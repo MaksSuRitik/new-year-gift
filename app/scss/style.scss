@@ -489,95 +489,101 @@ body {
   video { width: 100%; height: 100%; object-fit: contain; }
 }
 // ==========================================
-// 📱 МОБІЛЬНА АДАПТАЦІЯ (GRID VERSION)
+// 📱 МОБІЛЬНА АДАПТАЦІЯ (COMPACT VERSION)
 // ==========================================
 
 @media (max-width: 768px) {
 
-  // 1. Вмикаємо прокрутку сторінки (Обов'язково!)
+  // 1. Вмикаємо прокрутку
   html, body {
     overflow-y: auto !important;
     overflow-x: hidden !important;
     height: auto !important;
   }
 
-  // 2. Головний контейнер тепер розтягується вниз
+  // 2. Контейнер
   .main-container {
     height: auto !important;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding-top: 100px; // Відступ зверху під кнопки
-    padding-bottom: 50px;
+    padding-top: 90px;
+    padding-bottom: 40px;
   }
 
-  // 3. КАРУСЕЛЬ -> ГРІД (СІТКА)
+  // 3. Сітка карток (Зменшуємо відступи)
   .carousel {
     display: grid !important;       
-    grid-template-columns: 1fr !important; // Одна колонка на всю ширину
-    gap: 40px !important;           // Відступ між картками
+    grid-template-columns: 1fr !important;
+    gap: 20px !important;           // БУЛО 40px -> СТАЛО 20px
     
-    width: 90% !important;          // Ширина контейнера
-    height: auto !important;        // Висота автоматична
-    margin: 0 auto;                 // Центруємо саму сітку
-    
-    perspective: none !important;   // Вимикаємо 3D ефекти
+    width: 90% !important;
+    height: auto !important;
+    margin: 0 auto;
+    perspective: none !important;
   }
 
-  // 4. КАРТКИ (ПАНЕЛІ)
-  // Найважливіше: position: relative, щоб вони йшли одна за одною
+  // 4. Картки (Зменшуємо висоту)
   .panel {
     position: relative !important; 
-    top: auto !important;
-    left: auto !important;
+    top: auto !important; left: auto !important;
     
-    width: 100% !important;         // На всю ширину сітки
-    height: 400px !important;       // Фіксована висота картки
+    width: 100% !important;
+    height: 280px !important;       // БУЛО 400px -> СТАЛО 280px
     
-    transform: none !important;     // Прибираємо поворот
-    opacity: 1 !important;          // Всі картки видимі
+    transform: none !important;
+    opacity: 1 !important;
     margin: 0 !important;
-    
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important;
   }
 
-  // Скасовуємо стилі для класів left/right/center
-  // Тепер вони всі однакові
   .panel.left, .panel.right, .panel.center {
     transform: none !important;
     opacity: 1 !important;
     z-index: 1 !important;
   }
   
-  // Фон всередині картки
   .panel-content {
     border-radius: 20px;
   }
 
-  // --- АДАПТАЦІЯ СТОРІНКИ КАЗИНО ---
-  
+  // 5. Зменшуємо КНОПКИ всередині карток
+  .action-btn {
+    padding: 10px 30px !important;  // Менші відступи
+    font-size: 1.2rem !important;   // Менший шрифт
+    border-radius: 30px !important;
+  }
+
+  // --- АДАПТАЦІЯ КАЗИНО ---
   .sketch-layout {
     justify-content: flex-start;
     padding-top: 20px;
     height: auto;
     min-height: 100vh;
-    gap: 30px;
+    gap: 20px;
   }
 
   .horizontal-slot {
     width: 95% !important;
-    height: 100px;
+    height: 90px;
   }
 
   .slot-item-text {
-    min-width: 90vw !important; // Текст майже на всю ширину екрану
-    font-size: 0.9rem;
+    min-width: 90vw !important;
+    font-size: 0.8rem;
   }
 
   .center-console {
     width: 90%;
     padding: 20px;
+    border-radius: 30px;
+  }
+  
+  // Кнопка СПІН теж менша
+  .sketch-spin-btn {
+    padding: 12px 60px !important;
+    font-size: 1.3rem !important;
   }
 
   .video-card {
