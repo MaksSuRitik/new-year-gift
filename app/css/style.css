@@ -1090,3 +1090,100 @@ body {
   -o-object-fit: contain;
      object-fit: contain;
 }
+
+@media (max-width: 768px) {
+  html, body {
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
+  }
+  .main-container {
+    height: auto !important;
+    min-height: 100vh;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: flex-start;
+    padding-top: 12vh;
+    padding-bottom: 5vh;
+  }
+  .carousel {
+    display: -ms-grid !important;
+    display: grid !important;
+    -ms-grid-columns: 1fr !important;
+    grid-template-columns: 1fr !important;
+    gap: 3vh !important;
+    width: 85% !important;
+    height: auto !important;
+    margin: 0 auto;
+    -webkit-perspective: none !important;
+            perspective: none !important;
+  }
+  .panel {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    width: 100% !important;
+    height: 35vh !important;
+    min-height: 200px !important;
+    -webkit-transform: none !important;
+        -ms-transform: none !important;
+            transform: none !important;
+    opacity: 1 !important;
+    margin: 0 !important;
+    -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
+  }
+  .panel.left, .panel.right, .panel.center {
+    -webkit-transform: none !important;
+        -ms-transform: none !important;
+            transform: none !important;
+    opacity: 1 !important;
+    z-index: 1 !important;
+  }
+  .panel-content {
+    border-radius: 20px;
+  }
+  .action-btn {
+    padding: 1.5vh 8vw !important;
+    font-size: 1.2rem !important;
+    border-radius: 50px !important;
+  }
+  .sketch-layout {
+    -webkit-box-pack: start;
+        -ms-flex-pack: start;
+            justify-content: flex-start;
+    padding-top: 5vh;
+    height: auto;
+    min-height: 100vh;
+    gap: 3vh;
+  }
+  .horizontal-slot {
+    width: 95% !important;
+    height: 12vh;
+  }
+  .slot-item-text {
+    min-width: 90vw !important;
+    font-size: 0.9rem;
+  }
+  .center-console {
+    width: 90%;
+    padding: 3vh 20px;
+  }
+  .sketch-spin-btn {
+    padding: 2vh 10vw !important;
+    font-size: 1.3rem !important;
+  }
+  .video-card {
+    width: 100% !important;
+    height: 100% !important;
+    border-radius: 0 !important;
+    border: none !important;
+  }
+}
