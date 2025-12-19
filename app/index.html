@@ -8,9 +8,15 @@
 </head>
 <body data-theme="dark" data-lang="UA">
 
+  <div id="snow-container"></div>
+
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+  
   <div class="controls">
     <button id="themeToggle" class="btn theme-btn">🌙</button>
-
     <div class="lang-wrapper">
       <button id="langToggle" class="btn lang-btn">UA</button>
       <div class="lang-dropdown">
@@ -21,11 +27,39 @@
     </div>
   </div>
 
-  <main class="card">
-    <h1 data-i18n="title">Привіт! Це твій подарунок 😎</h1>
-    <p data-i18n="text">
-      Я вирішив не дарувати шкарпетки, а зробити цей сайт. Тут трохи дивно, але весело.
-    </p>
+  <main class="main-container">
+    
+    <div id="view-start" class="view active">
+      <button id="btnStart" class="mega-button">
+        <span class="glow-effect"></span>
+        <div class="content-wrapper">
+          <span class="emoji-icon">🎁</span>
+          <span class="shimmer-text" data-i18n="title">З новим роком</span>
+          <span class="small-text" data-i18n="text">Тиць</span>
+        </div>
+      </button>
+    </div>
+
+    <div id="view-hub" class="view hidden">
+      <div class="carousel">
+        <div class="panel left" id="panel-memes">
+          <div class="panel-content glass-panel">
+            <button class="action-btn" data-target="memes" data-i18n="btnMemes">Мемс</button>
+          </div>
+        </div>
+        <div class="panel center" id="panel-dance">
+          <div class="panel-content glass-panel">
+            <button class="action-btn" data-target="dance" data-i18n="btnDance">Денс</button>
+          </div>
+        </div>
+        <div class="panel right" id="panel-surprise">
+          <div class="panel-content glass-panel">
+            <button class="action-btn" data-target="surprise" data-i18n="btnSurprise">Сюрпрайз</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
   </main>
 
   <script src="js/script.js"></script>
