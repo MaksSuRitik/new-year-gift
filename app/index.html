@@ -1,39 +1,33 @@
 <!DOCTYPE html>
-<html lang="uk">
+<html lang="ua">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Year Gift</title>
-    <link rel="stylesheet" href="css/style.css">
+  <meta charset="UTF-8">
+  <title>New Year Gift</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body data-theme="dark" data-lang="UA">
 
-    <div class="controls">
-        <button id="theme-btn" class="theme-toggle">🌜</button>
+  <div class="controls">
+    <button id="themeToggle" class="btn theme-btn">🌙</button>
 
-        <div class="lang-widget">
-           <button id="main-btn" class="lang-btn main">UA</button>
-            <div id="lang-menu" class="lang-dropdown">
-                <button data-lang="ua">UA</button>
-                <button data-lang="ru">RU</button>
-                <button data-lang="meow">🐱MEOW</button>
-            </div>
-        </div>
+    <div class="lang-wrapper">
+      <button id="langToggle" class="btn lang-btn">UA</button>
+      <div class="lang-dropdown">
+        <button data-lang="UA">UA</button>
+        <button data-lang="RU">RU</button>
+        <button data-lang="MEOW">🐱</button>
+      </div>
     </div>
+  </div>
 
-    <main class="container">
-        <h1 data-key="greeting">Привіт! Це твій подарунок 😎</h1>
-        
-        <div class="card">
-            <p data-key="message">
-                Я вирішив не дарувати тобі шкарпетки, а зробити цей сайт. 
-                Тут трохи дивно, але весело. Тицяй кнопки, дивись навкруги!
-            </p>
-        </div>
+  <main class="card">
+    <h1 data-i18n="title">Привіт! Це твій подарунок 😎</h1>
+    <p data-i18n="text">
+      Я вирішив не дарувати шкарпетки, а зробити цей сайт. Тут трохи дивно, але весело.
+    </p>
+  </main>
 
-        <p class="small-text" data-key="footer">Зроблено з любов'ю та HTML</p>
-    </main>
-
-    <script src="js/script.js"></script>
+  <script src="js/script.js"></script>
 </body>
 </html>

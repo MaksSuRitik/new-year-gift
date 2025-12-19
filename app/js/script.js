@@ -1,92 +1,82 @@
+const themeBtn = document.getElementById('themeToggle');
+const langBtn = document.getElementById('langToggle');
+const langWrapper = document.querySelector('.lang-wrapper');
+const langItems = document.querySelectorAll('.lang-dropdown button');
+const texts = document.querySelectorAll('[data-i18n]');
+
 const translations = {
-    ua: {
-        greeting: "Привіт! Це твій подарунок 😎",
-        message: "Я вирішив не дарувати тобі шкарпетки, а зробити цей сайт. Тут трохи дивно, але весело. Тицяй кнопки, дивись навкруги!",
-        footer: "Зроблено з любов'ю та HTML",
-        btnEmoji: "🇺🇦"
-    },
-    ru: {
-        greeting: "Привет! Это твой подарок 😎",
-        message: "Я решил не дарить тебе носки, а сделать этот сайт. Тут немного странно, но весело. Тыкай кнопки, смотри по сторонам!",
-        footer: "Сделано с любовью и HTML",
-        btnEmoji: "🇷🇺"
-    }
+  UA: {
+    title: 'Привіт! Це твій подарунок 😎',
+    text: 'Я вирішив не дарувати шкарпетки, а зробити цей сайт. Тут трохи дивно, але весело.'
+  },
+  RU: {
+    title: 'Привет! Это твой подарок 😎',
+    text: 'Я решил не дарить носки, а сделать этот сайт. Тут немного странно, но весело.'
+  },
+  MEOW: {
+    title: 'Мяу 😼',
+    text: 'Мрр. Мяу мяу. Кусь.'
+  }
 };
 
-const mainBtn = document.getElementById('main-btn');
-const themeBtn = document.getElementById('theme-btn');
-const langMenu = document.getElementById('lang-menu');
-const textElements = document.querySelectorAll('[data-key]');
+themeBtn.addEventListener('click', (e) => {
+  if (!document.startViewTransition) {
+    toggleTheme();
+    return;
+  }
 
-// 1. Мовна логіка
-function toMeowLanguage(text) {
-    return text.replace(/[а-яА-ЯіІїЇєЄa-zA-Z0-9]+/g, (word) => {
-        if (word.length <= 3) return "Мяу";
-        if (word.length <= 5) return "Мрр";
-        return Math.random() > 0.7 ? "Кусь" : "Мя" + "я".repeat(word.length - 2) + "у";
-    });
-}
+  const x = e.clientX;
+  const y = e.clientY;
 
-mainBtn.addEventListener('click', () => langMenu.classList.toggle('active'));
+  document.startViewTransition(() => {
+    toggleTheme();
+  });
 
-document.querySelectorAll('.lang-dropdown button').forEach(btn => {
-    btn.addEventListener('click', () => {
-        const lang = btn.getAttribute('data-lang');
-        setLanguage(lang);
-        langMenu.classList.remove('active');
-    });
+  document.documentElement.animate(
+    {
+      clipPath: [
+        `circle(0px at ${x}px ${y}px)`,
+        `circle(150% at ${x}px ${y}px)`
+      ]
+    },
+    {
+      duration: 600,
+      easing: 'ease-in-out',
+      pseudoElement: '::view-transition-new(root)'
+    }
+  );
 });
 
-function setLanguage(lang) {
-    const isMeow = lang === 'meow';
-    
-    // Вмикаємо/вимикаємо клас кота для курсора
-    document.body.classList.toggle('meow-mode', isMeow);
-
-    // Оновлюємо текст головної кнопки (UA, RU або 🐱)
-    if (isMeow) {
-        mainBtn.textContent = "🐱";
-    } else {
-        mainBtn.textContent = lang.toUpperCase(); 
-    }
-
-    // Перекладаємо тексти
-    textElements.forEach(el => {
-        const key = el.getAttribute('data-key');
-        const baseText = translations['ua'][key]; // Беремо UA за основу для Meow
-        
-        if (isMeow) {
-            el.textContent = toMeowLanguage(baseText);
-        } else {
-            if (translations[lang][key]) {
-                el.textContent = translations[lang][key];
-            }
-        }
-    });
+function toggleTheme() {
+  const body = document.body;
+  const isDark = body.getAttribute('data-theme') === 'dark';
+  body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+  themeBtn.textContent = isDark ? '☀️' : '🌙';
 }
 
-// 2. Анімація теми
-themeBtn.addEventListener('click', (e) => {
-    const toggle = () => {
-        document.body.classList.toggle('light-theme');
-        themeBtn.textContent = document.body.classList.contains('light-theme') ? '🔆' : '🌜';
-    };
+langBtn.addEventListener('click', () => {
+  langWrapper.classList.toggle('open');
+});
 
-    if (!document.startViewTransition) {
-        toggle();
-        return;
-    }
+langItems.forEach(btn => {
+  btn.addEventListener('click', () => {
+    const lang = btn.dataset.lang;
+    document.body.setAttribute('data-lang', lang);
+    langBtn.textContent = lang === 'MEOW' ? '🐱' : lang;
+    applyLanguage(lang);
+    langWrapper.classList.remove('open');
+  });
+});
 
-    const x = e.clientX;
-    const y = e.clientY;
-    const endRadius = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+function applyLanguage(lang) {
+  texts.forEach(el => {
+    const key = el.dataset.i18n;
+    el.textContent = translations[lang][key];
+  });
+}
 
-    const transition = document.startViewTransition(toggle);
-
-    transition.ready.then(() => {
-        document.documentElement.animate(
-            { clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${endRadius}px at ${x}px ${y}px)`] },
-            { duration: 500, easing: 'ease-in', pseudoElement: '::view-transition-new(root)' }
-        );
-    });
+document.addEventListener('click', (e) => {
+  if (!langWrapper.contains(e.target)) {
+    langWrapper.classList.remove('open');
+  }
 });
