@@ -389,11 +389,22 @@ body {
 
 // --- ЦЕНТРАЛЬНА КОНСОЛЬ (БЕЗ ЗМІН) ---
 .center-console {
-  background: #000; border: 2px solid rgba(255,255,255,0.1); border-radius: 40px;
-  padding: 40px 60px; width: 400px;
+  // --- СКЛЯНИЙ ЕФЕКТ ---
+  background: var(--glass-bg);               
+  backdrop-filter: blur(var(--glass-blur));  
+  border: 1px solid var(--glass-border);     
+  box-shadow: var(--glass-shadow);           
+  // ---------------------
+
+  border-radius: 40px;
+  padding: 40px 60px;
+  width: 400px;
   display: flex; flex-direction: column; align-items: center; gap: 30px;
-  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
-  position: relative; z-index: 50; // Щоб була поверх всього
+  
+  // Видаляємо дублювання позиціонування, якщо воно є нижче, 
+  // але тут важливо залишити ці властивості:
+  position: relative; 
+  z-index: 50;
   
   .console-text {
     text-align: center; color: white;
@@ -401,7 +412,6 @@ body {
     p { font-size: 0.9rem; opacity: 0.6; margin: 5px 0 0 0; }
   }
 }
-
 .sketch-spin-btn {
   background: #fff; color: #000;
   font-family: 'Comic Sans MS', sans-serif; font-weight: bold; font-size: 1.5rem;
@@ -578,10 +588,30 @@ body {
     font-size: 0.9rem;
   }
 
-  .center-console {
-    width: 90%;
-    padding: 3vh 20px; // Відступи залежать від висоти
+ .center-console {
+  // Додали !important, щоб точно перебити чорний колір
+  background: var(--glass-bg) !important;
+  backdrop-filter: blur(var(--glass-blur)) !important;
+  border: 1px solid var(--glass-border) !important;
+  box-shadow: var(--glass-shadow) !important;
+
+  border-radius: 40px;
+  padding: 40px 60px;
+  width: 400px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 30px;
+  position: relative;
+  z-index: 50;
+
+  .console-text {
+    text-align: center;
+    color: white;
+    h2 { font-size: 1.2rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+    p { font-size: 0.9rem; opacity: 0.6; margin: 5px 0 0 0; }
   }
+}
   
   .sketch-spin-btn {
     padding: 2vh 10vw !important;

@@ -828,8 +828,12 @@ body {
 }
 
 .center-console {
-  background: #000;
-  border: 2px solid rgba(255, 255, 255, 0.1);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+          backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  -webkit-box-shadow: var(--glass-shadow);
+          box-shadow: var(--glass-shadow);
   border-radius: 40px;
   padding: 40px 60px;
   width: 400px;
@@ -844,8 +848,6 @@ body {
       -ms-flex-align: center;
           align-items: center;
   gap: 30px;
-  -webkit-box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
-          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
   position: relative;
   z-index: 50;
 }
@@ -1173,8 +1175,43 @@ body {
     font-size: 0.9rem;
   }
   .center-console {
-    width: 90%;
-    padding: 3vh 20px;
+    background: var(--glass-bg) !important;
+    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
+            backdrop-filter: blur(var(--glass-blur)) !important;
+    border: 1px solid var(--glass-border) !important;
+    -webkit-box-shadow: var(--glass-shadow) !important;
+            box-shadow: var(--glass-shadow) !important;
+    border-radius: 40px;
+    padding: 40px 60px;
+    width: 400px;
+    display: -webkit-box;
+    display: -ms-flexbox;
+    display: flex;
+    -webkit-box-orient: vertical;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: column;
+            flex-direction: column;
+    -webkit-box-align: center;
+        -ms-flex-align: center;
+            align-items: center;
+    gap: 30px;
+    position: relative;
+    z-index: 50;
+  }
+  .center-console .console-text {
+    text-align: center;
+    color: white;
+  }
+  .center-console .console-text h2 {
+    font-size: 1.2rem;
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .center-console .console-text p {
+    font-size: 0.9rem;
+    opacity: 0.6;
+    margin: 5px 0 0 0;
   }
   .sketch-spin-btn {
     padding: 2vh 10vw !important;
