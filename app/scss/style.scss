@@ -489,95 +489,97 @@ body {
   video { width: 100%; height: 100%; object-fit: contain; }
 }
 // ==========================================
-// 📱 МОБІЛЬНА АДАПТАЦІЯ (MEDIA QUERIES)
+// 📱 МОБІЛЬНА АДАПТАЦІЯ (GRID VERSION)
 // ==========================================
-
-
 
 @media (max-width: 768px) {
 
-  // 1. ДОЗВОЛЯЄМО СКРОЛ (Це найважливіше!)
+  // 1. Вмикаємо прокрутку сторінки (Обов'язково!)
   html, body {
-    overflow-y: scroll !important; // Вмикаємо прокрутку вниз
-    height: auto !important;       // Висота не фіксована
-    position: static !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    height: auto !important;
   }
 
-  // 2. Розтягуємо контейнер
+  // 2. Головний контейнер тепер розтягується вниз
   .main-container {
     height: auto !important;
     min-height: 100vh;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
-    padding-top: 80px;  // Місце для кнопок зверху
-    padding-bottom: 50px; // Місце знизу
+    padding-top: 100px; // Відступ зверху під кнопки
+    padding-bottom: 50px;
   }
 
-  // 3. Робимо вертикальний список замість 3D каруселі
+  // 3. КАРУСЕЛЬ -> ГРІД (СІТКА)
   .carousel {
-    display: flex !important;
-    flex-direction: column !important; // Вертикально
-    height: auto !important;
-    perspective: none !important; // Вимикаємо 3D
-    gap: 30px; // Відступ між картками
-    width: 100%;
+    display: grid !important;       
+    grid-template-columns: 1fr !important; // Одна колонка на всю ширину
+    gap: 40px !important;           // Відступ між картками
+    
+    width: 90% !important;          // Ширина контейнера
+    height: auto !important;        // Висота автоматична
+    margin: 0 auto;                 // Центруємо саму сітку
+    
+    perspective: none !important;   // Вимикаємо 3D ефекти
   }
 
-  // 4. Налаштування карток (Панелей)
+  // 4. КАРТКИ (ПАНЕЛІ)
+  // Найважливіше: position: relative, щоб вони йшли одна за одною
   .panel {
-    position: relative !important; // ВАЖЛИВО: щоб вони йшли одна за одною, а не накладалися
-    width: 90% !important;        // Ширина картки
-    height: 450px !important;     // Висота картки
-    
-    left: auto !important;
+    position: relative !important; 
     top: auto !important;
-    transform: none !important;   // Прибираємо повороти
-    opacity: 1 !important;        // Робимо всі видимими
-    margin: 0 auto;               // Центруємо по горизонталі
+    left: auto !important;
     
-    // Тінь, щоб їх було видно на темному фоні
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+    width: 100% !important;         // На всю ширину сітки
+    height: 400px !important;       // Фіксована висота картки
+    
+    transform: none !important;     // Прибираємо поворот
+    opacity: 1 !important;          // Всі картки видимі
+    margin: 0 !important;
+    
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
   }
 
-  // Перебиваємо стилі left/right/center, щоб на телефоні всі виглядали однаково
+  // Скасовуємо стилі для класів left/right/center
+  // Тепер вони всі однакові
   .panel.left, .panel.right, .panel.center {
     transform: none !important;
     opacity: 1 !important;
     z-index: 1 !important;
   }
   
-  // Фон карток
-  .panel .panel-content {
+  // Фон всередині картки
+  .panel-content {
     border-radius: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
   }
 
-  // 5. Сторінка Казино (теж адаптуємо)
+  // --- АДАПТАЦІЯ СТОРІНКИ КАЗИНО ---
+  
   .sketch-layout {
     justify-content: flex-start;
     padding-top: 20px;
-    gap: 15px;
     height: auto;
     min-height: 100vh;
+    gap: 30px;
   }
 
   .horizontal-slot {
     width: 95% !important;
-    height: 90px;
+    height: 100px;
   }
-  
+
   .slot-item-text {
-    min-width: 95vw !important; // Один елемент на весь екран
-    font-size: 0.8rem;
+    min-width: 90vw !important; // Текст майже на всю ширину екрану
+    font-size: 0.9rem;
   }
 
   .center-console {
     width: 90%;
     padding: 20px;
   }
-  
-  // Плеєр на весь екран
+
   .video-card {
     width: 100% !important;
     height: 100% !important;
