@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ua">
+<head>
+  <meta charset="UTF-8">
+  <title>Meme Casino</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+</head>
+<body data-theme="dark">
+
+  <div id="snow-container"></div>
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <div class="controls">
+    <button id="themeToggle" class="btn theme-btn">🌙</button>
+    <div class="lang-wrapper">
+      <button id="langToggle" class="btn lang-btn">UA</button>
+      <div class="lang-dropdown">
+        <button data-lang="UA">UA</button>
+        <button data-lang="RU">RU</button>
+        <button data-lang="MEOW">🐱</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-container">
+    <div class="view active">
+      
+      <div class="sketch-layout">
+        
+       <a href="index.html" class="simple-back" data-i18n="btnBack">⬅ Назад</a>
+
+        <div id="slotMachine" class="horizontal-slot hidden">
+           <div class="pointer-arrow">▼</div>
+           <div class="slot-window-horizontal">
+               <div id="slotStrip" class="strip-horizontal"></div>
+               <div class="shadow-left"></div>
+               <div class="shadow-right"></div>
+           </div>
+        </div>
+
+        <div class="center-console">
+  <div class="console-text">
+    <h2 data-i18n="spinTitle">НУ давайте лудомани</h2>
+    <p data-i18n="spinSub">Крутіть меми</p>
+  </div>
+  <button id="spinBtn" class="sketch-spin-btn" data-i18n="btnSpin">Спін</button>
+</div>
+
+      </div>
+    </div>
+  </main>
+
+  <div id="videoModal" class="video-overlay hidden" style="background: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(5px);">
+    <div class="video-card">
+    <div class="video-header">
+  <h3 id="modalTitle" data-i18n="videoDefault">Video</h3>
+  <button class="close-btn" id="closeModal">✕</button>
+</div>
+      <div class="player-wrapper">
+        <video id="memeVideo" controls playsinline>
+          <source src="" type="video/mp4">
+        </video>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>
