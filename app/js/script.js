@@ -232,20 +232,37 @@ if (spinBtn) {
         slotStrip.style.transform = 'translateX(0)';
         slotStrip.offsetHeight; // Reflow
 
-        // Розрахунок (ШИРИНА 320)
-        const itemWidth = 320; 
+        // ===============================================
+        // 👇 ЗАМІНИТИ СТАРИЙ РОЗРАХУНОК НА ЦЕЙ БЛОК 👇
+        // ===============================================
+        
+        // 1. Знаходимо перший елемент у списку
+        const firstItem = slotStrip.querySelector('.slot-item-text');
+        
+        // 2. Питаємо у браузера: "Яка в нього зараз ширина?"
+        // (На ПК це буде 320, на телефоні — ширина екрану)
+        const itemWidth = firstItem ? firstItem.offsetWidth : 320; 
+        
         const targetIndex = 30; 
-        const containerWidth = slotMachine.offsetWidth || 800;
+        
+        // 3. Беремо ширину самого контейнера рулетки
+        const containerWidth = slotMachine.offsetWidth;
+        
+        // 4. Рахуємо центр
         const centerOffset = (containerWidth / 2) - (itemWidth / 2);
         
         const finalPosition = -(targetIndex * itemWidth) + centerOffset;
+
+        // ===============================================
+        // 👆 КІНЕЦЬ НОВОГО БЛОКУ 👆
+        // ===============================================
 
         // Анімація
         setTimeout(() => {
             slotStrip.style.transition = 'transform 5s cubic-bezier(0.15, 0.9, 0.3, 1)';
             slotStrip.style.transform = `translateX(${finalPosition}px)`;
         }, 50);
-
+        
         // Відкриття
         setTimeout(() => {
             openVideo(winner);
