@@ -492,6 +492,19 @@ body {
           transform: translateX(340px) scale(0.9) rotateY(-10deg);
 }
 
+.panel.left .action-btn,
+.panel.right .action-btn {
+  pointer-events: none;
+  opacity: 0.5;
+  cursor: default;
+}
+
+.panel.center .action-btn {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
 .action-btn {
   padding: 15px 40px;
   font-size: 1.5rem;
@@ -1095,132 +1108,81 @@ body {
 
 @media (max-width: 768px) {
   html, body {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    height: auto !important;
+    overflow: hidden !important;
+    height: 100% !important;
   }
   .main-container {
-    height: auto !important;
-    min-height: 100vh;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
-    -webkit-box-pack: start;
-        -ms-flex-pack: start;
-            justify-content: flex-start;
-    padding-top: 12vh;
-    padding-bottom: 5vh;
+    height: 100vh !important;
+    padding: 0 !important;
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    overflow: hidden;
   }
   .carousel {
-    display: -ms-grid !important;
-    display: grid !important;
-    -ms-grid-columns: 1fr !important;
-    grid-template-columns: 1fr !important;
-    gap: 3vh !important;
-    width: 85% !important;
-    height: auto !important;
-    margin: 0 auto;
-    -webkit-perspective: none !important;
-            perspective: none !important;
+    display: -webkit-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -webkit-box-align: center !important;
+        -ms-flex-align: center !important;
+            align-items: center !important;
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-perspective: 600px !important;
+            perspective: 600px !important;
+    position: relative !important;
+    margin-top: -50px;
   }
   .panel {
-    position: relative !important;
-    top: auto !important;
-    left: auto !important;
-    width: 100% !important;
-    height: 35vh !important;
-    min-height: 200px !important;
-    -webkit-transform: none !important;
-        -ms-transform: none !important;
-            transform: none !important;
-    opacity: 1 !important;
-    margin: 0 !important;
-    -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5) !important;
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 65vw !important;
+    height: 55vh !important;
+    max-height: 400px !important;
+    margin-left: -32.5vw !important;
+    margin-top: -27.5vh !important;
+    -webkit-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    -webkit-box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
   }
-  .panel.left, .panel.right, .panel.center {
-    -webkit-transform: none !important;
-        -ms-transform: none !important;
-            transform: none !important;
+  .panel.center {
+    -webkit-transform: translateZ(0) scale(1) !important;
+            transform: translateZ(0) scale(1) !important;
+    z-index: 10 !important;
     opacity: 1 !important;
-    z-index: 1 !important;
   }
-  .panel-content {
-    border-radius: 20px;
+  .panel.left {
+    -webkit-transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+            transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+  .panel.right {
+    -webkit-transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+            transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
   }
   .action-btn {
-    padding: 1.5vh 8vw !important;
-    font-size: 1.2rem !important;
-    border-radius: 50px !important;
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
   }
   .sketch-layout {
-    -webkit-box-pack: start;
-        -ms-flex-pack: start;
-            justify-content: flex-start;
-    padding-top: 5vh;
-    height: auto;
-    min-height: 100vh;
-    gap: 3vh;
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    padding-top: 0 !important;
   }
   .horizontal-slot {
     width: 95% !important;
-    height: 12vh;
-  }
-  .slot-item-text {
-    min-width: 90vw !important;
-    font-size: 0.9rem;
   }
   .center-console {
-    background: var(--glass-bg) !important;
-    -webkit-backdrop-filter: blur(var(--glass-blur)) !important;
-            backdrop-filter: blur(var(--glass-blur)) !important;
-    border: 1px solid var(--glass-border) !important;
-    -webkit-box-shadow: var(--glass-shadow) !important;
-            box-shadow: var(--glass-shadow) !important;
-    border-radius: 40px;
-    padding: 40px 60px;
-    width: 400px;
-    display: -webkit-box;
-    display: -ms-flexbox;
-    display: flex;
-    -webkit-box-orient: vertical;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: column;
-            flex-direction: column;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-    gap: 30px;
-    position: relative;
-    z-index: 50;
-  }
-  .center-console .console-text {
-    text-align: center;
-    color: white;
-  }
-  .center-console .console-text h2 {
-    font-size: 1.2rem;
-    margin: 0;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
-  .center-console .console-text p {
-    font-size: 0.9rem;
-    opacity: 0.6;
-    margin: 5px 0 0 0;
-  }
-  .sketch-spin-btn {
-    padding: 2vh 10vw !important;
-    font-size: 1.3rem !important;
-  }
-  .video-card {
-    width: 100% !important;
-    height: 100% !important;
-    border-radius: 0 !important;
-    border: none !important;
+    width: 90% !important;
+    padding: 20px !important;
   }
 }

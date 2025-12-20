@@ -216,6 +216,20 @@ body {
   &.right { z-index: 5; transform: translateX(340px) scale(0.85) rotateY(-15deg); opacity: 0.5; cursor: pointer; &:hover { opacity: 0.8; transform: translateX(340px) scale(0.9) rotateY(-10deg); } }
 }
 
+.panel.left .action-btn,
+.panel.right .action-btn {
+  pointer-events: none; // Клік проходить крізь кнопку (спрацює поворот панелі)
+  opacity: 0.5;         // Візуально показуємо, що вона поки не активна
+  cursor: default;
+}
+
+// Активна тільки центральна
+.panel.center .action-btn {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
 .action-btn {
   padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 40px; 
   background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.4);
@@ -504,124 +518,92 @@ body {
 
 @media (max-width: 768px) {
 
-  // 1. Вмикаємо прокрутку
   html, body {
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
-    height: auto !important;
+    overflow: hidden !important; // Забороняємо скрол, бо у нас знову 3D
+    height: 100% !important;
   }
 
-  // 2. Контейнер з відступами у відсотках
   .main-container {
-    height: auto !important;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    padding-top: 12vh; // 12% висоти екрану зверху
-    padding-bottom: 5vh;
+    height: 100vh !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    overflow: hidden;
   }
 
-  // 3. Сітка карток
+  // 1. ПОВЕРТАЄМО КОНТЕЙНЕРУ 3D
   .carousel {
-    display: grid !important;       
-    grid-template-columns: 1fr !important;
-    gap: 3vh !important; // Відступ між картками залежить від висоти екрану
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
     
-    width: 85% !important; // Ширина контейнера
-    height: auto !important;
-    margin: 0 auto;
-    perspective: none !important;
-  }
-
-  // 4. ГУМОВІ КАРТКИ
-  .panel {
-    position: relative !important; 
-    top: auto !important; left: auto !important;
-    
-    width: 100% !important;
-    
-    // ОСЬ ГОЛОВНА ЗМІНА:
-    height: 35vh !important; // Картка завжди займає 35% висоти екрану
-    min-height: 200px !important; // Але не менше 200px (щоб не сплющило зовсім)
-    
-    transform: none !important;
-    opacity: 1 !important;
-    margin: 0 !important;
-    box-shadow: 0 5px 15px rgba(0,0,0,0.5) !important;
-  }
-
-  .panel.left, .panel.right, .panel.center {
-    transform: none !important;
-    opacity: 1 !important;
-    z-index: 1 !important;
-  }
-  
-  .panel-content {
-    border-radius: 20px;
-    // Кнопка центрується автоматично флексом з основного CSS
-  }
-
-  // Кнопки теж адаптивні
-  .action-btn {
-    padding: 1.5vh 8vw !important; // Розмір кнопки залежить від екрану
-    font-size: 1.2rem !important;
-    border-radius: 50px !important;
-  }
-
-  // --- АДАПТАЦІЯ КАЗИНО ---
-  .sketch-layout {
-    justify-content: flex-start;
-    padding-top: 5vh;
-    height: auto;
-    min-height: 100vh;
-    gap: 3vh;
-  }
-
-  .horizontal-slot {
-    width: 95% !important;
-    height: 12vh; // Висота слота теж гумова
-  }
-
-  .slot-item-text {
-    min-width: 90vw !important;
-    font-size: 0.9rem;
-  }
-
- .center-console {
-  // Додали !important, щоб точно перебити чорний колір
-  background: var(--glass-bg) !important;
-  backdrop-filter: blur(var(--glass-blur)) !important;
-  border: 1px solid var(--glass-border) !important;
-  box-shadow: var(--glass-shadow) !important;
-
-  border-radius: 40px;
-  padding: 40px 60px;
-  width: 400px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 30px;
-  position: relative;
-  z-index: 50;
-
-  .console-text {
-    text-align: center;
-    color: white;
-    h2 { font-size: 1.2rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
-    p { font-size: 0.9rem; opacity: 0.6; margin: 5px 0 0 0; }
-  }
-}
-  
-  .sketch-spin-btn {
-    padding: 2vh 10vw !important;
-    font-size: 1.3rem !important;
-  }
-
-  .video-card {
     width: 100% !important;
     height: 100% !important;
-    border-radius: 0 !important;
-    border: none !important;
+    
+    perspective: 600px !important; // Глибина 3D для телефону
+    position: relative !important;
+    margin-top: -50px; // Трохи підняти вгору
+  }
+
+  // 2. НАЛАШТУВАННЯ КАРТОК
+  .panel {
+    position: absolute !important; // Повертаємо абсолютне позиціонування
+    top: 50% !important;
+    left: 50% !important;
+    
+    // Розмір картки для мобільного (вужча)
+    width: 65vw !important;  
+    height: 55vh !important;
+    max-height: 400px !important;
+    
+    // Центрування абсолютної картки
+    margin-left: -32.5vw !important; // Половина ширини
+    margin-top: -27.5vh !important;  // Половина висоти
+    
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+  }
+
+  // 3. ПОЗИЦІЇ (ТРАНСФОРМАЦІЇ) ДЛЯ ТЕЛЕФОНУ
+  
+  // ЦЕНТР: Стоїть прямо, зверху
+  .panel.center {
+    transform: translateZ(0) scale(1) !important;
+    z-index: 10 !important;
+    opacity: 1 !important;
+  }
+
+  // ЛІВО: Зсуваємо вліво на 55%, трохи зменшуємо і повертаємо
+  .panel.left {
+    transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+
+  // ПРАВО: Зсуваємо вправо на 55%
+  .panel.right {
+    transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+  
+  // КНОПКИ НА МОБІЛЬНОМУ
+  .action-btn {
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
+  }
+
+  // 4. ІНШІ ЕЛЕМЕНТИ (Казино та інше)
+  .sketch-layout {
+    justify-content: center !important;
+    padding-top: 0 !important;
+  }
+  
+  .horizontal-slot {
+    width: 95% !important;
+  }
+  
+  .center-console {
+    width: 90% !important;
+    padding: 20px !important;
   }
 }
