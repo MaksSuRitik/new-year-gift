@@ -2,39 +2,118 @@
 // 1. ЗМІННІ ТА БАЗОВІ НАЛАШТУВАННЯ
 // ==========================================
 :root {
-  --bg-color: #0f0c29;
-  --text-color: #ffffff;
+  // --- ТЕМНА ТЕМА (BERT Palette) ---
+  --bg-color: #0B0C10;        // Глибокий чорний
+  --text-color: #C5C6C7;      // Світло-сірий
+  --highlight: #66FCF1;       // Неоновий ЦІАН (Основний колір неону)
   
-  // Налаштування "Скла" (Glassmorphism)
-  --glass-bg: rgba(255, 255, 255, 0.08);
-  --glass-border: rgba(255, 255, 255, 0.15);
-  --glass-blur: 20px;
-  --glass-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  // Скляний ефект
+  --glass-bg: rgba(31, 40, 51, 0.8);
+  --glass-border: rgba(102, 252, 241, 0.5); // Рамка теж ціанова
+  --glass-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+  --glass-blur: 15px;
   
-  --accent-glow: rgba(255, 255, 255, 0.2);
-  --blob-1: #302b63;
-  --blob-2: #24243e;
+  --accent-glow: rgba(102, 252, 241, 0.4); // Сильне світіння
+  --blob-1: #45A29E; 
+  --blob-2: #1F2833;
   --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-// Світла тема
+// ==========================================
+// ☁️ СВІТЛА ТЕМА (DEEP SKY & BLOBS)
+// ==========================================
 body[data-theme="light"] {
-  --bg-color: #e0e5ec;
-  --text-color: #2d3436;
-  --glass-bg: rgba(255, 255, 255, 0.4);
-  --glass-border: rgba(255, 255, 255, 0.5);
-  --glass-shadow: 0 15px 35px rgba(100, 100, 100, 0.1);
-  --blob-1: #ffffff;
-  --blob-2: #b2bec3;
-  --accent-glow: rgba(0, 0, 0, 0.05);
+  // 1. ФОН (Більше не білий!)
+  // Робимо його "щільним" сіро-блакитним. Це дасть ефект глибини.
+  --bg-color: #DCE6F1;        
   
-  // Для чорної консолі казино залишаємо темні кольори навіть у світлій темі
-  .center-console, .sketch-slot-frame, .video-card {
-     color: white; 
-  }
-}
+  // 2. ТІ САМІ "КОЛА" (Blobs)
+  // Щоб їх було видно, кольори мають бути насиченими
+  --blob-1: #89CFF0; // Яскраво-блакитний (Baby Blue)
+  --blob-2: #C3B1E1; // Ніжно-фіолетовий (Pastel Purple)
+  
+  // 3. ТЕКСТ (Темно-синій сталь)
+  --text-color: #243B55;      
+  
+  // 4. АКЦЕНТ (Твій улюблений #86B3D1, але трохи темніший для кнопок)
+  --highlight: #5D8AA8;       
+  
+  // 5. ЕФЕКТ СКЛА
+  // Робимо скло білим і напівпрозорим, щоб через нього було видно "кола"
+  --glass-bg: rgba(255, 255, 255, 0.45); 
+  --glass-border: rgba(255, 255, 255, 0.6); 
+  
+  // Тіні робимо м'якими в колір фону
+  --glass-shadow: 
+    15px 15px 35px rgba(166, 185, 204, 0.5), 
+    -15px -15px 35px rgba(255, 255, 255, 0.8);
+  
+  --accent-glow: rgba(93, 138, 168, 0.3); 
 
-// Meow Mode (колір рамок)
+  // --- НАЛАШТУВАННЯ ЕЛЕМЕНТІВ ---
+
+  // Гіфки та панелі (Щоб було видно фон через них)
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.1) !important; 
+    border: 1px solid rgba(255, 255, 255, 0.5) !important;
+    box-shadow: none !important;
+  }
+
+  // КНОПКИ МЕНЮ (Мемс, Денс...)
+  .action-btn {
+    background: rgba(255, 255, 255, 0.6) !important; // Напівпрозорі
+    border: 2px solid #fff !important;
+    color: var(--text-color) !important;
+    font-weight: 800;
+    
+    &:hover {
+      background: var(--highlight) !important; 
+      color: #fff !important;
+      border-color: var(--highlight) !important;
+      box-shadow: 0 0 30px var(--blob-1); // Світиться кольором "кола"
+    }
+  }
+
+  // Текст "З новим роком"
+  .shimmer-text {
+    background: linear-gradient(120deg, #243B55 40%, #5D8AA8 50%, #243B55 60%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  
+  // Примусовий колір тексту
+  .center-console, .video-card, .mega-button .small-text { 
+     color: var(--text-color) !important; text-shadow: none;
+  }
+  .center-console .console-text h2 {
+    color: #141E30 !important; // Майже чорний заголовок
+  }
+  .center-console .console-text p {
+    color: var(--text-color) !important; opacity: 1 !important;
+  }
+
+  // Кнопка СПІН
+  .sketch-spin-btn {
+    background: var(--text-color); // Темна кнопка
+    color: #fff;
+    box-shadow: 0 10px 20px rgba(36, 59, 85, 0.3);
+    &:hover { background: var(--highlight); transform: scale(1.05); }
+  }
+  
+  // Рулетка
+  .slot-window-horizontal {
+    background: #141E30 !important; // Темна всередині
+    border-color: var(--highlight) !important;
+  }
+  
+  // Градієнти (під колір нового фону)
+  .shadow-left { background: linear-gradient(to right, #DCE6F1 0%, transparent 100%); }
+  .shadow-right { background: linear-gradient(to left, #DCE6F1 0%, transparent 100%); }
+
+  .simple-back, .pointer-arrow { color: var(--text-color); }
+}
+// Meow Mode
 body[data-lang="MEOW"] {
   --blob-1: #4a2c2c;
   .action-btn, .mega-button { border-color: #ff9999; }
@@ -43,18 +122,15 @@ body[data-lang="MEOW"] {
 * { box-sizing: border-box; }
 
 html, body {
-  margin: 0; padding: 0; 
-  width: 100%; height: 100%; 
-  overflow: hidden; // Забороняємо скрол
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; 
 }
 
 body {
-  font-family: 'Comic Sans MS', sans-serif; // Твій фірмовий шрифт
+  font-family: 'Comic Sans MS', sans-serif;
   color: var(--text-color);
   background: var(--bg-color);
   transition: background 0.6s;
 }
-
 // ==========================================
 // 2. ФОНОВІ ЕФЕКТИ (СНІГ ТА БЛОБИ)
 // ==========================================
@@ -167,7 +243,13 @@ body {
   .emoji-icon { font-size: 3rem; margin-bottom: 5px; }
   .small-text { font-size: 1rem; opacity: 0.7; color: var(--text-color); }
 
-  &:hover { transform: scale(1.05); animation: none; box-shadow: 0 0 50px var(--accent-glow); }
+ &:hover { 
+    transform: scale(1.05); 
+    animation: none; 
+    // НОВЕ: Світіння акцентним кольором (Ціан або Бордо)
+    border-color: var(--highlight);
+    box-shadow: 0 0 50px var(--accent-glow); 
+  }
   &:active { transform: scale(0.95); }
 }
 
@@ -211,7 +293,17 @@ body {
   &#panel-dance .panel-content { background-image: linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(15, 12, 41, 0.8)), url('../img/dance.gif'); }
   &#panel-surprise .panel-content { background-image: linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(15, 12, 41, 0.8)), url('../img/secret.gif'); }
 
-  &.center { z-index: 10; transform: translateX(0) scale(1); opacity: 1; .panel-content { border: 1px solid rgba(255,255,255,0.5); box-shadow: 0 30px 60px rgba(0,0,0,0.5); } }
+  &.center { 
+    z-index: 10; 
+    transform: translateX(0) scale(1); 
+    opacity: 1; 
+    
+    .panel-content { 
+      // НЕОНОВА ОБВОДКА ГІФКИ
+      border: 3px solid var(--highlight); // Кольорова рамка (Ціан або Бордо)
+      box-shadow: 0 0 35px var(--accent-glow), inset 0 0 10px var(--accent-glow); // Світіння назовні і всередину
+    } 
+  }
   &.left { z-index: 5; transform: translateX(-340px) scale(0.85) rotateY(15deg); opacity: 0.5; cursor: pointer; &:hover { opacity: 0.8; transform: translateX(-340px) scale(0.9) rotateY(10deg); } }
   &.right { z-index: 5; transform: translateX(340px) scale(0.85) rotateY(-15deg); opacity: 0.5; cursor: pointer; &:hover { opacity: 0.8; transform: translateX(340px) scale(0.9) rotateY(-10deg); } }
 }
@@ -231,10 +323,33 @@ body {
 }
 
 .action-btn {
-  padding: 15px 40px; font-size: 1.5rem; font-weight: bold; border-radius: 40px; 
-  background: rgba(255, 255, 255, 0.15); backdrop-filter: blur(15px); border: 1px solid rgba(255,255,255,0.4);
-  color: var(--text-color); cursor: pointer; transition: 0.3s; text-decoration: none; display: inline-block;
-  &:hover { background: #fff; color: #000; transform: scale(1.05); }
+  padding: 15px 40px; 
+  font-size: 1.5rem; 
+  font-weight: bold; 
+  border-radius: 40px; 
+  
+  // Скло + Тонка кольорова рамка
+  background: rgba(255, 255, 255, 0.05); 
+  backdrop-filter: blur(15px); 
+  border: 2px solid var(--highlight); // Рамка кольору теми (Ціан/Бордо)
+  
+  // Легке світіння у спокійному стані
+  box-shadow: 0 0 10px var(--accent-glow);
+  
+  color: var(--text-color); 
+  cursor: pointer; 
+  transition: 0.3s; 
+  text-decoration: none; 
+  display: inline-block;
+  
+  // ПРИ НАВЕДЕННІ - ЯСКРАВИЙ СПАЛАХ
+  &:hover { 
+    background: var(--highlight); // Заливаємо кольором
+    color: var(--bg-color);       // Текст стає кольором фону (контраст)
+    box-shadow: 0 0 30px var(--highlight); // Потужне світіння
+    transform: scale(1.05); 
+    border-color: var(--highlight);
+  }
 }
 
 // ==========================================
@@ -271,18 +386,27 @@ body {
   
   .console-text {
     text-align: center; color: white;
-    h2 { font-size: 1.2rem; margin: 0; text-transform: uppercase; letter-spacing: 1px; }
+   h2 { 
+      font-size: 1.2rem; margin: 0; text-transform: uppercase; letter-spacing: 1px;
+      // НОВЕ: Заголовок кольоровий (Ціан або Бордо)
+      color: var(--highlight);
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
     p { font-size: 0.9rem; opacity: 0.6; margin: 5px 0 0 0; }
   }
 }
 
 // Кнопка Спін (Біла пігулка)
 .sketch-spin-btn {
-  background: #fff; color: #000;
+  // НОВЕ: Використовуємо змінні
+  background: var(--highlight); 
+  color: var(--bg-color);
+  
   font-family: 'Comic Sans MS', sans-serif; font-weight: bold; font-size: 1.5rem;
   padding: 15px 80px; border-radius: 50px; border: none; cursor: pointer;
-  transition: transform 0.1s; box-shadow: 0 0 15px rgba(255,255,255,0.5);
-  &:hover { transform: scale(1.05); box-shadow: 0 0 25px rgba(255,255,255,0.8); }
+  transition: transform 0.1s; box-shadow: 0 0 15px var(--accent-glow);
+  
+  &:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--highlight); }
   &:active { transform: scale(0.95); }
 }
 
@@ -373,25 +497,59 @@ body {
 }
 
 // --- КОЛЬОРИ РІДКОСТІ (Трохи підправив розміри) ---
-.common { 
-  color: #4caf50; 
-  text-shadow: 0 0 10px rgba(76, 175, 80, 0.6);
-  font-size: 0.9rem; // Для звичайних довгих фраз
+@keyframes neonPulse {
+  0%, 100% { opacity: 1; filter: brightness(100%); }
+  50% { opacity: 0.8; filter: brightness(130%); }
 }
-.rare { 
-  color: #2196f3; 
-  text-shadow: 0 0 15px rgba(33, 150, 243, 0.7);
-  font-size: 1rem;
+
+.slot-item-text {
+  // Базові налаштування
+  font-family: 'Comic Sans MS', sans-serif; // Або твій шрифт
+  font-weight: 900; // Жирний текст для кращого світіння
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  animation: neonPulse 2s infinite alternate; // Вмикаємо пульсацію
 }
-.epic { 
-  color: #9c27b0; 
-  text-shadow: 0 0 20px rgba(156, 39, 176, 0.8);
-  font-size: 1.1rem;
+
+// 🟩 COMMON (Зелений неон)
+.common {
+  color: #fff; // Білий центр
+  text-shadow:
+    0 0 5px #0f0,
+    0 0 10px #0f0,
+    0 0 20px #0f0,
+    0 0 40px #00ff00;
 }
-.legendary { 
-  color: #ffeb3b; 
-  text-shadow: 0 0 25px rgba(255, 235, 59, 1);
-  font-size: 1.2rem; // Легендарний трохи більший, але не гігантський
+
+// 🟦 RARE (Голубий неон)
+.rare {
+  color: #fff;
+  text-shadow:
+    0 0 5px #00e6e6,
+    0 0 10px #00e6e6,
+    0 0 20px #00e6e6,
+    0 0 40px #00ffff;
+}
+
+// 🟪 EPIC (Фіолетовий/Рожевий неон)
+.epic {
+  color: #fff;
+  text-shadow:
+    0 0 5px #d400ff,
+    0 0 10px #d400ff,
+    0 0 20px #d400ff,
+    0 0 40px #ff00ff;
+}
+
+// 🟧 LEGENDARY (Золотий/Вогняний неон)
+.legendary {
+  color: #fff;
+  text-shadow:
+    0 0 5px #ff8800,
+    0 0 10px #ff8800,
+    0 0 20px #ff8800,
+    0 0 40px #ff0000;
+  animation: neonPulse 0.5s infinite alternate; // Легендарний миготить швидше!
 }
 
 // Тіні по боках (щоб крайні елементи зникали в темряві)
@@ -441,34 +599,7 @@ body {
 }
 
 // --- ПЛЕЄР (Той самий) ---
-.video-overlay {
-  position: fixed; 
-  top: 0; 
-  left: 0; 
-  width: 100%; 
-  height: 100%;
-  
-  // ОСЬ ТУТ МАГІЯ:
-  // 0, 0, 0 = чорний колір
-  // 0.5 = 50% прозорості (можна ставити від 0.1 до 0.9)
-  background: rgba(0, 0, 0, 0.5); 
-  
-  // Додаємо розмиття фону (сніг буде розмитим позаду)
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px); // Для Safari/Chrome
 
-  z-index: 1000;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
-  
-  &.hidden { display: none; }
-}
-.video-card {
-  width: 95%; max-width: 1000px; height: 85vh;
-  background: #1a1a1a; border-radius: 20px; border: 1px solid #333;
-  display: flex; flex-direction: column; overflow: hidden;
-}
 .video-header {
   padding: 15px 20px; background: #000; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #333;
   h3 { margin: 0; color: #fff; font-size: 1.2rem; }
