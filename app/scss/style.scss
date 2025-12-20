@@ -188,7 +188,13 @@ body {
   
   &:hover { background: var(--accent-glow); transform: scale(1.1); }
 }
-
+.sound-btn {
+  font-size: 1.2rem;
+  &.playing {
+    border-color: var(--highlight);
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+}
 .lang-wrapper { position: relative; }
 .lang-dropdown { 
   position: absolute; top: 60px; right: 0; 

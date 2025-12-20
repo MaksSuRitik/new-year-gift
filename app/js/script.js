@@ -4,10 +4,17 @@
 
 const themeBtn = document.getElementById('themeToggle');
 const langBtn = document.getElementById('langToggle');
+const soundBtn = document.getElementById('soundToggle'); 
 const langWrapper = document.querySelector('.lang-wrapper');
 const langItems = document.querySelectorAll('.lang-dropdown button');
 
-// Словник перекладів
+// 🎵 АУДІО ЕЛЕМЕНТИ
+const bgMusic = document.getElementById('bg-music');
+const sfxClick = document.getElementById('sfx-click');
+const sfxHover = document.getElementById('sfx-hover');
+const sfxSpin = document.getElementById('sfx-spin');
+const sfxWin = document.getElementById('sfx-win');
+
 const translations = {
   UA: {
     title: 'З новим роком 😎', text: 'Жмякайте',
@@ -32,46 +39,126 @@ const translations = {
   }
 };
 
-// --- 1. ЗАВАНТАЖЕННЯ ЗБЕРЕЖЕНИХ НАЛАШТУВАНЬ (ЦЕ НОВЕ!) ---
+// --- 1. ЗАВАНТАЖЕННЯ НАЛАШТУВАНЬ ---
 
-// Перевіряємо, чи є збережена тема
-const savedTheme = localStorage.getItem('siteTheme') || 'dark'; // За замовчуванням dark
+// Тема
+const savedTheme = localStorage.getItem('siteTheme') || 'dark';
 document.body.setAttribute('data-theme', savedTheme);
 if(themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
-// Перевіряємо, чи є збережена мова
-const savedLang = localStorage.getItem('siteLang') || 'UA'; // За замовчуванням UA
+// Мова
+const savedLang = localStorage.getItem('siteLang') || 'UA';
 document.body.setAttribute('data-lang', savedLang);
 if(langBtn) langBtn.textContent = savedLang === 'MEOW' ? '🐱' : savedLang;
 
-// Одразу застосовуємо переклад при завантаженні сторінки
+// --- 🔊 ЛОГІКА ЗВУКУ (ВИПРАВЛЕНА) ---
+
+// 1. За замовчуванням звук УВІМКНЕНО (false), якщо в localStorage нічого немає
+// localStorage повертає рядок 'true', тому порівнюємо з рядком.
+let isMuted = localStorage.getItem('isMuted') === 'true'; 
+
+if(bgMusic) {
+    bgMusic.volume = 0.2; // Гучність фону
+    
+    // 2. Відновлюємо момент пісні, щоб не починалася спочатку
+    const savedTime = localStorage.getItem('bgMusicTime');
+    if(savedTime) bgMusic.currentTime = parseFloat(savedTime);
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(savedLang);
+    updateSoundIcon();
+    
+    // Спроба автозапуску
+    tryPlayMusic();
+});
+
+// Зберігаємо час пісні перед виходом зі сторінки
+window.addEventListener('beforeunload', () => {
+    if(bgMusic && !bgMusic.paused) {
+        localStorage.setItem('bgMusicTime', bgMusic.currentTime);
+    }
 });
 
 
-// --- 2. ОБРОБНИКИ ПОДІЙ ---
+// --- ФУНКЦІЇ ЗВУКУ ---
 
-// Логіка зміни ТЕМИ
+function updateSoundIcon() {
+    if(!soundBtn) return;
+    if (isMuted) {
+        soundBtn.textContent = '🔇';
+        soundBtn.classList.remove('playing');
+        if(bgMusic) bgMusic.pause();
+    } else {
+        soundBtn.textContent = '🔊';
+        soundBtn.classList.add('playing');
+        tryPlayMusic();
+    }
+}
+
+// 🪄 МАГІЯ АВТОЗАПУСКУ
+function tryPlayMusic() {
+    if(isMuted || !bgMusic) return;
+
+    // Браузер повертає проміс (обіцянку). Якщо він відхиляє автоплей - ми ловимо помилку.
+    const playPromise = bgMusic.play();
+
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Автоплей заблоковано браузером. Чекаємо кліку...");
+            // Якщо браузер не дав запустити, вішаємо одноразовий слухач на ВЕСЬ документ
+            document.addEventListener('click', unlockAudio, { once: true });
+        });
+    }
+}
+
+function unlockAudio() {
+    if(!isMuted && bgMusic) {
+        bgMusic.play();
+    }
+}
+
+function playSfx(audioEl) {
+    if (isMuted || !audioEl) return;
+    audioEl.currentTime = 0;
+    audioEl.volume = 0.4;
+    audioEl.play().catch(() => {});
+}
+
+if(soundBtn) {
+    soundBtn.addEventListener('click', () => {
+        isMuted = !isMuted;
+        localStorage.setItem('isMuted', isMuted); // Зберігаємо вибір
+        updateSoundIcon();
+        if (!isMuted) playSfx(sfxClick);
+    });
+}
+
+// Глобальні звуки
+document.querySelectorAll('button, .action-btn, .mega-button').forEach(btn => {
+    btn.addEventListener('mouseenter', () => playSfx(sfxHover));
+});
+
+
+// --- ІНШІ ОБРОБНИКИ (ТЕМА, МОВА) ---
+
 if (themeBtn) {
     themeBtn.addEventListener('click', () => {
         const body = document.body;
         const isDark = body.getAttribute('data-theme') === 'dark';
         const newTheme = isDark ? 'light' : 'dark';
-        
         body.setAttribute('data-theme', newTheme);
         themeBtn.textContent = isDark ? '☀️' : '🌙';
-        
-        // ЗБЕРІГАЄМО ТЕМУ
         localStorage.setItem('siteTheme', newTheme);
+        playSfx(sfxClick);
     });
 }
 
-// Логіка зміни МОВИ
 if (langBtn) {
     langBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         langWrapper.classList.toggle('open');
+        playSfx(sfxClick);
     });
     
     document.addEventListener('click', (e) => {
@@ -81,23 +168,16 @@ if (langBtn) {
     langItems.forEach(btn => {
         btn.addEventListener('click', () => {
             const lang = btn.dataset.lang;
-            
-            // Змінюємо атрибути
             document.body.setAttribute('data-lang', lang);
             langBtn.textContent = lang === 'MEOW' ? '🐱' : lang;
-            
-            // Перекладаємо
             applyLanguage(lang);
-            
-            // ЗБЕРІГАЄМО МОВУ
             localStorage.setItem('siteLang', lang);
-            
             langWrapper.classList.remove('open');
+            playSfx(sfxClick);
         });
     });
 }
 
-// Функція перекладу (шукає всі елементи data-i18n і замінює текст)
 function applyLanguage(lang) {
     const allTexts = document.querySelectorAll('[data-i18n]');
     allTexts.forEach(el => {
@@ -109,7 +189,7 @@ function applyLanguage(lang) {
 }
 
 
-// --- 3. ФОНОВИЙ СНІГ ---
+// --- ФОНОВИЙ СНІГ ---
 const snowContainer = document.getElementById('snow-container');
 if (snowContainer) {
     function createSnowflake() {
@@ -141,8 +221,11 @@ if (btnStart) {
     const viewHub = document.getElementById('view-hub');
     const panels = document.querySelectorAll('.panel');
 
-    // Клік на "РОЗПАКУВАТИ"
     btnStart.addEventListener('click', () => {
+        playSfx(sfxClick);
+        // Тут також пробуємо запустити музику, бо це клік користувача!
+        if(!isMuted && bgMusic && bgMusic.paused) bgMusic.play(); 
+        
         viewStart.classList.add('hidden');
         viewStart.classList.remove('active');
         setTimeout(() => {
@@ -151,13 +234,12 @@ if (btnStart) {
         }, 400);
     });
 
-    // Клік на панелі каруселі
     panels.forEach(panel => {
         panel.addEventListener('click', function(e) {
-            // Якщо це посилання або кнопка всередині - не крутимо
             if(e.target.tagName === 'A' || e.target.closest('a')) return;
             if(e.target.classList.contains('action-btn')) return;
 
+            playSfx(sfxClick);
             if (this.classList.contains('left')) rotateCarousel('right');
             else if (this.classList.contains('right')) rotateCarousel('left');
         });
@@ -192,7 +274,6 @@ if (spinBtn) {
     const modalTitle = document.getElementById('modalTitle');
     const memeVideo = document.getElementById('memeVideo');
 
-    // ТВОЯ БАЗА МЕМІВ
     const memesDB = [
         { title: "ERROR 404", file: "error.mp4", rarity: "rare" },
         { title: "Save our cum rat", file: "rat.mp4", rarity: "common" },
@@ -209,62 +290,46 @@ if (spinBtn) {
     spinBtn.addEventListener('click', () => {
         slotMachine.classList.remove('hidden');
         
+        if (!isMuted && sfxSpin) {
+            sfxSpin.currentTime = 0;
+            sfxSpin.volume = 0.3;
+            sfxSpin.play();
+        }
+
         const winner = getWeightedWinner();
 
         let htmlContent = '';
-        // 30 для розгону
         for(let i=0; i<30; i++) {
             const randomMeme = memesDB[Math.floor(Math.random() * memesDB.length)];
             htmlContent += createSlotItem(randomMeme);
         }
-        // Переможець
         htmlContent += createSlotItem(winner);
-        // Хвіст
         for(let i=0; i<3; i++) {
              const randomMeme = memesDB[Math.floor(Math.random() * memesDB.length)];
              htmlContent += createSlotItem(randomMeme);
         }
 
         slotStrip.innerHTML = htmlContent;
-        
-        // Скидання
         slotStrip.style.transition = 'none';
         slotStrip.style.transform = 'translateX(0)';
-        slotStrip.offsetHeight; // Reflow
+        slotStrip.offsetHeight; 
 
-        // ===============================================
-        // 👇 ЗАМІНИТИ СТАРИЙ РОЗРАХУНОК НА ЦЕЙ БЛОК 👇
-        // ===============================================
-        
-        // 1. Знаходимо перший елемент у списку
         const firstItem = slotStrip.querySelector('.slot-item-text');
-        
-        // 2. Питаємо у браузера: "Яка в нього зараз ширина?"
-        // (На ПК це буде 320, на телефоні — ширина екрану)
         const itemWidth = firstItem ? firstItem.offsetWidth : 320; 
-        
         const targetIndex = 30; 
-        
-        // 3. Беремо ширину самого контейнера рулетки
         const containerWidth = slotMachine.offsetWidth;
-        
-        // 4. Рахуємо центр
         const centerOffset = (containerWidth / 2) - (itemWidth / 2);
-        
         const finalPosition = -(targetIndex * itemWidth) + centerOffset;
 
-        // ===============================================
-        // 👆 КІНЕЦЬ НОВОГО БЛОКУ 👆
-        // ===============================================
-
-        // Анімація
         setTimeout(() => {
             slotStrip.style.transition = 'transform 5s cubic-bezier(0.15, 0.9, 0.3, 1)';
             slotStrip.style.transform = `translateX(${finalPosition}px)`;
         }, 50);
         
-        // Відкриття
         setTimeout(() => {
+            if(sfxSpin) sfxSpin.pause();
+            if(!isMuted) playSfx(sfxWin);
+
             openVideo(winner);
         }, 5500);
     });
@@ -294,6 +359,7 @@ if (spinBtn) {
     }
 
     closeModalBtn.addEventListener('click', () => {
+        playSfx(sfxClick); 
         videoModal.classList.add('hidden');
         memeVideo.pause();
         memeVideo.src = "";

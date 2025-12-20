@@ -242,6 +242,15 @@ body {
           transform: scale(1.1);
 }
 
+.sound-btn {
+  font-size: 1.2rem;
+}
+.sound-btn.playing {
+  border-color: var(--highlight);
+  -webkit-box-shadow: 0 0 15px var(--accent-glow);
+          box-shadow: 0 0 15px var(--accent-glow);
+}
+
 .lang-wrapper {
   position: relative;
 }
