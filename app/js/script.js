@@ -365,3 +365,83 @@ if (spinBtn) {
         memeVideo.src = "";
     });
 }
+// ==========================================
+// 📱 PULL TO REFRESH (ТЯГНИ-ОНОВЛЮЙ)
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', () => {
+    const ptrContainer = document.getElementById('pull-to-refresh');
+    const ptrSpinner = document.querySelector('.ptr-spinner');
+    
+    if (!ptrContainer) return;
+
+    let startY = 0;
+    let currentY = 0;
+    let isPulling = false;
+    const threshold = 150; // Скільки пікселів треба протягнути вниз
+
+    // 1. ТОРКНУЛИСЯ ЕКРАНУ
+    window.addEventListener('touchstart', (e) => {
+        // Працюємо тільки якщо ми на самому верху сторінки
+        if (window.scrollY === 0) {
+            startY = e.touches[0].clientY;
+            isPulling = true;
+        }
+    }, { passive: true });
+
+    // 2. ТЯГНЕМО ПАЛЕЦЬ
+    window.addEventListener('touchmove', (e) => {
+        if (!isPulling) return;
+        
+        currentY = e.touches[0].clientY;
+        const diff = currentY - startY;
+
+        // Якщо тягнемо вниз і ми нагорі
+        if (diff > 0 && window.scrollY === 0) {
+            // Додаємо опір (щоб тягнулося туго)
+            const move = Math.min(diff * 0.5, threshold); 
+            
+            ptrContainer.style.transform = `translateY(${move}px)`;
+            
+            // Крутимо спінер залежно від відстані (візуальний ефект)
+            ptrSpinner.style.transform = `rotate(${move * 2}deg)`;
+            
+            // Якщо тягнемо вниз, блокуємо стандартний скрол (щоб не було "гумки" браузера)
+            if (e.cancelable && diff > 10) {
+                e.preventDefault(); 
+            }
+        } else {
+            // Якщо почали скролити вниз контент — скасовуємо PTR
+            ptrContainer.style.transform = '';
+            isPulling = false;
+        }
+    }, { passive: false }); // passive: false важливий для e.preventDefault()
+
+    // 3. ВІДПУСТИЛИ ПАЛЕЦЬ
+    window.addEventListener('touchend', () => {
+        if (!isPulling) return;
+        isPulling = false;
+        
+        const diff = currentY - startY;
+        
+        // Якщо протягнули достатньо далеко (наприклад 80px реального руху)
+        if (diff * 0.5 >= 80) {
+            // Запускаємо анімацію завантаження
+            ptrContainer.classList.add('loading');
+            ptrContainer.style.transform = ''; // Клас loading сам поставить потрібну позицію
+            
+            // Вібрація (тактильний відгук), якщо телефон підтримує
+            if (navigator.vibrate) navigator.vibrate(50);
+            
+            // Оновлюємо сторінку через пів секунди (щоб побачити анімацію)
+            setTimeout(() => {
+                location.reload();
+            }, 800);
+            
+        } else {
+            // Якщо мало протягнули — ховаємо назад
+            ptrContainer.style.transform = '';
+            ptrSpinner.style.transform = '';
+        }
+    });
+});

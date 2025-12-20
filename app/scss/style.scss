@@ -761,3 +761,45 @@ body {
     padding: 20px !important;
   }
 }
+// ==========================================
+// 🔄 PULL TO REFRESH (ОНОВЛЕННЯ СТОРІНКИ)
+// ==========================================
+
+.ptr-container {
+  position: fixed;
+  top: -80px; // Сховано зверху
+  left: 0;
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; // Поверх усього
+  pointer-events: none; // Щоб не заважав клікати
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); // Пружинистий ефект
+  
+  &.loading {
+    transform: translateY(80px) !important; // Фіксуємо, коли вантажить
+  }
+}
+
+.ptr-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1); // Тьмяна частина
+  border-top-color: var(--highlight); // 🔥 НЕОНОВИЙ КОЛІР (Ціан або Фіолетовий)
+  box-shadow: 0 0 15px var(--accent-glow); // 🔥 СВІТІННЯ
+  
+  // Початковий стан (стрілочка вниз, якщо хочеш, або просто кружок)
+  transition: transform 0.3s;
+}
+
+// Анімація обертання (вмикається класом)
+.ptr-container.loading .ptr-spinner {
+  animation: ptr-spin 0.6s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
