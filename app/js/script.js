@@ -266,6 +266,8 @@ if (btnStart) {
 // ==========================================
 const spinBtn = document.getElementById('spinBtn');
 
+// ... (начало файла без изменений) ...
+
 if (spinBtn) {
     const slotMachine = document.getElementById('slotMachine');
     const slotStrip = document.getElementById('slotStrip');
@@ -281,18 +283,21 @@ if (spinBtn) {
         { title: "Даже салаги знают кто главный петух в чате", file: "rooster.mp4", rarity: "common" },
         { title: "ЕБАТЬ , ВОТ ЭТО НИХУЕ СЕБЕ", file: "magic.mp4", rarity: "legendary" }, 
         { title: "Если гора не идёт к Магомеду, то Магомед спускается с горы", file: "magomed.mp4", rarity: "epic" },
-        { title: "Похвасталась", file: "compat.mp4", rarity: "epic" },
+        { title: "Идеальная совместимость", file: "compat.mp4", rarity: "epic" },
         { title: "Иногда для счастья надо нырнуть щучкой", file: "dive.mp4", rarity: "rare" },
-        { title: "Ротик шире (улыбка , а вы о чем)", file: "all.mp4", rarity: "common" },
+        { title: "Ну всё так всё", file: "all.mp4", rarity: "common" },
         { title: "Только в момент тишины осознаёшь ценность звука", file: "sound.mp4", rarity: "common" }
     ];
 
     spinBtn.addEventListener('click', () => {
+        // 🔒 БЛОКИРУЕМ КНОПКУ (Фикс бага)
+        spinBtn.disabled = true;
+
         slotMachine.classList.remove('hidden');
         
         if (!isMuted && sfxSpin) {
             sfxSpin.currentTime = 0;
-            sfxSpin.volume = 0.3;
+            sfxSpin.volume = 0.3; // Тише, чтобы не оглохнуть
             sfxSpin.play();
         }
 
@@ -328,7 +333,10 @@ if (spinBtn) {
         
         setTimeout(() => {
             if(sfxSpin) sfxSpin.pause();
-            if(!isMuted) playSfx(sfxWin);
+            if(!isMuted) {
+                sfxWin.volume = 1.0; 
+                playSfx(sfxWin);
+            }
 
             openVideo(winner);
         }, 5500);
@@ -363,6 +371,9 @@ if (spinBtn) {
         videoModal.classList.add('hidden');
         memeVideo.pause();
         memeVideo.src = "";
+        
+        // 🔓 РАЗБЛОКИРУЕМ КНОПКУ (когда закрыли видео)
+        spinBtn.disabled = false;
     });
 }
 // ==========================================

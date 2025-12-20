@@ -77,6 +77,16 @@ body[data-theme=light] .sketch-spin-btn:hover {
   -webkit-box-shadow: 0 0 30px var(--highlight);
           box-shadow: 0 0 30px var(--highlight);
 }
+body[data-theme=light] .sketch-spin-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  -webkit-transform: none !important;
+      -ms-transform: none !important;
+          transform: none !important;
+  -webkit-box-shadow: none !important;
+          box-shadow: none !important;
+  pointer-events: none;
+}
 body[data-theme=light] .slot-window-horizontal {
   background: #141E30 !important;
   border: 2px solid var(--highlight) !important;
