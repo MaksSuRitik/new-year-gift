@@ -8,10 +8,11 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 </head>
 <body data-theme="dark">
-<body ... >
+
   <div id="pull-to-refresh" class="ptr-container">
     <div class="ptr-spinner"></div>
   </div>
+
   <div id="snow-container"></div>
   <div class="bg-blobs">
     <div class="blob blob-1"></div>
@@ -48,23 +49,28 @@
         </div>
 
         <div class="center-console">
-  <div class="console-text">
-    <h2 data-i18n="spinTitle">НУ давайте лудомани</h2>
-    <p data-i18n="spinSub">Крутіть меми</p>
-  </div>
-  <button id="spinBtn" class="sketch-spin-btn" data-i18n="btnSpin">Спін</button>
-</div>
+          <div class="console-text">
+            <h2 data-i18n="spinTitle">НУ давайте лудомани</h2>
+            <p data-i18n="spinSub">Крутіть меми</p>
+          </div>
+          
+          <button id="spinBtn" class="sketch-spin-btn" data-i18n="btnSpin">Спін</button>
+          
+          <a href="battle.html" class="archive-link" data-i18n="btnBattle">
+            ⚔️ АРХІВ МОМЕНТІВ
+          </a>
+        </div>
 
       </div>
     </div>
   </main>
 
-  <div id="videoModal" class="video-overlay hidden" style="background: rgba(0, 0, 0, 0.4) !important; backdrop-filter: blur(5px);">
+  <div id="videoModal" class="video-overlay hidden" style="background: rgba(0, 0, 0, 0.8) !important; backdrop-filter: blur(10px);">
     <div class="video-card">
-    <div class="video-header">
-  <h3 id="modalTitle" data-i18n="videoDefault">Video</h3>
-  <button class="close-btn" id="closeModal">✕</button>
-</div>
+      <div class="video-header">
+        <h3 id="modalTitle" data-i18n="videoDefault">Video</h3>
+        <button class="close-btn" id="closeModal">✕</button>
+      </div>
       <div class="player-wrapper">
         <video id="memeVideo" controls playsinline>
           <source src="" type="video/mp4">
@@ -72,8 +78,6 @@
       </div>
     </div>
   </div>
-
-</main>
 
   <div id="audio-assets" style="display: none;">
     <audio id="bg-music" src="audio/lofi-xmas.mp3" loop></audio>
@@ -85,5 +89,4 @@
   
   <script src="js/script.js"></script>
 </body>
-</html>
 </html>

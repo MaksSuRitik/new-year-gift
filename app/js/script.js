@@ -21,21 +21,42 @@ const translations = {
     btnMemes: 'Мемс', btnDance: 'Денс', btnSurprise: 'Сюрпрайз',
     spinTitle: 'НУ давайте лудомани', spinSub: 'Крутіть меми',
     btnSpin: 'Спін', btnBack: '⬅ Назад',
-    videoDefault: 'Відео', btnOpen: 'РОЗПАКУВАТИ'
+    videoDefault: 'Відео', btnOpen: 'РОЗПАКУВАТИ',
+    btnBattle: '⚔️ АРХІВ МОМЕНТІВ',
+    // 👇 НОВЕ ДЛЯ БИТВИ
+    battleTitle: 'БИТВА МОМЕНТІВ ⚔️',
+    battleSub: 'Обирай, що смішніше ',
+    battleStats: 'Переглянуто пар:',
+    winTitle: '🏆 ВАШ ФАВОРИТ 🏆',
+    btnRestart: 'Зіграти ще раз'
   },
   RU: {
     title: 'С новым годом 😎', text: 'Жмякайте',
     btnMemes: 'Мемс', btnDance: 'Дэнс', btnSurprise: 'Сюрпрайз',
     spinTitle: 'НУ давайте лудоманы', spinSub: 'Крутите мемы',
     btnSpin: 'Спин', btnBack: '⬅ Назад',
-    videoDefault: 'Видео', btnOpen: 'РАСПАКОВАТЬ'
+    videoDefault: 'Видео', btnOpen: 'РАСПАКОВАТЬ',
+    btnBattle: '⚔️ АРХИВ МОМЕНТОВ ',
+    // 👇 НОВЕ ДЛЯ БИТВИ
+    battleTitle: 'БИТВА МОМЕНТОВ⚔️',
+    battleSub: 'Выбирай, что смешнее ',
+    battleStats: 'Просмотрено пар:',
+    winTitle: '🏆 ВАШ ФАВОРИТ 🏆',
+    btnRestart: 'Сыграть еще раз'
   },
   MEOW: {
     title: 'Meow Meow 😎', text: 'Meow',
     btnMemes: 'Meow', btnDance: 'Meow', btnSurprise: 'Meow',
     spinTitle: 'MEOW MEOW', spinSub: 'Meow meow',
     btnSpin: 'Meow', btnBack: '⬅ Meow',
-    videoDefault: 'Meow', btnOpen: 'MEOW!'
+    videoDefault: 'Meow', btnOpen: 'MEOW!',
+    btnBattle: '⚔️ MEOW MEOW',
+    // 👇 НОВЕ ДЛЯ БИТВИ
+    battleTitle: 'MEOW MEOW ⚔️',
+    battleSub: 'Meow meow meow meow',
+    battleStats: 'Meow MEOW:',
+    winTitle: '🏆 MEOW KING 🏆',
+    btnRestart: 'Meow again'
   }
 };
 
@@ -456,3 +477,130 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 });
+// ==========================================
+// ⚔️ ЛОГІКА БИТВИ (BATTLE.HTML)
+// ==========================================
+
+const cardLeft = document.getElementById('card-left');
+const cardRight = document.getElementById('card-right');
+
+if (cardLeft && cardRight) {
+    const imgLeft = document.getElementById('img-left');
+    const imgRight = document.getElementById('img-right');
+    const counterEl = document.getElementById('round-counter');
+    
+    // Елементи перемоги
+    const winnerOverlay = document.getElementById('winner-overlay');
+    const winnerImg = document.getElementById('winner-img');
+    const restartBtn = document.getElementById('restartBtn');
+    
+    // Налаштування
+    const TOTAL_PHOTOS = 75; 
+    const ROUNDS_LIMIT = 15; // 🎯 ЛІМІТ РАУНДІВ
+    const PATH_PREFIX = 'img/screens/photo_'; 
+    const FILE_EXT = '.jpg'; 
+    
+    let roundsPlayed = 0;
+    
+    let allIds = Array.from({length: TOTAL_PHOTOS}, (_, i) => i + 1);
+    let currentLeftId, currentRightId;
+
+    function getRandomId(exclude) {
+        let available = allIds.filter(id => id !== exclude);
+        return available[Math.floor(Math.random() * available.length)];
+    }
+
+    function setBattle() {
+        if (!currentLeftId) currentLeftId = getRandomId(null);
+        currentRightId = getRandomId(currentLeftId);
+
+        imgLeft.src = `${PATH_PREFIX}${currentLeftId}${FILE_EXT}`;
+        imgRight.src = `${PATH_PREFIX}${currentRightId}${FILE_EXT}`;
+        
+        cardLeft.className = 'fighter-card';
+        cardRight.className = 'fighter-card';
+    }
+
+    function handleVote(winnerSide) {
+        roundsPlayed++;
+        counterEl.textContent = `${roundsPlayed} / ${ROUNDS_LIMIT}`; // Показуємо прогрес
+
+        let winnerCard, loserCard;
+        let winnerId;
+        // Зберігаємо посилання на картинку переможця
+        let winnerSrc = winnerSide === 'left' ? imgLeft.src : imgRight.src;
+
+        if (winnerSide === 'left') {
+            winnerCard = cardLeft; loserCard = cardRight;
+            winnerId = currentLeftId; 
+        } else {
+            winnerCard = cardRight; loserCard = cardLeft;
+            winnerId = currentRightId; 
+        }
+
+        // 1. Зберігаємо голос
+        let votes = parseInt(localStorage.getItem(`vote_photo_${winnerId}`) || 0);
+        localStorage.setItem(`vote_photo_${winnerId}`, votes + 1);
+
+        // 2. Анімація
+        winnerCard.classList.add('winner');
+        loserCard.classList.add('loser');
+        
+        if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
+
+        // 🔥 ПЕРЕВІРКА НА КІНЕЦЬ ГРИ
+        if (roundsPlayed >= ROUNDS_LIMIT) {
+            setTimeout(() => {
+                showWinnerScreen(winnerSrc);
+            }, 500); // Чекаємо поки пройде анімація кліку
+            return; // Зупиняємо функцію, далі код не піде
+        }
+
+        // 3. Наступний раунд (якщо не кінець)
+        setTimeout(() => {
+            if (winnerSide === 'left') {
+                currentRightId = getRandomId(currentLeftId);
+                imgRight.src = `${PATH_PREFIX}${currentRightId}${FILE_EXT}`;
+            } else {
+                currentLeftId = getRandomId(currentRightId);
+                imgLeft.src = `${PATH_PREFIX}${currentLeftId}${FILE_EXT}`;
+            }
+            winnerCard.classList.remove('winner');
+            loserCard.classList.remove('loser');
+        }, 500);
+    }
+
+    function showWinnerScreen(imgSrc) {
+        // Звук перемоги
+        if(typeof playSfx === 'function') {
+            const winSound = document.getElementById('sfx-win');
+            if(winSound) { winSound.volume = 1.0; playSfx(winSound); }
+        }
+        
+        winnerImg.src = imgSrc;
+        winnerOverlay.classList.remove('hidden');
+        
+        // Салют (конфетті) за бажанням, але поки просто покажемо екран
+    }
+
+    // Рестарт гри
+    if(restartBtn) {
+        restartBtn.addEventListener('click', () => {
+            roundsPlayed = 0;
+            counterEl.textContent = 0;
+            winnerOverlay.classList.add('hidden');
+            
+            // Скидаємо бійців
+            currentLeftId = null; 
+            currentRightId = null;
+            setBattle();
+            
+            if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
+        });
+    }
+
+    cardLeft.addEventListener('click', () => handleVote('left'));
+    cardRight.addEventListener('click', () => handleVote('right'));
+
+    setBattle();
+}

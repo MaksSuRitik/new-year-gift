@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <title>Meme Battle</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body data-theme="dark">
+
+  <div id="snow-container"></div>
+  <div class="bg-blobs">
+    <div class="blob blob-1"></div>
+    <div class="blob blob-2"></div>
+  </div>
+
+  <div class="controls">
+    <button id="themeToggle" class="btn theme-btn">🌙</button>
+    <button id="soundToggle" class="btn sound-btn">🔇</button>
+    <div class="lang-wrapper">
+      <button id="langToggle" class="btn lang-btn">UA</button>
+      <div class="lang-dropdown">
+        <button data-lang="UA">UA</button>
+        <button data-lang="RU">RU</button>
+        <button data-lang="MEOW">🐱</button>
+      </div>
+    </div>
+  </div>
+
+  <a href="memes.html" class="simple-back" data-i18n="btnBack" style="z-index: 1000; position: fixed;">⬅ Назад</a>
+
+  <main class="battle-container">
+    
+    <div class="battle-header">
+      <h1 class="shimmer-text" data-i18n="battleTitle">БИТВА КРІНЖІ ⚔️</h1>
+      <p data-i18n="battleSub">Обирай, що смішніше (або крінжовіше)</p>
+    </div>
+
+    <div class="arena">
+      <div class="fighter-card" id="card-left">
+        <div class="img-wrapper">
+          <img id="img-left" src="" alt="Meme 1">
+          <div class="vote-overlay">👍 +1</div>
+        </div>
+      </div>
+
+      <div class="vs-badge">VS</div>
+
+      <div class="fighter-card" id="card-right">
+        <div class="img-wrapper">
+          <img id="img-right" src="" alt="Meme 2">
+          <div class="vote-overlay">👍 +1</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stats-panel glass-panel">
+      <span data-i18n="battleStats">Переглянуто пар:</span> <b id="round-counter">0</b>
+    </div>
+
+  </main>
+
+  <div id="audio-assets" style="display: none;">
+    <audio id="bg-music" src="audio/lofi-xmas.mp3" loop></audio>
+    <audio id="sfx-click" src="audio/click.mp3"></audio>
+    <audio id="sfx-hover" src="audio/hover.mp3"></audio>
+    <audio id="sfx-spin" src="audio/slot-spin.mp3" loop></audio>
+    <audio id="sfx-win" src="audio/win-bell.mp3"></audio>
+  </div>
+
+  <div id="winner-overlay" class="winner-overlay hidden">
+    <div class="winner-card">
+      <h1 class="shimmer-text" data-i18n="winTitle">🏆 ВАШ ФАВОРИТ 🏆</h1>
+      <div class="winner-img-wrapper">
+        <img id="winner-img" src="" alt="Winner">
+      </div>
+      <button id="restartBtn" class="action-btn" data-i18n="btnRestart">Зіграти ще раз</button>
+    </div>
+  </div>
+
+  <script src="js/script.js"></script>
+</body>
+</html>

@@ -813,3 +813,191 @@ body {
 @keyframes ptr-spin {
   to { transform: rotate(360deg); }
 }
+// ==========================================
+// ⚔️ БИТВА МЕМІВ (ARENA)
+// ==========================================
+
+.battle-container {
+  width: 100%; height: 100vh;
+  display: flex; flex-direction: column; 
+  align-items: center; justify-content: center;
+  position: relative; z-index: 10;
+  padding: 20px;
+}
+
+.battle-header {
+  text-align: center; margin-bottom: 30px;
+  h1 { font-size: 2.5rem; margin: 0; }
+  p { color: var(--text-color); opacity: 0.7; }
+}
+
+.arena {
+  display: flex; align-items: center; justify-content: center;
+  gap: 40px; width: 100%; max-width: 1000px;
+  position: relative;
+}
+
+.fighter-card {
+  width: 45%; 
+  max-width: 350px; // Зробили вужчими
+  height: 60vh;     // Фіксована висота (60% від екрану), щоб не були гігантськими
+  
+  background: #000; // Чорний фон для скрінів
+  border: 2px solid var(--glass-border);
+  border-radius: 20px; 
+  overflow: hidden;
+  cursor: pointer; 
+  transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  
+  // Прибираємо aspect-ratio, бо скріни різні
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: scale(1.03);
+    border-color: var(--highlight);
+    box-shadow: 0 0 25px var(--accent-glow);
+  }
+  
+  &:active { transform: scale(0.95); }
+
+  .img-wrapper {
+    width: 100%; 
+    height: 100%; 
+    position: relative;
+    
+    img { 
+      width: 100%; 
+      height: 100%; 
+      // 🔥 ГОЛОВНА ЗМІНА: contain покаже весь скріншот без обрізки
+      object-fit: contain; 
+    }
+  }
+}
+
+.vote-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 255, 128, 0.3); // Зелене підсвічування перемоги
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; color: #fff; font-weight: bold; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  opacity: 0; transition: 0.2s;
+  backdrop-filter: blur(2px);
+}
+
+// Клас переможця (додається через JS)
+.fighter-card.winner .vote-overlay { opacity: 1; }
+
+// Клас лузера (зникає)
+.fighter-card.loser {
+  opacity: 0; transform: scale(0.8) translateY(50px); pointer-events: none;
+}
+
+.vs-badge {
+  font-size: 2.5rem; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  width: 70px; height: 70px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; z-index: 20;
+  box-shadow: 0 0 20px rgba(255, 75, 43, 0.6);
+  border: 3px solid #fff;
+}
+
+.stats-panel {
+  margin-top: 30px; padding: 10px 30px;
+  color: var(--text-color); font-weight: bold;
+}
+
+// 📱 Адаптація для телефону
+@media (max-width: 768px) {
+  .arena { flex-direction: row; gap: 10px; } // Тримаємо поруч
+  .fighter-card { 
+    height: 50vh; // Високі картки
+    width: 48%; // Дві в ряд
+    aspect-ratio: auto; 
+  }
+  .vs-badge { width: 40px; height: 40px; font-size: 1rem; border-width: 2px; }
+  .battle-header h1 { font-size: 1.5rem; }
+}
+// Стиль для кнопки "Архів" під спіном
+.archive-link {
+  margin-top: -10px; // Трохи підтягуємо до кнопки Спін
+  font-size: 1rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--text-color);
+  padding: 10px 25px;
+  border: 1px solid var(--highlight); // Тонка неонова рамка
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: var(--highlight);
+    color: var(--bg-color); // Текст стає темним
+    box-shadow: 0 0 15px var(--accent-glow);
+    transform: scale(1.05);
+  }
+}
+
+// У світлій темі робимо текст темнішим при наведенні
+body[data-theme="light"] .archive-link:hover {
+  color: #fff;
+}
+@media (max-width: 768px) {
+  .arena { 
+    flex-direction: row; // Лишаємо в рядок
+    gap: 10px; 
+    align-items: center;
+  } 
+  
+  .fighter-card { 
+    height: 45vh; // На телефоні ще менші
+    width: 48%; 
+  }
+  
+  .vs-badge { 
+    width: 35px; height: 35px; 
+    font-size: 0.8rem; border-width: 2px; 
+  }
+  
+  .battle-header h1 { font-size: 1.5rem; margin-top: 10px;}
+}
+// ==========================================
+// 🏆 ЕКРАН ПЕРЕМОГИ (ВАШ ФАВОРИТ)
+// ==========================================
+
+.winner-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.95); // Дуже темний фон
+  z-index: 2000; // Поверх усього
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px);
+  animation: fadeIn 0.5s ease;
+  
+  &.hidden { display: none; }
+}
+
+.winner-card {
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+  width: 90%; max-width: 500px;
+  animation: scaleIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); // Пружинистий ефект
+
+  h1 { font-size: 2.5rem; text-align: center; margin: 0; }
+}
+
+.winner-img-wrapper {
+  width: 100%;
+  max-height: 60vh;
+  border-radius: 20px;
+  overflow: hidden;
+  border: 4px solid var(--highlight); // Неонова рамка
+  box-shadow: 0 0 50px var(--accent-glow); // Сильне світіння
+  
+  img { width: 100%; height: 100%; object-fit: contain; display: block; }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
