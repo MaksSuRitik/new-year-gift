@@ -14,38 +14,39 @@
 
 body[data-theme=light] {
   --bg-color: #DCE6F1;
+  --bg-pattern: radial-gradient(rgba(179, 136, 235, 0.2) 2px, transparent 2px);
+  --bg-size: 25px 25px;
   --blob-1: #89CFF0;
   --blob-2: #C3B1E1;
   --text-color: #243B55;
-  --highlight: #5D8AA8;
-  --glass-bg: rgba(255, 255, 255, 0.45);
-  --glass-border: rgba(255, 255, 255, 0.6);
+  --highlight: #B388EB;
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  --glass-border: rgba(179, 136, 235, 0.6);
   --glass-shadow:
     15px 15px 35px rgba(166, 185, 204, 0.5),
     -15px -15px 35px rgba(255, 255, 255, 0.8);
-  --accent-glow: rgba(93, 138, 168, 0.3);
+  --accent-glow: rgba(179, 136, 235, 0.4);
 }
 body[data-theme=light] .glass-panel {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  border: 1px solid rgba(255, 255, 255, 0.5) !important;
-  -webkit-box-shadow: none !important;
-          box-shadow: none !important;
+  background-color: rgba(255, 255, 255, 0.2) !important;
+  border: 2px solid var(--highlight) !important;
+  -webkit-box-shadow: 0 0 15px var(--accent-glow) !important;
+          box-shadow: 0 0 15px var(--accent-glow) !important;
 }
 body[data-theme=light] .action-btn {
   background: rgba(255, 255, 255, 0.6) !important;
-  border: 2px solid #fff !important;
+  border: 2px solid var(--highlight) !important;
   color: var(--text-color) !important;
   font-weight: 800;
 }
 body[data-theme=light] .action-btn:hover {
   background: var(--highlight) !important;
   color: #fff !important;
-  border-color: var(--highlight) !important;
-  -webkit-box-shadow: 0 0 30px var(--blob-1);
-          box-shadow: 0 0 30px var(--blob-1);
+  -webkit-box-shadow: 0 0 30px var(--highlight) !important;
+          box-shadow: 0 0 30px var(--highlight) !important;
 }
 body[data-theme=light] .shimmer-text {
-  background: linear-gradient(120deg, #243B55 40%, #5D8AA8 50%, #243B55 60%);
+  background: linear-gradient(120deg, #243B55 40%, #B388EB 50%, #243B55 60%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -64,18 +65,23 @@ body[data-theme=light] .center-console .console-text p {
 body[data-theme=light] .sketch-spin-btn {
   background: var(--text-color);
   color: #fff;
-  -webkit-box-shadow: 0 10px 20px rgba(36, 59, 85, 0.3);
-          box-shadow: 0 10px 20px rgba(36, 59, 85, 0.3);
+  -webkit-box-shadow: 0 0 20px var(--accent-glow);
+          box-shadow: 0 0 20px var(--accent-glow);
+  border: 2px solid var(--highlight);
 }
 body[data-theme=light] .sketch-spin-btn:hover {
   background: var(--highlight);
   -webkit-transform: scale(1.05);
       -ms-transform: scale(1.05);
           transform: scale(1.05);
+  -webkit-box-shadow: 0 0 30px var(--highlight);
+          box-shadow: 0 0 30px var(--highlight);
 }
 body[data-theme=light] .slot-window-horizontal {
   background: #141E30 !important;
-  border-color: var(--highlight) !important;
+  border: 2px solid var(--highlight) !important;
+  -webkit-box-shadow: 0 0 15px var(--accent-glow);
+          box-shadow: 0 0 15px var(--accent-glow);
 }
 body[data-theme=light] .shadow-left {
   background: -webkit-gradient(linear, left top, right top, from(#DCE6F1), to(transparent));

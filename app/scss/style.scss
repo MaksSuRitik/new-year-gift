@@ -20,63 +20,68 @@
 }
 
 // ==========================================
-// ☁️ СВІТЛА ТЕМА (DEEP SKY & BLOBS)
+// ☁️ СВІТЛА ТЕМА (DEEP SKY & BLOBS + NEON)
 // ==========================================
 body[data-theme="light"] {
-  // 1. ФОН (Більше не білий!)
-  // Робимо його "щільним" сіро-блакитним. Це дасть ефект глибини.
-  --bg-color: #DCE6F1;        
+  // 1. ФОН (Твій "щільний" сіро-блакитний)
+  --bg-color: #DCE6F1;
   
-  // 2. ТІ САМІ "КОЛА" (Blobs)
-  // Щоб їх було видно, кольори мають бути насиченими
-  --blob-1: #89CFF0; // Яскраво-блакитний (Baby Blue)
-  --blob-2: #C3B1E1; // Ніжно-фіолетовий (Pastel Purple)
+  // Додаємо ніжний патерн снігу (фіолетовий, щоб пасував до неону)
+  --bg-pattern: radial-gradient(rgba(179, 136, 235, 0.2) 2px, transparent 2px);
+  --bg-size: 25px 25px;
+
+  // 2. БЛОБИ (Залишив твої насичені кольори)
+  --blob-1: #89CFF0; // Яскраво-блакитний
+  --blob-2: #C3B1E1; // Ніжно-фіолетовий
   
-  // 3. ТЕКСТ (Темно-синій сталь)
+  // 3. ТЕКСТ (Залишив твій темно-синій)
   --text-color: #243B55;      
   
-  // 4. АКЦЕНТ (Твій улюблений #86B3D1, але трохи темніший для кнопок)
-  --highlight: #5D8AA8;       
+  // 4. АКЦЕНТ (ЗМІНИВ НА КРЕМОВО-ФІОЛЕТОВИЙ НЕОН)
+  --highlight: #B388EB;       
   
   // 5. ЕФЕКТ СКЛА
-  // Робимо скло білим і напівпрозорим, щоб через нього було видно "кола"
-  --glass-bg: rgba(255, 255, 255, 0.45); 
-  --glass-border: rgba(255, 255, 255, 0.6); 
+  --glass-bg: rgba(255, 255, 255, 0.55); 
+  // Рамка тепер має колір хайлайту (фіолетова), а не просто біла
+  --glass-border: rgba(179, 136, 235, 0.6); 
   
-  // Тіні робимо м'якими в колір фону
+  // Тіні з легким фіолетовим відтінком
   --glass-shadow: 
     15px 15px 35px rgba(166, 185, 204, 0.5), 
     -15px -15px 35px rgba(255, 255, 255, 0.8);
   
-  --accent-glow: rgba(93, 138, 168, 0.3); 
+  // Світіння навколо (Glow)
+  --accent-glow: rgba(179, 136, 235, 0.4); 
 
   // --- НАЛАШТУВАННЯ ЕЛЕМЕНТІВ ---
 
-  // Гіфки та панелі (Щоб було видно фон через них)
+  // Гіфки та панелі
   .glass-panel {
-    background-color: rgba(255, 255, 255, 0.1) !important; 
-    border: 1px solid rgba(255, 255, 255, 0.5) !important;
-    box-shadow: none !important;
+    background-color: rgba(255, 255, 255, 0.2) !important; 
+    // Додаємо неонову рамку
+    border: 2px solid var(--highlight) !important;
+    box-shadow: 0 0 15px var(--accent-glow) !important;
   }
 
-  // КНОПКИ МЕНЮ (Мемс, Денс...)
+  // КНОПКИ МЕНЮ
   .action-btn {
-    background: rgba(255, 255, 255, 0.6) !important; // Напівпрозорі
-    border: 2px solid #fff !important;
+    background: rgba(255, 255, 255, 0.6) !important;
+    // Фіолетова обводка
+    border: 2px solid var(--highlight) !important;
     color: var(--text-color) !important;
     font-weight: 800;
     
     &:hover {
       background: var(--highlight) !important; 
       color: #fff !important;
-      border-color: var(--highlight) !important;
-      box-shadow: 0 0 30px var(--blob-1); // Світиться кольором "кола"
+      // Яскраве світіння при наведенні
+      box-shadow: 0 0 30px var(--highlight) !important;
     }
   }
 
-  // Текст "З новим роком"
+  // Текст "З новим роком" (Градієнт підлаштував під новий неон)
   .shimmer-text {
-    background: linear-gradient(120deg, #243B55 40%, #5D8AA8 50%, #243B55 60%);
+    background: linear-gradient(120deg, #243B55 40%, #B388EB 50%, #243B55 60%);
     background-size: 200% auto;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -87,7 +92,7 @@ body[data-theme="light"] {
      color: var(--text-color) !important; text-shadow: none;
   }
   .center-console .console-text h2 {
-    color: #141E30 !important; // Майже чорний заголовок
+    color: #141E30 !important;
   }
   .center-console .console-text p {
     color: var(--text-color) !important; opacity: 1 !important;
@@ -95,19 +100,27 @@ body[data-theme="light"] {
 
   // Кнопка СПІН
   .sketch-spin-btn {
-    background: var(--text-color); // Темна кнопка
+    background: var(--text-color);
     color: #fff;
-    box-shadow: 0 10px 20px rgba(36, 59, 85, 0.3);
-    &:hover { background: var(--highlight); transform: scale(1.05); }
+    // Додаємо світіння кнопці
+    box-shadow: 0 0 20px var(--accent-glow);
+    border: 2px solid var(--highlight);
+    
+    &:hover { 
+      background: var(--highlight); 
+      transform: scale(1.05); 
+      box-shadow: 0 0 30px var(--highlight);
+    }
   }
   
   // Рулетка
   .slot-window-horizontal {
-    background: #141E30 !important; // Темна всередині
-    border-color: var(--highlight) !important;
+    background: #141E30 !important;
+    border: 2px solid var(--highlight) !important; // Неонова рамка
+    box-shadow: 0 0 15px var(--accent-glow);
   }
   
-  // Градієнти (під колір нового фону)
+  // Градієнти тіней
   .shadow-left { background: linear-gradient(to right, #DCE6F1 0%, transparent 100%); }
   .shadow-right { background: linear-gradient(to left, #DCE6F1 0%, transparent 100%); }
 
