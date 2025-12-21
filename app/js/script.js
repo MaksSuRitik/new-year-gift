@@ -23,7 +23,6 @@ const translations = {
     btnSpin: 'Спін', btnBack: '⬅ Назад',
     videoDefault: 'Відео', btnOpen: 'РОЗПАКУВАТИ',
     btnBattle: '⚔️ АРХІВ МОМЕНТІВ',
-    // 👇 НОВЕ ДЛЯ БИТВИ
     battleTitle: 'БИТВА МОМЕНТІВ ⚔️',
     battleSub: 'Обирай, що смішніше ',
     battleStats: 'Переглянуто пар:',
@@ -37,7 +36,6 @@ const translations = {
     btnSpin: 'Спин', btnBack: '⬅ Назад',
     videoDefault: 'Видео', btnOpen: 'РАСПАКОВАТЬ',
     btnBattle: '⚔️ АРХИВ МОМЕНТОВ ',
-    // 👇 НОВЕ ДЛЯ БИТВИ
     battleTitle: 'БИТВА МОМЕНТОВ⚔️',
     battleSub: 'Выбирай, что смешнее ',
     battleStats: 'Просмотрено пар:',
@@ -51,7 +49,6 @@ const translations = {
     btnSpin: 'Meow', btnBack: '⬅ Meow',
     videoDefault: 'Meow', btnOpen: 'MEOW!',
     btnBattle: '⚔️ MEOW MEOW',
-    // 👇 НОВЕ ДЛЯ БИТВИ
     battleTitle: 'MEOW MEOW ⚔️',
     battleSub: 'Meow meow meow meow',
     battleStats: 'Meow MEOW:',
@@ -62,26 +59,24 @@ const translations = {
 
 // --- 1. ЗАВАНТАЖЕННЯ НАЛАШТУВАНЬ ---
 
-// Тема
 const savedTheme = localStorage.getItem('siteTheme') || 'dark';
 document.body.setAttribute('data-theme', savedTheme);
 if(themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
 
-// Мова
 const savedLang = localStorage.getItem('siteLang') || 'UA';
 document.body.setAttribute('data-lang', savedLang);
 if(langBtn) langBtn.textContent = savedLang === 'MEOW' ? '🐱' : savedLang;
 
-// --- 🔊 ЛОГІКА ЗВУКУ (ВИПРАВЛЕНА) ---
+// --- 🔊 ЛОГІКА ЗВУКУ ---
 
-// 1. За замовчуванням звук УВІМКНЕНО (false), якщо в localStorage нічого немає
+// Перевіряємо, чи користувач колись вимикав звук. Якщо ні - звук УВІМКНЕНО.
 let isMuted = localStorage.getItem('isMuted') === 'true'; 
 
 if(bgMusic) {
-    bgMusic.volume = 0.2; // Гучність фону
-    bgMusic.loop = true;  // 🔄 ОСЬ ЦЕЙ РЯДОК ДОДАЙ! (Примусовий повтор)
+    bgMusic.volume = 0.2; 
+    bgMusic.loop = true;  
     
-    // 2. Відновлюємо момент пісні
+    // Відновлюємо момент пісні
     const savedTime = localStorage.getItem('bgMusicTime');
     if(savedTime) bgMusic.currentTime = parseFloat(savedTime);
 }
@@ -90,19 +85,15 @@ document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(savedLang);
     updateSoundIcon();
     
-    // Спроба автозапуску
-    tryPlayMusic();
+    // Запускаємо "мисливця за кліком/рухом" для музики
+    startMusicUnlocker();
 });
 
-// Зберігаємо час пісні перед виходом зі сторінки
 window.addEventListener('beforeunload', () => {
     if(bgMusic && !bgMusic.paused) {
         localStorage.setItem('bgMusicTime', bgMusic.currentTime);
     }
 });
-
-
-// --- ФУНКЦІЇ ЗВУКУ ---
 
 function updateSoundIcon() {
     if(!soundBtn) return;
@@ -113,30 +104,34 @@ function updateSoundIcon() {
     } else {
         soundBtn.textContent = '🔊';
         soundBtn.classList.add('playing');
-        tryPlayMusic();
+        // Якщо іконка "гучно", пробуємо грати
+        if(bgMusic && bgMusic.paused) startMusicUnlocker();
     }
 }
 
-// 🪄 МАГІЯ АВТОЗАПУСКУ
-function tryPlayMusic() {
+// 🔥 ФУНКЦІЯ АГРЕСИВНОГО ЗАПУСКУ МУЗИКИ
+function startMusicUnlocker() {
     if(isMuted || !bgMusic) return;
 
-    // Браузер повертає проміс (обіцянку). Якщо він відхиляє автоплей - ми ловимо помилку.
-    const playPromise = bgMusic.play();
+    // Спроба 1: Чесний запуск (іноді працює, якщо сайт перезавантажили)
+    bgMusic.play().catch(() => {
+        console.log("Автоплей чекає на дію...");
+    });
 
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log("Автоплей заблоковано браузером. Чекаємо кліку...");
-            // Якщо браузер не дав запустити, вішаємо одноразовий слухач на ВЕСЬ документ
-            document.addEventListener('click', unlockAudio, { once: true });
-        });
-    }
-}
+    // Спроба 2: Ловимо БУДЬ-ЯКУ дію користувача
+    // Музика запуститься не тільки від кліку, а й від руху миші чи скролу!
+    const events = ['click', 'touchstart', 'mousemove', 'scroll', 'keydown'];
 
-function unlockAudio() {
-    if(!isMuted && bgMusic) {
-        bgMusic.play();
+    function unlock() {
+        if(!isMuted && bgMusic) {
+            bgMusic.play().then(() => {
+                // Успіх! Прибираємо слухачі, щоб не вантажити систему
+                events.forEach(e => document.removeEventListener(e, unlock, { capture: true }));
+            }).catch(() => {}); 
+        }
     }
+
+    events.forEach(e => document.addEventListener(e, unlock, { capture: true, once: true }));
 }
 
 function playSfx(audioEl) {
@@ -149,19 +144,17 @@ function playSfx(audioEl) {
 if(soundBtn) {
     soundBtn.addEventListener('click', () => {
         isMuted = !isMuted;
-        localStorage.setItem('isMuted', isMuted); // Зберігаємо вибір
+        localStorage.setItem('isMuted', isMuted);
         updateSoundIcon();
         if (!isMuted) playSfx(sfxClick);
     });
 }
 
-// Глобальні звуки
 document.querySelectorAll('button, .action-btn, .mega-button').forEach(btn => {
     btn.addEventListener('mouseenter', () => playSfx(sfxHover));
 });
 
-
-// --- ІНШІ ОБРОБНИКИ (ТЕМА, МОВА) ---
+// --- ІНШІ ОБРОБНИКИ ---
 
 if (themeBtn) {
     themeBtn.addEventListener('click', () => {
@@ -209,11 +202,10 @@ function applyLanguage(lang) {
     });
 }
 
-
-// --- ФОНОВИЙ СНІГ ---
+// --- ФОНОВИЙ СНІГ (З ВИПРАВЛЕННЯМ ЗНИКНЕННЯ) ---
 const snowContainer = document.getElementById('snow-container');
 if (snowContainer) {
-    function createSnowflake() {
+    function createSnowflake(isInstant = false) {
         const snowflake = document.createElement('div');
         snowflake.classList.add('snowflake');
         const size = Math.random() * 5 + 3 + 'px';
@@ -223,15 +215,40 @@ if (snowContainer) {
         snowflake.style.width = size;
         snowflake.style.height = size;
         snowflake.style.left = left;
-        snowflake.style.animationDuration = duration;
+        
+        // Якщо це "миттєвий" сніг (після повернення на вкладку)
+        if (isInstant) {
+            snowflake.style.top = Math.random() * 100 + 'vh'; // Падає звідусіль
+            snowflake.style.animationDuration = (parseFloat(duration) / 2) + 's';
+        } else {
+            snowflake.style.top = '-20px';
+            snowflake.style.animationDuration = duration;
+        }
+
         if (Math.random() > 0.5) snowflake.style.filter = `blur(${Math.random()}px)`;
 
         snowContainer.appendChild(snowflake);
-        setTimeout(() => snowflake.remove(), parseFloat(duration) * 1000);
+        
+        // Видалення
+        setTimeout(() => {
+            if(snowflake && snowflake.parentNode) snowflake.remove();
+        }, parseFloat(duration) * 1000);
     }
-    setInterval(createSnowflake, 150);
-}
 
+    // Регулярний сніг
+    setInterval(() => createSnowflake(false), 150);
+
+    // 🔥 ФІКС: Насипаємо сніг, коли повернулися на вкладку
+    document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") {
+            // Генеруємо 40 сніжинок миттєво
+            for(let i=0; i<40; i++) createSnowflake(true); 
+        }
+    });
+    
+    // При старті теж насипаємо, щоб не було пусто
+    for(let i=0; i<30; i++) createSnowflake(true);
+}
 
 // ==========================================
 // --- ЛОГІКА INDEX.HTML ---
@@ -244,7 +261,7 @@ if (btnStart) {
 
     btnStart.addEventListener('click', () => {
         playSfx(sfxClick);
-        // Тут також пробуємо запустити музику, бо це клік користувача!
+        // Додатковий шанс запустити музику (якщо рух миші не спрацював)
         if(!isMuted && bgMusic && bgMusic.paused) bgMusic.play(); 
         
         viewStart.classList.add('hidden');
@@ -281,13 +298,10 @@ if (btnStart) {
     }
 }
 
-
 // ==========================================
 // --- ЛОГІКА MEMES.HTML ---
 // ==========================================
 const spinBtn = document.getElementById('spinBtn');
-
-// ... (начало файла без изменений) ...
 
 if (spinBtn) {
     const slotMachine = document.getElementById('slotMachine');
@@ -311,14 +325,12 @@ if (spinBtn) {
     ];
 
     spinBtn.addEventListener('click', () => {
-        // 🔒 БЛОКИРУЕМ КНОПКУ (Фикс бага)
         spinBtn.disabled = true;
-
         slotMachine.classList.remove('hidden');
         
         if (!isMuted && sfxSpin) {
             sfxSpin.currentTime = 0;
-            sfxSpin.volume = 0.3; // Тише, чтобы не оглохнуть
+            sfxSpin.volume = 0.3;
             sfxSpin.play();
         }
 
@@ -358,7 +370,6 @@ if (spinBtn) {
                 sfxWin.volume = 1.0; 
                 playSfx(sfxWin);
             }
-
             openVideo(winner);
         }, 5500);
     });
@@ -392,15 +403,13 @@ if (spinBtn) {
         videoModal.classList.add('hidden');
         memeVideo.pause();
         memeVideo.src = "";
-        
-        // 🔓 РАЗБЛОКИРУЕМ КНОПКУ (когда закрыли видео)
         spinBtn.disabled = false;
     });
 }
-// ==========================================
-// 📱 PULL TO REFRESH (ТЯГНИ-ОНОВЛЮЙ)
-// ==========================================
 
+// ==========================================
+// 📱 PULL TO REFRESH
+// ==========================================
 document.addEventListener('DOMContentLoaded', () => {
     const ptrContainer = document.getElementById('pull-to-refresh');
     const ptrSpinner = document.querySelector('.ptr-spinner');
@@ -410,73 +419,47 @@ document.addEventListener('DOMContentLoaded', () => {
     let startY = 0;
     let currentY = 0;
     let isPulling = false;
-    const threshold = 150; // Скільки пікселів треба протягнути вниз
+    const threshold = 150; 
 
-    // 1. ТОРКНУЛИСЯ ЕКРАНУ
     window.addEventListener('touchstart', (e) => {
-        // Працюємо тільки якщо ми на самому верху сторінки
         if (window.scrollY === 0) {
             startY = e.touches[0].clientY;
             isPulling = true;
         }
     }, { passive: true });
 
-    // 2. ТЯГНЕМО ПАЛЕЦЬ
     window.addEventListener('touchmove', (e) => {
         if (!isPulling) return;
-        
         currentY = e.touches[0].clientY;
         const diff = currentY - startY;
 
-        // Якщо тягнемо вниз і ми нагорі
         if (diff > 0 && window.scrollY === 0) {
-            // Додаємо опір (щоб тягнулося туго)
             const move = Math.min(diff * 0.5, threshold); 
-            
             ptrContainer.style.transform = `translateY(${move}px)`;
-            
-            // Крутимо спінер залежно від відстані (візуальний ефект)
             ptrSpinner.style.transform = `rotate(${move * 2}deg)`;
-            
-            // Якщо тягнемо вниз, блокуємо стандартний скрол (щоб не було "гумки" браузера)
-            if (e.cancelable && diff > 10) {
-                e.preventDefault(); 
-            }
+            if (e.cancelable && diff > 10) e.preventDefault(); 
         } else {
-            // Якщо почали скролити вниз контент — скасовуємо PTR
             ptrContainer.style.transform = '';
             isPulling = false;
         }
-    }, { passive: false }); // passive: false важливий для e.preventDefault()
+    }, { passive: false });
 
-    // 3. ВІДПУСТИЛИ ПАЛЕЦЬ
     window.addEventListener('touchend', () => {
         if (!isPulling) return;
         isPulling = false;
-        
         const diff = currentY - startY;
-        
-        // Якщо протягнули достатньо далеко (наприклад 80px реального руху)
         if (diff * 0.5 >= 80) {
-            // Запускаємо анімацію завантаження
             ptrContainer.classList.add('loading');
-            ptrContainer.style.transform = ''; // Клас loading сам поставить потрібну позицію
-            
-            // Вібрація (тактильний відгук), якщо телефон підтримує
+            ptrContainer.style.transform = ''; 
             if (navigator.vibrate) navigator.vibrate(50);
-            
-            // Оновлюємо сторінку через пів секунди (щоб побачити анімацію)
-            setTimeout(() => {
-                location.reload();
-            }, 800);
-            
+            setTimeout(() => { location.reload(); }, 800);
         } else {
-            // Якщо мало протягнули — ховаємо назад
             ptrContainer.style.transform = '';
             ptrSpinner.style.transform = '';
         }
     });
 });
+
 // ==========================================
 // ⚔️ ЛОГІКА БИТВИ (BATTLE.HTML)
 // ==========================================
@@ -488,20 +471,16 @@ if (cardLeft && cardRight) {
     const imgLeft = document.getElementById('img-left');
     const imgRight = document.getElementById('img-right');
     const counterEl = document.getElementById('round-counter');
-    
-    // Елементи перемоги
     const winnerOverlay = document.getElementById('winner-overlay');
     const winnerImg = document.getElementById('winner-img');
     const restartBtn = document.getElementById('restartBtn');
     
-    // Налаштування
     const TOTAL_PHOTOS = 75; 
-    const ROUNDS_LIMIT = 15; // 🎯 ЛІМІТ РАУНДІВ
+    const ROUNDS_LIMIT = 15; 
     const PATH_PREFIX = 'img/screens/photo_'; 
     const FILE_EXT = '.jpg'; 
     
     let roundsPlayed = 0;
-    
     let allIds = Array.from({length: TOTAL_PHOTOS}, (_, i) => i + 1);
     let currentLeftId, currentRightId;
 
@@ -513,21 +492,18 @@ if (cardLeft && cardRight) {
     function setBattle() {
         if (!currentLeftId) currentLeftId = getRandomId(null);
         currentRightId = getRandomId(currentLeftId);
-
         imgLeft.src = `${PATH_PREFIX}${currentLeftId}${FILE_EXT}`;
         imgRight.src = `${PATH_PREFIX}${currentRightId}${FILE_EXT}`;
-        
         cardLeft.className = 'fighter-card';
         cardRight.className = 'fighter-card';
     }
 
     function handleVote(winnerSide) {
         roundsPlayed++;
-        counterEl.textContent = `${roundsPlayed} / ${ROUNDS_LIMIT}`; // Показуємо прогрес
+        counterEl.textContent = `${roundsPlayed} / ${ROUNDS_LIMIT}`; 
 
         let winnerCard, loserCard;
         let winnerId;
-        // Зберігаємо посилання на картинку переможця
         let winnerSrc = winnerSide === 'left' ? imgLeft.src : imgRight.src;
 
         if (winnerSide === 'left') {
@@ -538,25 +514,19 @@ if (cardLeft && cardRight) {
             winnerId = currentRightId; 
         }
 
-        // 1. Зберігаємо голос
         let votes = parseInt(localStorage.getItem(`vote_photo_${winnerId}`) || 0);
         localStorage.setItem(`vote_photo_${winnerId}`, votes + 1);
 
-        // 2. Анімація
         winnerCard.classList.add('winner');
         loserCard.classList.add('loser');
         
         if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
 
-        // 🔥 ПЕРЕВІРКА НА КІНЕЦЬ ГРИ
         if (roundsPlayed >= ROUNDS_LIMIT) {
-            setTimeout(() => {
-                showWinnerScreen(winnerSrc);
-            }, 500); // Чекаємо поки пройде анімація кліку
-            return; // Зупиняємо функцію, далі код не піде
+            setTimeout(() => { showWinnerScreen(winnerSrc); }, 500);
+            return; 
         }
 
-        // 3. Наступний раунд (якщо не кінець)
         setTimeout(() => {
             if (winnerSide === 'left') {
                 currentRightId = getRandomId(currentLeftId);
@@ -571,30 +541,22 @@ if (cardLeft && cardRight) {
     }
 
     function showWinnerScreen(imgSrc) {
-        // Звук перемоги
         if(typeof playSfx === 'function') {
             const winSound = document.getElementById('sfx-win');
             if(winSound) { winSound.volume = 1.0; playSfx(winSound); }
         }
-        
         winnerImg.src = imgSrc;
         winnerOverlay.classList.remove('hidden');
-        
-        // Салют (конфетті) за бажанням, але поки просто покажемо екран
     }
 
-    // Рестарт гри
     if(restartBtn) {
         restartBtn.addEventListener('click', () => {
             roundsPlayed = 0;
             counterEl.textContent = 0;
             winnerOverlay.classList.add('hidden');
-            
-            // Скидаємо бійців
             currentLeftId = null; 
             currentRightId = null;
             setBattle();
-            
             if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
         });
     }
