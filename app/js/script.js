@@ -296,7 +296,7 @@ if (spinBtn) {
         { title: "Если гора не идёт к Магомеду, то Магомед спускается с горы", file: "magomed.mp4", rarity: "epic" },
         { title: "Идеальная совместимость", file: "compat.mp4", rarity: "epic" },
         { title: "Иногда для счастья надо нырнуть щучкой", file: "dive.mp4", rarity: "rare" },
-        { title: "Ну всё так всё", file: "all.mp4", rarity: "common" },
+        { title: "Ротик шире (улыбка , а вы о чем?)", file: "all.mp4", rarity: "common" },
         { title: "Только в момент тишины осознаёшь ценность звука", file: "sound.mp4", rarity: "common" }
     ];
 
