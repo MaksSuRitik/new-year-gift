@@ -5,6 +5,9 @@
   <title>Meme Battle</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="css/style.css">
+  
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
 </head>
 <body data-theme="dark">
 
@@ -15,6 +18,8 @@
   </div>
 
   <div class="controls">
+    <button id="leaderboardBtn" class="btn" style="width: auto; padding: 0 15px;">🏆 ТОП</button>
+    
     <button id="themeToggle" class="btn theme-btn">🌙</button>
     <button id="soundToggle" class="btn sound-btn">🔇</button>
     <div class="lang-wrapper">
@@ -30,10 +35,9 @@
   <a href="memes.html" class="simple-back" data-i18n="btnBack" style="z-index: 1000; position: fixed;">⬅ Назад</a>
 
   <main class="battle-container">
-    
     <div class="battle-header">
       <h1 class="shimmer-text" data-i18n="battleTitle">БИТВА КРІНЖІ ⚔️</h1>
-      <p data-i18n="battleSub">Обирай, що смішніше (або крінжовіше)</p>
+      <p data-i18n="battleSub">Обирай, що смішніше</p>
     </div>
 
     <div class="arena">
@@ -43,9 +47,7 @@
           <div class="vote-overlay">👍 +1</div>
         </div>
       </div>
-
       <div class="vs-badge">VS</div>
-
       <div class="fighter-card" id="card-right">
         <div class="img-wrapper">
           <img id="img-right" src="" alt="Meme 2">
@@ -57,7 +59,6 @@
     <div class="stats-panel glass-panel">
       <span data-i18n="battleStats">Переглянуто пар:</span> <b id="round-counter">0</b>
     </div>
-
   </main>
 
   <div id="audio-assets" style="display: none;">
@@ -66,6 +67,20 @@
     <audio id="sfx-hover" src="audio/hover.mp3"></audio>
     <audio id="sfx-spin" src="audio/slot-spin.mp3" loop></audio>
     <audio id="sfx-win" src="audio/win-bell.mp3"></audio>
+  </div>
+
+  <div id="leaderboard-modal" class="winner-overlay hidden" style="z-index: 3000;">
+    <div class="winner-card" style="max-height: 80vh;">
+      <h2 style="color:var(--highlight); margin:0;">🏆 ТОП 10 🏆</h2>
+      <div id="leaderboard-list" class="leaderboard-list">
+        <div class="loading-spinner">Завантаження...</div>
+      </div>
+      <button id="closeLeaderboard" class="action-btn" style="padding: 10px 30px; font-size: 1rem;">Закрити</button>
+    </div>
+  </div>
+
+  <div id="fullscreen-viewer" class="winner-overlay hidden" style="z-index: 4000; cursor: zoom-out;">
+    <img id="fullscreen-img" src="" style="max-width: 90%; max-height: 90vh; border-radius: 10px; box-shadow: 0 0 50px rgba(0,0,0,0.8);">
   </div>
 
   <div id="winner-overlay" class="winner-overlay hidden">

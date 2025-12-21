@@ -1,5 +1,5 @@
 // ==========================================
-// --- ГЛОБАЛЬНА ЛОГІКА (Працює на всіх сторінках) ---
+// --- ГЛОБАЛЬНА ЛОГІКА ---
 // ==========================================
 
 const themeBtn = document.getElementById('themeToggle');
@@ -69,14 +69,11 @@ if(langBtn) langBtn.textContent = savedLang === 'MEOW' ? '🐱' : savedLang;
 
 // --- 🔊 ЛОГІКА ЗВУКУ ---
 
-// Перевіряємо, чи користувач колись вимикав звук. Якщо ні - звук УВІМКНЕНО.
 let isMuted = localStorage.getItem('isMuted') === 'true'; 
 
 if(bgMusic) {
     bgMusic.volume = 0.2; 
     bgMusic.loop = true;  
-    
-    // Відновлюємо момент пісні
     const savedTime = localStorage.getItem('bgMusicTime');
     if(savedTime) bgMusic.currentTime = parseFloat(savedTime);
 }
@@ -84,8 +81,6 @@ if(bgMusic) {
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(savedLang);
     updateSoundIcon();
-    
-    // Запускаємо "мисливця за кліком/рухом" для музики
     startMusicUnlocker();
 });
 
@@ -104,33 +99,21 @@ function updateSoundIcon() {
     } else {
         soundBtn.textContent = '🔊';
         soundBtn.classList.add('playing');
-        // Якщо іконка "гучно", пробуємо грати
         if(bgMusic && bgMusic.paused) startMusicUnlocker();
     }
 }
 
-// 🔥 ФУНКЦІЯ АГРЕСИВНОГО ЗАПУСКУ МУЗИКИ
 function startMusicUnlocker() {
     if(isMuted || !bgMusic) return;
-
-    // Спроба 1: Чесний запуск (іноді працює, якщо сайт перезавантажили)
-    bgMusic.play().catch(() => {
-        console.log("Автоплей чекає на дію...");
-    });
-
-    // Спроба 2: Ловимо БУДЬ-ЯКУ дію користувача
-    // Музика запуститься не тільки від кліку, а й від руху миші чи скролу!
+    bgMusic.play().catch(() => {});
     const events = ['click', 'touchstart', 'mousemove', 'scroll', 'keydown'];
-
     function unlock() {
         if(!isMuted && bgMusic) {
             bgMusic.play().then(() => {
-                // Успіх! Прибираємо слухачі, щоб не вантажити систему
                 events.forEach(e => document.removeEventListener(e, unlock, { capture: true }));
             }).catch(() => {}); 
         }
     }
-
     events.forEach(e => document.addEventListener(e, unlock, { capture: true, once: true }));
 }
 
@@ -202,52 +185,46 @@ function applyLanguage(lang) {
     });
 }
 
-// --- ФОНОВИЙ СНІГ (З ВИПРАВЛЕННЯМ ЗНИКНЕННЯ) ---
+// --- ФОНОВИЙ СНІГ (ОПТИМІЗОВАНИЙ) ---
 const snowContainer = document.getElementById('snow-container');
 if (snowContainer) {
     function createSnowflake(isInstant = false) {
         const snowflake = document.createElement('div');
         snowflake.classList.add('snowflake');
-        const size = Math.random() * 5 + 3 + 'px';
-        const left = Math.random() * 100 + 'vw';
-        const duration = Math.random() * 5 + 5 + 's';
         
+        const size = (Math.random() * 4 + 2) + 'px'; 
         snowflake.style.width = size;
         snowflake.style.height = size;
-        snowflake.style.left = left;
+        snowflake.style.left = Math.random() * 100 + 'vw';
         
-        // Якщо це "миттєвий" сніг (після повернення на вкладку)
+        const duration = (Math.random() * 5 + 5) + 's';
+        snowflake.style.animationDuration = duration;
+        snowflake.style.opacity = Math.random() * 0.5 + 0.3;
+
         if (isInstant) {
-            snowflake.style.top = Math.random() * 100 + 'vh'; // Падає звідусіль
+            snowflake.style.top = Math.random() * 100 + 'vh'; 
             snowflake.style.animationDuration = (parseFloat(duration) / 2) + 's';
         } else {
-            snowflake.style.top = '-20px';
-            snowflake.style.animationDuration = duration;
+            snowflake.style.top = '-10px'; 
         }
-
-        if (Math.random() > 0.5) snowflake.style.filter = `blur(${Math.random()}px)`;
 
         snowContainer.appendChild(snowflake);
         
-        // Видалення
         setTimeout(() => {
             if(snowflake && snowflake.parentNode) snowflake.remove();
         }, parseFloat(duration) * 1000);
     }
 
-    // Регулярний сніг
-    setInterval(() => createSnowflake(false), 150);
+    // Інтервал 300мс - оптимально для телефону
+    setInterval(() => createSnowflake(false), 300);
 
-    // 🔥 ФІКС: Насипаємо сніг, коли повернулися на вкладку
     document.addEventListener("visibilitychange", () => {
         if (document.visibilityState === "visible") {
-            // Генеруємо 40 сніжинок миттєво
-            for(let i=0; i<40; i++) createSnowflake(true); 
+            for(let i=0; i<20; i++) createSnowflake(true); 
         }
     });
     
-    // При старті теж насипаємо, щоб не було пусто
-    for(let i=0; i<30; i++) createSnowflake(true);
+    for(let i=0; i<20; i++) createSnowflake(true);
 }
 
 // ==========================================
@@ -261,7 +238,6 @@ if (btnStart) {
 
     btnStart.addEventListener('click', () => {
         playSfx(sfxClick);
-        // Додатковий шанс запустити музику (якщо рух миші не спрацював)
         if(!isMuted && bgMusic && bgMusic.paused) bgMusic.play(); 
         
         viewStart.classList.add('hidden');
@@ -461,20 +437,45 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ==========================================
-// ⚔️ ЛОГІКА БИТВИ (BATTLE.HTML)
+// ⚔️ ЛОГІКА БИТВИ (BATTLE.HTML + FIREBASE)
 // ==========================================
 
 const cardLeft = document.getElementById('card-left');
 const cardRight = document.getElementById('card-right');
 
 if (cardLeft && cardRight) {
+    const firebaseConfig = {
+        apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
+        authDomain: "memebattle-4cb27.firebaseapp.com",
+        projectId: "memebattle-4cb27",
+        storageBucket: "memebattle-4cb27.firebasestorage.app",
+        messagingSenderId: "73285262990",
+        appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
+    };
+
+    let db;
+    if (typeof firebase !== 'undefined') {
+        try {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("Firebase успішно підключено! ✅");
+        } catch (e) {
+            console.error("Помилка ініціалізації Firebase:", e);
+        }
+    } else {
+        console.error("Firebase бібліотека не знайдена! Перевір battle.html");
+    }
+
     const imgLeft = document.getElementById('img-left');
     const imgRight = document.getElementById('img-right');
     const counterEl = document.getElementById('round-counter');
-    const winnerOverlay = document.getElementById('winner-overlay');
-    const winnerImg = document.getElementById('winner-img');
-    const restartBtn = document.getElementById('restartBtn');
-    
+    const leaderboardBtn = document.getElementById('leaderboardBtn');
+    const leaderboardModal = document.getElementById('leaderboard-modal');
+    const leaderboardList = document.getElementById('leaderboard-list');
+    const closeLeaderboard = document.getElementById('closeLeaderboard');
+    const fullscreenViewer = document.getElementById('fullscreen-viewer');
+    const fullscreenImg = document.getElementById('fullscreen-img');
+
     const TOTAL_PHOTOS = 75; 
     const ROUNDS_LIMIT = 15; 
     const PATH_PREFIX = 'img/screens/photo_'; 
@@ -514,12 +515,16 @@ if (cardLeft && cardRight) {
             winnerId = currentRightId; 
         }
 
-        let votes = parseInt(localStorage.getItem(`vote_photo_${winnerId}`) || 0);
-        localStorage.setItem(`vote_photo_${winnerId}`, votes + 1);
+        if (db) {
+            const docRef = db.collection("memes").doc("photo_" + winnerId);
+            docRef.set({
+                votes: firebase.firestore.FieldValue.increment(1),
+                path: `${PATH_PREFIX}${winnerId}${FILE_EXT}` 
+            }, { merge: true }).catch((error) => console.error("Помилка запису:", error));
+        }
 
         winnerCard.classList.add('winner');
         loserCard.classList.add('loser');
-        
         if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
 
         if (roundsPlayed >= ROUNDS_LIMIT) {
@@ -539,6 +544,71 @@ if (cardLeft && cardRight) {
             loserCard.classList.remove('loser');
         }, 500);
     }
+
+    if (leaderboardBtn) {
+        leaderboardBtn.addEventListener('click', () => {
+            leaderboardModal.classList.remove('hidden');
+            loadLeaderboard();
+            if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
+        });
+    }
+
+    if (closeLeaderboard) {
+        closeLeaderboard.addEventListener('click', () => {
+            leaderboardModal.classList.add('hidden');
+        });
+    }
+
+    function loadLeaderboard() {
+        if (!db) {
+            leaderboardList.innerHTML = '<div style="color:white; text-align:center;">Помилка підключення до бази</div>';
+            return;
+        }
+        
+        leaderboardList.innerHTML = '<div class="loading-spinner" style="color:white; text-align:center;">Завантаження...</div>';
+
+        db.collection("memes").orderBy("votes", "desc").limit(15).get()
+        .then((querySnapshot) => {
+            leaderboardList.innerHTML = '';
+            let rank = 1;
+            
+            if (querySnapshot.empty) {
+                 leaderboardList.innerHTML = '<div style="color:white; text-align:center;">Поки що голосів немає. Будь першим!</div>';
+                 return;
+            }
+
+            querySnapshot.forEach((doc) => {
+                const data = doc.data();
+                const item = document.createElement('div');
+                item.className = 'leader-item';
+                item.innerHTML = `
+                    <span class="rank-num">#${rank++}</span>
+                    <img src="${data.path}" class="mini-thumb" onclick="openFullImage('${data.path}')">
+                    <span class="vote-count">❤️ ${data.votes}</span>
+                `;
+                leaderboardList.appendChild(item);
+            });
+        })
+        .catch((error) => {
+            console.error("Error getting leaderboard:", error);
+            leaderboardList.innerHTML = '<div style="color:red; text-align:center;">Помилка завантаження :(</div>';
+        });
+    }
+
+    window.openFullImage = function(src) {
+        fullscreenImg.src = src;
+        fullscreenViewer.classList.remove('hidden');
+    }
+
+    if (fullscreenViewer) {
+        fullscreenViewer.addEventListener('click', () => {
+            fullscreenViewer.classList.add('hidden');
+        });
+    }
+
+    const winnerOverlay = document.getElementById('winner-overlay');
+    const winnerImg = document.getElementById('winner-img');
+    const restartBtn = document.getElementById('restartBtn');
 
     function showWinnerScreen(imgSrc) {
         if(typeof playSfx === 'function') {
