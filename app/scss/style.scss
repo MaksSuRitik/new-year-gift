@@ -153,6 +153,8 @@ body {
   color: var(--text-color);
   background: var(--bg-color);
   transition: background 0.6s;
+  /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
+  touch-action: none; 
 }
 // ==========================================
 // 2. ФОНОВІ ЕФЕКТИ (СНІГ ТА БЛОБИ)
@@ -723,105 +725,7 @@ body {
     border-radius: 0 0 16px 16px;
   }
 }
-// ==========================================
-// 📱 МОБІЛЬНА АДАПТАЦІЯ (ПОВНІСТЮ ГУМОВА)
-// ==========================================
 
-@media (max-width: 768px) {
-
-  html, body {
-    overflow: hidden !important; // Забороняємо скрол, бо у нас знову 3D
-    height: 100% !important;
-  }
-
-  .main-container {
-    height: 100vh !important;
-    padding: 0 !important;
-    justify-content: center !important;
-    overflow: hidden;
-  }
-
-  // 1. ПОВЕРТАЄМО КОНТЕЙНЕРУ 3D
-  .carousel {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    
-    width: 100% !important;
-    height: 100% !important;
-    
-    perspective: 600px !important; // Глибина 3D для телефону
-    position: relative !important;
-    margin-top: -50px; // Трохи підняти вгору
-  }
-
-  // 2. НАЛАШТУВАННЯ КАРТОК
-  .panel {
-    position: absolute !important; // Повертаємо абсолютне позиціонування
-    top: 50% !important;
-    left: 50% !important;
-    
-    // Розмір картки для мобільного (вужча)
-    width: 65vw !important;  
-    height: 55vh !important;
-    max-height: 400px !important;
-    
-    // Центрування абсолютної картки
-    margin-left: -32.5vw !important; // Половина ширини
-    margin-top: -27.5vh !important;  // Половина висоти
-    
-    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
-
-    border-radius: 24px;       // 1. Примусово заокруглюємо сам контейнер
-    overflow: hidden;          // 2. Обрізаємо все, що стирчить
-    -webkit-mask-image: -webkit-radial-gradient(white, black); // 3. Магічний фікс для iPhone
-  }
-
-  // 3. ПОЗИЦІЇ (ТРАНСФОРМАЦІЇ) ДЛЯ ТЕЛЕФОНУ
-  
-  // ЦЕНТР: Стоїть прямо, зверху
-  .panel.center {
-    transform: translateZ(0) scale(1) !important;
-    z-index: 10 !important;
-    opacity: 1 !important;
-  }
-
-  // ЛІВО: Зсуваємо вліво на 55%, трохи зменшуємо і повертаємо
-  .panel.left {
-    transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
-    z-index: 5 !important;
-    opacity: 0.6 !important;
-  }
-
-  // ПРАВО: Зсуваємо вправо на 55%
-  .panel.right {
-    transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
-    z-index: 5 !important;
-    opacity: 0.6 !important;
-  }
-  
-  // КНОПКИ НА МОБІЛЬНОМУ
-  .action-btn {
-    padding: 12px 30px !important;
-    font-size: 1.1rem !important;
-  }
-
-  // 4. ІНШІ ЕЛЕМЕНТИ (Казино та інше)
-  .sketch-layout {
-    justify-content: center !important;
-    padding-top: 0 !important;
-  }
-  
-  .horizontal-slot {
-    width: 95% !important;
-  }
-  
-  .center-console {
-    width: 90% !important;
-    padding: 20px !important;
-  }
-}
 // ==========================================
 // 🔄 PULL TO REFRESH (ОНОВЛЕННЯ СТОРІНКИ)
 // ==========================================
@@ -1188,12 +1092,6 @@ body[data-theme="light"] .archive-link:hover {
     justify-content: center;
 }
 
-canvas {
-    box-shadow: 0 0 50px rgba(0,0,0,0.5);
-    border-left: 2px solid var(--glass-border);
-    border-right: 2px solid var(--glass-border);
-}
-
 /* Результат */
 .result-overlay {
     position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -1230,6 +1128,9 @@ canvas {
     box-shadow: 0 0 100px rgba(0,0,0,0.5);
     border-left: 1px solid #333;
     border-right: 1px solid #333;
+    
+    // ВАЖЛИВО: Забороняємо браузерні дії (зум/скрол) всередині гри
+    touch-action: none; 
 }
 
 /* Канвас на весь контейнер */
@@ -1237,6 +1138,9 @@ canvas#rhythmCanvas {
     width: 100%;
     height: 100%;
     display: block;
+    // Канвас має бути клікабельним
+    position: relative;
+    z-index: 10;
 }
 
 /* Меню вибору пісень - центруємо по екрану, а не по контейнеру */
@@ -1286,7 +1190,19 @@ canvas#rhythmCanvas {
     width: 100%;
     height: 1px;
     background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+    
+    // 🔥 ВАЖЛИВО: Пропускаємо кліки крізь лінію
     pointer-events: none;
+    z-index: 20; 
+}
+
+/* Контейнер ефектів довгих нот - ВАЖЛИВО, він перекривав кліки */
+#hold-effects-container {
+    position: absolute; 
+    top:0; left:0; width:100%; height:100%;
+    // 🔥 ВАЖЛИВО: Пропускаємо кліки крізь цей контейнер
+    pointer-events: none;
+    z-index: 25; 
 }
 
 /* Ефекти натискання (Спаркли) */
@@ -1365,7 +1281,7 @@ canvas#rhythmCanvas {
 /* --- ШКАЛА ПРОГРЕСУ ТА ЗІРКИ --- */
 .game-header {
     position: absolute;
-    top: 20px;
+    top: 20px; /* За замовчуванням (ПК) */
     left: 50%;
     transform: translateX(-50%);
     width: 80%;
@@ -1374,6 +1290,7 @@ canvas#rhythmCanvas {
     display: flex;
     flex-direction: column;
     align-items: center;
+    transition: top 0.3s;
 }
 
 .progress-container {
@@ -1554,15 +1471,6 @@ body[data-theme="light"] #game-container {
 /* Інші елементи інтерфейсу */
 #game-progress-bar { box-shadow: 0 0 15px var(--highlight); }
 .star-marker.active { color: #FFD700; transform: scale(1.3); }
-/* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
-
-/* Фон контейнера гри */
-#game-container {
-    background: #0B0C10; /* Темний за замовчуванням */
-    transition: background 0.5s;
-    position: relative;
-    overflow: hidden;
-}
 
 /* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
 
@@ -1629,13 +1537,10 @@ body[data-theme="light"] .pause-overlay h2 {
     color: #2c3e50;
     text-shadow: none;
 }
-// ... (весь твій попередній код) ...
 
-// ==========================================
-// 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES)
-// ==========================================
+/* --- 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES) --- */
 
-/* Базовий стиль для букв S D J K (щоб вони були рівно по центру доріжок) */
+/* Підказки S D J K (щоб вони були рівно) */
 .lane-hints {
   position: absolute;
   bottom: 20px;
@@ -1655,38 +1560,122 @@ body[data-theme="light"] .pause-overlay h2 {
   text-shadow: 0 0 5px #000;
 }
 
-/* Спеціальні правки для сенсорних екранів */
 @media (max-width: 768px) {
   
-  /* 1. Блокуємо системні жести (скрол, свайп "назад") на самій грі */
-  canvas#rhythmCanvas {
-    touch-action: none; 
+  html, body {
+    overflow: hidden !important; 
+    height: 100% !important;
   }
 
-  /* 2. Кнопка паузи більша, щоб легше попасти пальцем */
-  .pause-btn {
-    width: 50px; height: 50px;
-    font-size: 1.5rem;
+  .main-container {
+    height: 100vh !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    overflow: hidden;
   }
 
-  /* 3. Меню вибору пісень на весь екран */
-  .song-list-container {
-    width: 95%;
-    max-height: 75vh;
+  .carousel {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    perspective: 600px !important; 
+    position: relative !important;
+    margin-top: -50px; 
   }
 
-  /* 4. Зменшуємо букви підказок (на телефоні вони менш важливі) */
-  .lane-key {
-    font-size: 1rem;
-    opacity: 0.3;
-    margin-bottom: 5px;
+  .panel {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 65vw !important;  
+    height: 55vh !important;
+    max-height: 400px !important;
+    margin-left: -32.5vw !important; 
+    margin-top: -27.5vh !important;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+    border-radius: 24px;       
+    overflow: hidden;          
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+
+  .panel.center {
+    transform: translateZ(0) scale(1) !important;
+    z-index: 10 !important;
+    opacity: 1 !important;
+  }
+
+  .panel.left {
+    transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+
+  .panel.right {
+    transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
   }
   
-  /* 5. Глобальна кнопка "Назад" - зручніше розташування */
+  .action-btn {
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .sketch-layout {
+    justify-content: center !important;
+    padding-top: 0 !important;
+  }
+  
+  .horizontal-slot {
+    width: 95% !important;
+  }
+  
+  .center-console {
+    width: 90% !important;
+    padding: 20px !important;
+  }
+
+  /* --- 🔥 ВИПРАВЛЕННЯ ДЛЯ ГРИ --- */
+
+  /* 1. Опускаємо шкалу прогресу нижче кнопок меню */
+  .game-header {
+      top: 85px !important; 
+      width: 90% !important;
+      transform: translateX(-50%) scale(0.85) !important;
+  }
+
+  /* 2. Зручніша кнопка "Назад" */
   #global-back-btn {
     top: 15px !important;
     left: 15px !important;
     padding: 10px 20px !important;
     font-size: 1rem !important;
+  }
+
+  /* 3. Кнопка паузи */
+  .pause-btn {
+    width: 50px; height: 50px;
+    font-size: 1.5rem;
+    top: 85px !important; /* На рівні з прогресом */
+    left: 10px !important;
+  }
+
+  /* 4. Приховуємо зайві підказки на телефоні */
+  .lane-key {
+    font-size: 1rem;
+    opacity: 0.3;
+  }
+
+  /* 5. ФІКС КЛІКІВ: Заборона скролу і зуму */
+  #game-container, canvas#rhythmCanvas {
+      touch-action: none !important;
+  }
+  
+  /* Гарантуємо, що кліки проходять крізь оверлеї */
+  #hold-effects-container, .hit-line, .lane-hints {
+      pointer-events: none !important;
   }
 }

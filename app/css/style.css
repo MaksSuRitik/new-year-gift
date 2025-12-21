@@ -132,6 +132,9 @@ body {
   background: var(--bg-color);
   -webkit-transition: background 0.6s;
   transition: background 0.6s;
+  /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
+  -ms-touch-action: none;
+      touch-action: none;
 }
 
 #snow-container {
@@ -1178,89 +1181,6 @@ body {
   border-radius: 0 0 16px 16px;
 }
 
-@media (max-width: 768px) {
-  html, body {
-    overflow: hidden !important;
-    height: 100% !important;
-  }
-  .main-container {
-    height: 100vh !important;
-    padding: 0 !important;
-    -webkit-box-pack: center !important;
-        -ms-flex-pack: center !important;
-            justify-content: center !important;
-    overflow: hidden;
-  }
-  .carousel {
-    display: -webkit-box !important;
-    display: -ms-flexbox !important;
-    display: flex !important;
-    -webkit-box-align: center !important;
-        -ms-flex-align: center !important;
-            align-items: center !important;
-    -webkit-box-pack: center !important;
-        -ms-flex-pack: center !important;
-            justify-content: center !important;
-    width: 100% !important;
-    height: 100% !important;
-    -webkit-perspective: 600px !important;
-            perspective: 600px !important;
-    position: relative !important;
-    margin-top: -50px;
-  }
-  .panel {
-    position: absolute !important;
-    top: 50% !important;
-    left: 50% !important;
-    width: 65vw !important;
-    height: 55vh !important;
-    max-height: 400px !important;
-    margin-left: -32.5vw !important;
-    margin-top: -27.5vh !important;
-    -webkit-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
-    -webkit-box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
-    border-radius: 24px;
-    overflow: hidden;
-    -webkit-mask-image: -webkit-radial-gradient(white, black);
-  }
-  .panel.center {
-    -webkit-transform: translateZ(0) scale(1) !important;
-            transform: translateZ(0) scale(1) !important;
-    z-index: 10 !important;
-    opacity: 1 !important;
-  }
-  .panel.left {
-    -webkit-transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
-            transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
-    z-index: 5 !important;
-    opacity: 0.6 !important;
-  }
-  .panel.right {
-    -webkit-transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
-            transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
-    z-index: 5 !important;
-    opacity: 0.6 !important;
-  }
-  .action-btn {
-    padding: 12px 30px !important;
-    font-size: 1.1rem !important;
-  }
-  .sketch-layout {
-    -webkit-box-pack: center !important;
-        -ms-flex-pack: center !important;
-            justify-content: center !important;
-    padding-top: 0 !important;
-  }
-  .horizontal-slot {
-    width: 95% !important;
-  }
-  .center-console {
-    width: 90% !important;
-    padding: 20px !important;
-  }
-}
 .ptr-container {
   position: fixed;
   top: -80px;
@@ -1845,13 +1765,6 @@ body[data-theme=light] .archive-link:hover {
           justify-content: center;
 }
 
-canvas {
-  -webkit-box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-          box-shadow: 0 0 50px rgba(0, 0, 0, 0.5);
-  border-left: 2px solid var(--glass-border);
-  border-right: 2px solid var(--glass-border);
-}
-
 /* Результат */
 .result-overlay {
   position: fixed;
@@ -1904,6 +1817,8 @@ canvas {
           box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
   border-left: 1px solid #333;
   border-right: 1px solid #333;
+  -ms-touch-action: none;
+      touch-action: none;
 }
 
 /* Канвас на весь контейнер */
@@ -1911,6 +1826,8 @@ canvas#rhythmCanvas {
   width: 100%;
   height: 100%;
   display: block;
+  position: relative;
+  z-index: 10;
 }
 
 /* Меню вибору пісень - центруємо по екрану, а не по контейнеру */
@@ -2005,6 +1922,18 @@ canvas#rhythmCanvas {
   background: -webkit-gradient(linear, left top, right top, from(transparent), color-stop(rgba(255, 255, 255, 0.3)), to(transparent));
   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
   pointer-events: none;
+  z-index: 20;
+}
+
+/* Контейнер ефектів довгих нот - ВАЖЛИВО, він перекривав кліки */
+#hold-effects-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 25;
 }
 
 /* Ефекти натискання (Спаркли) */
@@ -2173,7 +2102,7 @@ canvas#rhythmCanvas {
 /* --- ШКАЛА ПРОГРЕСУ ТА ЗІРКИ --- */
 .game-header {
   position: absolute;
-  top: 20px;
+  top: 20px; /* За замовчуванням (ПК) */
   left: 50%;
   -webkit-transform: translateX(-50%);
       -ms-transform: translateX(-50%);
@@ -2191,6 +2120,8 @@ canvas#rhythmCanvas {
   -webkit-box-align: center;
       -ms-flex-align: center;
           align-items: center;
+  -webkit-transition: top 0.3s;
+  transition: top 0.3s;
 }
 
 .progress-container {
@@ -2525,16 +2456,6 @@ body[data-theme=light] #game-container {
 /* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
 /* Фон контейнера гри */
 #game-container {
-  background: #0B0C10; /* Темний за замовчуванням */
-  -webkit-transition: background 0.5s;
-  transition: background 0.5s;
-  position: relative;
-  overflow: hidden;
-}
-
-/* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
-/* Фон контейнера гри */
-#game-container {
   background: #0B0C10;
   background-image: radial-gradient(circle at 50% 50%, rgba(102, 252, 241, 0.05), transparent 70%);
   -webkit-transition: background 0.5s;
@@ -2600,4 +2521,151 @@ body[data-theme=light] .pause-overlay h1,
 body[data-theme=light] .pause-overlay h2 {
   color: #2c3e50;
   text-shadow: none;
+}
+
+/* --- 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES) --- */
+/* Підказки S D J K (щоб вони були рівно) */
+.lane-hints {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  pointer-events: none; /* Щоб кліки проходили крізь текст */
+  z-index: 20;
+}
+
+.lane-key {
+  -webkit-box-flex: 1;
+      -ms-flex: 1;
+          flex: 1; /* Рівномірний розподіл */
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.5);
+  text-shadow: 0 0 5px #000;
+}
+
+@media (max-width: 768px) {
+  html, body {
+    overflow: hidden !important;
+    height: 100% !important;
+  }
+  .main-container {
+    height: 100vh !important;
+    padding: 0 !important;
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    overflow: hidden;
+  }
+  .carousel {
+    display: -webkit-box !important;
+    display: -ms-flexbox !important;
+    display: flex !important;
+    -webkit-box-align: center !important;
+        -ms-flex-align: center !important;
+            align-items: center !important;
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    -webkit-perspective: 600px !important;
+            perspective: 600px !important;
+    position: relative !important;
+    margin-top: -50px;
+  }
+  .panel {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 65vw !important;
+    height: 55vh !important;
+    max-height: 400px !important;
+    margin-left: -32.5vw !important;
+    margin-top: -27.5vh !important;
+    -webkit-transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    -webkit-box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 24px;
+    overflow: hidden;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+  .panel.center {
+    -webkit-transform: translateZ(0) scale(1) !important;
+            transform: translateZ(0) scale(1) !important;
+    z-index: 10 !important;
+    opacity: 1 !important;
+  }
+  .panel.left {
+    -webkit-transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+            transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+  .panel.right {
+    -webkit-transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+            transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+  .action-btn {
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
+  }
+  .sketch-layout {
+    -webkit-box-pack: center !important;
+        -ms-flex-pack: center !important;
+            justify-content: center !important;
+    padding-top: 0 !important;
+  }
+  .horizontal-slot {
+    width: 95% !important;
+  }
+  .center-console {
+    width: 90% !important;
+    padding: 20px !important;
+  }
+  /* --- 🔥 ВИПРАВЛЕННЯ ДЛЯ ГРИ --- */
+  /* 1. Опускаємо шкалу прогресу нижче кнопок меню */
+  .game-header {
+    top: 85px !important;
+    width: 90% !important;
+    -webkit-transform: translateX(-50%) scale(0.85) !important;
+        -ms-transform: translateX(-50%) scale(0.85) !important;
+            transform: translateX(-50%) scale(0.85) !important;
+  }
+  /* 2. Зручніша кнопка "Назад" */
+  #global-back-btn {
+    top: 15px !important;
+    left: 15px !important;
+    padding: 10px 20px !important;
+    font-size: 1rem !important;
+  }
+  /* 3. Кнопка паузи */
+  .pause-btn {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
+    top: 85px !important; /* На рівні з прогресом */
+    left: 10px !important;
+  }
+  /* 4. Приховуємо зайві підказки на телефоні */
+  .lane-key {
+    font-size: 1rem;
+    opacity: 0.3;
+  }
+  /* 5. ФІКС КЛІКІВ: Заборона скролу і зуму */
+  #game-container, canvas#rhythmCanvas {
+    -ms-touch-action: none !important;
+        touch-action: none !important;
+  }
+  /* Гарантуємо, що кліки проходять крізь оверлеї */
+  #hold-effects-container, .hit-line, .lane-hints {
+    pointer-events: none !important;
+  }
 }
