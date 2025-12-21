@@ -69,11 +69,14 @@ if(langBtn) langBtn.textContent = savedLang === 'MEOW' ? '🐱' : savedLang;
 
 // --- 🔊 ЛОГІКА ЗВУКУ ---
 
+// Перевіряємо, чи користувач колись вимикав звук. Якщо ні - звук УВІМКНЕНО.
 let isMuted = localStorage.getItem('isMuted') === 'true'; 
 
 if(bgMusic) {
     bgMusic.volume = 0.2; 
     bgMusic.loop = true;  
+    
+    // Відновлюємо момент пісні
     const savedTime = localStorage.getItem('bgMusicTime');
     if(savedTime) bgMusic.currentTime = parseFloat(savedTime);
 }
@@ -81,6 +84,8 @@ if(bgMusic) {
 document.addEventListener('DOMContentLoaded', () => {
     applyLanguage(savedLang);
     updateSoundIcon();
+    
+    // Запускаємо "мисливця за кліком/рухом" для музики
     startMusicUnlocker();
 });
 
@@ -99,21 +104,33 @@ function updateSoundIcon() {
     } else {
         soundBtn.textContent = '🔊';
         soundBtn.classList.add('playing');
+        // Якщо іконка "гучно", пробуємо грати
         if(bgMusic && bgMusic.paused) startMusicUnlocker();
     }
 }
 
+// 🔥 ФУНКЦІЯ АГРЕСИВНОГО ЗАПУСКУ МУЗИКИ
 function startMusicUnlocker() {
     if(isMuted || !bgMusic) return;
-    bgMusic.play().catch(() => {});
+
+    // Спроба 1: Чесний запуск (іноді працює, якщо сайт перезавантажили)
+    bgMusic.play().catch(() => {
+        console.log("Автоплей чекає на дію...");
+    });
+
+    // Спроба 2: Ловимо БУДЬ-ЯКУ дію користувача
+    // Музика запуститься не тільки від кліку, а й від руху миші чи скролу!
     const events = ['click', 'touchstart', 'mousemove', 'scroll', 'keydown'];
+
     function unlock() {
         if(!isMuted && bgMusic) {
             bgMusic.play().then(() => {
+                // Успіх! Прибираємо слухачі, щоб не вантажити систему
                 events.forEach(e => document.removeEventListener(e, unlock, { capture: true }));
             }).catch(() => {}); 
         }
     }
+
     events.forEach(e => document.addEventListener(e, unlock, { capture: true, once: true }));
 }
 
