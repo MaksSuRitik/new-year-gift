@@ -65,11 +65,13 @@
     </div>
   </main>
 
-  <div id="videoModal" class="video-overlay hidden" style="background: rgba(0, 0, 0, 0.8) !important; backdrop-filter: blur(10px);">
+ <div id="videoModal" class="video-overlay hidden">
     <div class="video-card">
       <div class="video-header">
         <h3 id="modalTitle" data-i18n="videoDefault">Video</h3>
-        <button class="close-btn" id="closeModal">✕</button>
+        <button class="close-btn" id="closeModal">
+            <span class="material-icons-round" style="font-size: 24px;">close</span>
+        </button>
       </div>
       <div class="player-wrapper">
         <video id="memeVideo" controls playsinline>
