@@ -1,6 +1,5 @@
 /* ==========================================
-   🎹 NEON PIANO: ULTRA FX VERSION 4.0
-   (Laser Beams, Column Shake, Combo Colors, Particles)
+   🎹 NEON PIANO: FIXED INPUT & MOBILE LAYOUT
    ========================================== */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -149,9 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let holdingTiles = [null, null, null, null]; 
     const laneElements = [null, null, null, null]; 
     
-    // --- NEW: FX VARIABLES ---
-    let laneBeamAlpha = [0, 0, 0, 0]; // Alpha for laser beams
-    // -------------------------
+    let laneBeamAlpha = [0, 0, 0, 0]; 
 
     const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
 
@@ -191,7 +188,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTiles = []; mapTiles = []; particles = [];
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
-        laneBeamAlpha = [0, 0, 0, 0]; // Reset beams
+        laneBeamAlpha = [0, 0, 0, 0]; 
         
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = ''; 
@@ -201,7 +198,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (progressBar) progressBar.style.width = '0%';
         if (comboDisplay) {
             comboDisplay.style.opacity = 0;
-            comboDisplay.style.color = '#fff'; // Reset color
+            comboDisplay.style.color = '#fff'; 
         }
         
         const pauseModal = document.getElementById('pause-modal');
@@ -595,9 +592,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const actualYHeadTop = yHead - headHeight;
                 const tailH = actualYHeadTop - yTail;
 
-                // Long note uses static colors usually, but head can shift? 
-                // Let's keep long note body consistent to avoid confusion, 
-                // but maybe shift the Head color for high combos?
                 let colorSet = tile.failed ? colors.dead : colors.long;
 
                 if (tailH > 0) {
@@ -657,13 +651,11 @@ document.addEventListener('DOMContentLoaded', () => {
             
             // Draw Sparks/Triangles
             if (p.type === 'perfect') {
-               // Draw Triangle for Perfect
                ctx.moveTo(p.x, p.y);
                ctx.lineTo(p.x + 4, p.y + 8);
                ctx.lineTo(p.x - 4, p.y + 8);
                ctx.fill();
             } else {
-               // Circle for Good
                ctx.arc(p.x, p.y, Math.random()*5, 0, Math.PI*2);
                ctx.fill();
             }
@@ -709,7 +701,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // --- TRIGGER LASER BEAM ---
         laneBeamAlpha[lane] = 1.0; 
-        // --------------------------
         
         if (holdingTiles[lane]) return; 
 
@@ -899,6 +890,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function initControls() {
         const lanesContainer = document.getElementById('lanes-bg');
         if (lanesContainer) for(let i=0; i<4; i++) laneElements[i] = lanesContainer.children[i];
+        
+        // --- 🔴 MOBILE FIX: FORCE POINTER EVENTS OFF ---
+        // Це критично для телефонів, щоб кліки проходили крізь ефекти
+        if(holdEffectsContainer) holdEffectsContainer.style.pointerEvents = 'none';
+        const hitLine = document.querySelector('.hit-line');
+        if(hitLine) hitLine.style.pointerEvents = 'none';
+        const hints = document.querySelector('.lane-hints');
+        if(hints) hints.style.pointerEvents = 'none';
+        // ------------------------------------------------
 
         function togglePauseGame() {
             if (!isPlaying) return;
@@ -929,9 +929,31 @@ document.addEventListener('DOMContentLoaded', () => {
         window.addEventListener('keyup', e => { const lane = KEYS.indexOf(e.code); if (lane !== -1) handleInputUp(lane); });
 
         if (canvas) {
-            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); const rect = canvas.getBoundingClientRect(); for (let i=0; i<e.changedTouches.length; i++) handleInputDown(Math.floor((e.changedTouches[i].clientX - rect.left) / (canvas.width / 4))); }, {passive: false});
-            canvas.addEventListener('touchend', (e) => { e.preventDefault(); const rect = canvas.getBoundingClientRect(); for (let i=0; i<e.changedTouches.length; i++) handleInputUp(Math.floor((e.changedTouches[i].clientX - rect.left) / (canvas.width / 4))); }, {passive: false});
-            canvas.addEventListener('mousedown', (e) => { handleInputDown(Math.floor((e.clientX - canvas.getBoundingClientRect().left) / (canvas.width / 4))); setTimeout(() => handleInputUp(Math.floor((e.clientX - canvas.getBoundingClientRect().left) / (canvas.width / 4))), 150); });
+            canvas.addEventListener('touchstart', (e) => { 
+                e.preventDefault(); 
+                const rect = canvas.getBoundingClientRect(); 
+                for (let i=0; i<e.changedTouches.length; i++) {
+                    // --- 🔴 FIX: USE RECT.WIDTH instead of CANVAS.WIDTH ---
+                    // Виправляємо розрахунок координат для телефонів з високою роздільною здатністю
+                    handleInputDown(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))); 
+                }
+            }, {passive: false});
+
+            canvas.addEventListener('touchend', (e) => { 
+                e.preventDefault(); 
+                const rect = canvas.getBoundingClientRect(); 
+                for (let i=0; i<e.changedTouches.length; i++) {
+                    handleInputDown(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))); 
+                    setTimeout(() => handleInputUp(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))), 50);
+                } 
+            }, {passive: false});
+
+            canvas.addEventListener('mousedown', (e) => { 
+                const rect = canvas.getBoundingClientRect();
+                const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
+                handleInputDown(lane); 
+                setTimeout(() => handleInputUp(lane), 150); 
+            });
         }
 
         const tBtn = document.getElementById('themeToggle');

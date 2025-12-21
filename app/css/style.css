@@ -2669,3 +2669,58 @@ body[data-theme=light] .pause-overlay h2 {
     pointer-events: none !important;
   }
 }
+@media (max-width: 768px) {
+  /* 1. Блокуємо скрол та зум (критично для гри) */
+  html, body {
+    overflow: hidden !important;
+    -ms-touch-action: none !important;
+        touch-action: none !important;
+  }
+  #game-container, canvas#rhythmCanvas {
+    -ms-touch-action: none !important;
+        touch-action: none !important;
+  }
+  /* 2. Опускаємо шкалу РАДИКАЛЬНО нижче (щоб точно не налізла на кнопки) */
+  /* Використовуємо каскадність ID для пріоритету */
+  #game-container .game-header {
+    top: 50px !important; /* Було 85, тепер 120 - гарантовано нижче кнопок */
+    width: 90% !important;
+    left: 50% !important;
+    -webkit-transform: translateX(-50%) scale(0.9) !important;
+        -ms-transform: translateX(-50%) scale(0.9) !important;
+            transform: translateX(-50%) scale(0.9) !important;
+  }
+  /* 3. Кнопка паузи теж нижче */
+  .pause-btn {
+    top: 120px !important;
+    left: 10px !important;
+    width: 45px !important;
+    height: 45px !important;
+  }
+  /* 4. Глобальна кнопка "Назад" - фіксуємо зліва зверху */
+  #global-back-btn {
+    top: 15px !important;
+    left: 15px !important;
+    padding: 8px 15px !important;
+    font-size: 0.9rem !important;
+    z-index: 9999 !important; /* Поверх усього */
+  }
+  /* 5. Кнопки налаштувань (Тема, Звук, Мова) - фіксуємо справа зверху */
+  .controls-layer {
+    top: 15px !important;
+    right: 15px !important;
+    gap: 5px !important;
+  }
+  .controls-layer .btn {
+    width: 40px !important;
+    height: 40px !important;
+    font-size: 1rem !important;
+  }
+  /* 6. Гарантуємо, що оверлеї не перекривають кліки */
+  #hold-effects-container,
+  .hit-line,
+  .lane-hints,
+  .click-effect {
+    pointer-events: none !important;
+  }
+}
