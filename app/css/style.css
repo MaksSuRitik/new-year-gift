@@ -11,6 +11,8 @@
   --blob-1: #45A29E;
   --blob-2: #1F2833;
   --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
+  --tile-color: #66FCF1; /* Ціан */
+  --tile-gradient: linear-gradient(to bottom, #45A29E, #66FCF1);
 }
 
 body[data-theme=light] {
@@ -104,6 +106,121 @@ body[data-theme=light] .shadow-right {
 }
 body[data-theme=light] .simple-back, body[data-theme=light] .pointer-arrow {
   color: var(--text-color);
+}
+body[data-theme=light] .secret-lock-content, body[data-theme=light] .name-input-content, body[data-theme=light] .leaderboard-content {
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+}
+body[data-theme=light] .name-input-field {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--text-color);
+  color: var(--text-color);
+}
+body[data-theme=light] .name-input-field:focus {
+  border-color: var(--highlight);
+  -webkit-box-shadow: 0 0 10px var(--accent-glow);
+          box-shadow: 0 0 10px var(--accent-glow);
+}
+body[data-theme=light] .name-submit-btn {
+  background: var(--highlight);
+  color: #fff;
+}
+body[data-theme=light] .name-submit-btn:hover {
+  background: var(--text-color);
+  -webkit-box-shadow: 0 0 15px var(--highlight);
+          box-shadow: 0 0 15px var(--highlight);
+}
+body[data-theme=light] .leaderboard-modal {
+  background: rgba(255, 255, 255, 0.6);
+}
+body[data-theme=light] .leaderboard-content {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: var(--highlight); /* Фіолетовий */
+}
+body[data-theme=light] .lb-table th {
+  border-bottom-color: rgba(0, 0, 0, 0.1);
+}
+body[data-theme=light] .lb-table td {
+  border-bottom-color: rgba(0, 0, 0, 0.05);
+  color: #2c3e50; /* Темний текст */
+}
+body[data-theme=light] {
+  /* Секретна пісня у світлій темі */
+}
+body[data-theme=light] .secret-song-card {
+  background: rgba(255, 255, 255, 0.8) !important;
+}
+body[data-theme=light] .song-locked::after {
+  color: #555; /* Темний замок */
+}
+body[data-theme=light] {
+  /* Текст "Архів" під спіном */
+}
+body[data-theme=light] .archive-link:hover {
+  color: #fff;
+}
+body[data-theme=light] {
+  /* Фон контейнера гри у світлій темі */
+}
+body[data-theme=light] #game-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+body[data-theme=light] {
+  /* Сітка доріжок у світлій темі */
+}
+body[data-theme=light] .lane-col {
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
+  background: rgba(255, 255, 255, 0.3); /* Легке скло */
+}
+body[data-theme=light] {
+  /* Активна доріжка (світла) */
+}
+body[data-theme=light] .lane-col.active {
+  background: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.1)), to(transparent));
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+}
+body[data-theme=light] {
+  /* Кнопка паузи (світла) */
+}
+body[data-theme=light] .pause-btn {
+  background: #fff;
+  border: 1px solid #ccc;
+  color: #333;
+  -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+          box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+body[data-theme=light] {
+  /* Тексти в грі (світла) */
+}
+body[data-theme=light] #score-display, body[data-theme=light] #combo-display {
+  color: #2c3e50 !important;
+  text-shadow: none;
+  font-weight: 800;
+}
+body[data-theme=light] {
+  /* Підказки клавіш (світла) */
+}
+body[data-theme=light] .lane-key {
+  color: rgba(0, 0, 0, 0.6) !important;
+  font-weight: bold;
+}
+body[data-theme=light] {
+  /* Прогрес бар (світла) */
+}
+body[data-theme=light] .progress-container {
+  background: rgba(0, 0, 0, 0.1);
+}
+body[data-theme=light] {
+  /* Вікно результатів/паузи у світлій темі */
+}
+body[data-theme=light] .pause-overlay {
+  background: rgba(255, 255, 255, 0.85); /* Світле скло */
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+body[data-theme=light] .pause-overlay h1, body[data-theme=light] .pause-overlay h2 {
+  color: #2c3e50;
+  text-shadow: none;
 }
 
 body[data-lang=MEOW] {
@@ -628,6 +745,13 @@ body {
   border-color: var(--highlight);
 }
 
+.action-btn.btn-danger {
+  border-color: #ff5555;
+}
+.action-btn.btn-danger:hover {
+  background: #ff5555;
+}
+
 .sketch-layout {
   width: 100%;
   height: 100%;
@@ -704,6 +828,14 @@ body {
   gap: 30px;
   -webkit-box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
           box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: blur(var(--glass-blur));
+          backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  -webkit-box-shadow: var(--glass-shadow);
+          box-shadow: var(--glass-shadow);
+  position: relative;
+  z-index: 50;
 }
 .center-console .console-text {
   text-align: center;
@@ -885,7 +1017,7 @@ body {
       -ms-flex-align: center;
           align-items: center;
   font-family: "Comic Sans MS", sans-serif;
-  font-weight: bold;
+  font-weight: 900;
   font-size: 1rem;
   line-height: 1.2;
   text-transform: uppercase;
@@ -894,6 +1026,9 @@ body {
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8);
   white-space: normal;
+  letter-spacing: 1px;
+  -webkit-animation: neonPulse 2s infinite alternate;
+          animation: neonPulse 2s infinite alternate;
 }
 
 @-webkit-keyframes neonPulse {
@@ -921,15 +1056,6 @@ body {
             filter: brightness(130%);
   }
 }
-.slot-item-text {
-  font-family: "Comic Sans MS", sans-serif;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  -webkit-animation: neonPulse 2s infinite alternate;
-          animation: neonPulse 2s infinite alternate;
-}
-
 .common {
   color: #fff;
   text-shadow: 0 0 5px #0f0, 0 0 10px #0f0, 0 0 20px #0f0, 0 0 40px #00ff00;
@@ -971,88 +1097,6 @@ body {
   right: 0;
   background: -webkit-gradient(linear, right top, left top, from(#0f0c29), to(transparent));
   background: linear-gradient(to left, #0f0c29 0%, transparent 100%);
-}
-
-.center-console {
-  background: var(--glass-bg);
-  -webkit-backdrop-filter: blur(var(--glass-blur));
-          backdrop-filter: blur(var(--glass-blur));
-  border: 1px solid var(--glass-border);
-  -webkit-box-shadow: var(--glass-shadow);
-          box-shadow: var(--glass-shadow);
-  border-radius: 40px;
-  padding: 40px 60px;
-  width: 400px;
-  display: -webkit-box;
-  display: -ms-flexbox;
-  display: flex;
-  -webkit-box-orient: vertical;
-  -webkit-box-direction: normal;
-      -ms-flex-direction: column;
-          flex-direction: column;
-  -webkit-box-align: center;
-      -ms-flex-align: center;
-          align-items: center;
-  gap: 30px;
-  position: relative;
-  z-index: 50;
-}
-.center-console .console-text {
-  text-align: center;
-  color: white;
-}
-.center-console .console-text h2 {
-  font-size: 1.2rem;
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.center-console .console-text p {
-  font-size: 0.9rem;
-  opacity: 0.6;
-  margin: 5px 0 0 0;
-}
-
-.sketch-spin-btn {
-  background: #fff;
-  color: #000;
-  font-family: "Comic Sans MS", sans-serif;
-  font-weight: bold;
-  font-size: 1.5rem;
-  padding: 15px 80px;
-  border-radius: 50px;
-  border: none;
-  cursor: pointer;
-  -webkit-transition: -webkit-transform 0.1s;
-  transition: -webkit-transform 0.1s;
-  transition: transform 0.1s;
-  transition: transform 0.1s, -webkit-transform 0.1s;
-  -webkit-box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-          box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
-}
-.sketch-spin-btn:hover {
-  -webkit-transform: scale(1.05);
-      -ms-transform: scale(1.05);
-          transform: scale(1.05);
-  -webkit-box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
-          box-shadow: 0 0 25px rgba(255, 255, 255, 0.8);
-}
-.sketch-spin-btn:active {
-  -webkit-transform: scale(0.95);
-      -ms-transform: scale(0.95);
-          transform: scale(0.95);
-}
-
-.simple-back {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  color: #fff;
-  text-decoration: none;
-  opacity: 0.7;
-}
-.simple-back:hover {
-  opacity: 1;
 }
 
 .video-overlay {
@@ -1410,29 +1454,6 @@ body {
   font-weight: bold;
 }
 
-@media (max-width: 768px) {
-  .arena {
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-            flex-direction: row;
-    gap: 10px;
-  }
-  .fighter-card {
-    height: 50vh;
-    width: 48%;
-    aspect-ratio: auto;
-  }
-  .vs-badge {
-    width: 40px;
-    height: 40px;
-    font-size: 1rem;
-    border-width: 2px;
-  }
-  .battle-header h1 {
-    font-size: 1.5rem;
-  }
-}
 .archive-link {
   margin-top: -10px;
   font-size: 1rem;
@@ -1456,36 +1477,6 @@ body {
           transform: scale(1.05);
 }
 
-body[data-theme=light] .archive-link:hover {
-  color: #fff;
-}
-
-@media (max-width: 768px) {
-  .arena {
-    -webkit-box-orient: horizontal;
-    -webkit-box-direction: normal;
-        -ms-flex-direction: row;
-            flex-direction: row;
-    gap: 10px;
-    -webkit-box-align: center;
-        -ms-flex-align: center;
-            align-items: center;
-  }
-  .fighter-card {
-    height: 45vh;
-    width: 48%;
-  }
-  .vs-badge {
-    width: 35px;
-    height: 35px;
-    font-size: 0.8rem;
-    border-width: 2px;
-  }
-  .battle-header h1 {
-    font-size: 1.5rem;
-    margin-top: 10px;
-  }
-}
 .winner-overlay {
   position: fixed;
   top: 0;
@@ -1964,13 +1955,6 @@ canvas#rhythmCanvas {
             transform: scaleY(1.5);
   }
 }
-/* Стилі для плиток */
-/* Ми малюємо їх канвасом, але це для загального розуміння кольорів */
-:root {
-  --tile-color: #66FCF1; /* Ціан */
-  --tile-gradient: linear-gradient(to bottom, #45A29E, #66FCF1);
-}
-
 /* ==========================================
    ✨ PRO VISUALS (DANCE GAME)
    ========================================== */
@@ -2308,7 +2292,6 @@ canvas#rhythmCanvas {
   }
 }
 /* --- ОНОВЛЕНИЙ СПИСОК ПІСЕНЬ --- */
-/* Додай або заміни це в кінці файлу */
 .song-card {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -2549,6 +2532,27 @@ body[data-theme=light] .pause-overlay h2 {
 }
 
 @media (max-width: 768px) {
+  .arena {
+    -webkit-box-orient: horizontal;
+    -webkit-box-direction: normal;
+        -ms-flex-direction: row;
+            flex-direction: row;
+    gap: 10px;
+  }
+  .fighter-card {
+    height: 50vh;
+    width: 48%;
+    aspect-ratio: auto;
+  }
+  .vs-badge {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+    border-width: 2px;
+  }
+  .battle-header h1 {
+    font-size: 1.5rem;
+  }
   html, body {
     overflow: hidden !important;
     height: 100% !important;
@@ -2800,18 +2804,19 @@ body[data-theme=light] .pause-overlay h2 {
 }
 .secret-song-card {
   border: 3px solid transparent;
+  background: rgba(0, 0, 0, 0.6) !important;
   -webkit-animation: rainbow-border 2s linear infinite;
           animation: rainbow-border 2s linear infinite;
-  background: rgba(0, 0, 0, 0.6) !important;
 }
 
 /* Заблокована пісня */
 .song-locked {
+  position: relative;
   opacity: 0.5;
   -webkit-filter: grayscale(100%);
           filter: grayscale(100%);
-  pointer-events: none;
-  position: relative;
+  pointer-events: auto !important;
+  cursor: not-allowed; /* Візуально показуємо, що дія заборонена, але клік проходить */
 }
 .song-locked::after {
   content: "🔒";
@@ -2821,36 +2826,36 @@ body[data-theme=light] .pause-overlay h2 {
   -webkit-transform: translate(-50%, -50%);
       -ms-transform: translate(-50%, -50%);
           transform: translate(-50%, -50%);
-  font-size: 2rem;
   color: var(--text-color);
+  font-size: 2rem;
 }
 
 /* --- КНОПКА ТАБЛИЦІ ЛІДЕРІВ --- */
 .btn-leaderboard {
+  display: block;
   margin: 15px auto;
   padding: 10px 25px;
-  background: linear-gradient(45deg, var(--highlight), var(--blob-1));
-  color: #fff;
   border: none;
   border-radius: 20px;
-  cursor: pointer;
-  font-weight: bold;
+  background: linear-gradient(45deg, var(--highlight), var(--blob-1));
+  color: #fff;
   font-family: inherit;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
   -webkit-box-shadow: 0 0 15px var(--accent-glow);
           box-shadow: 0 0 15px var(--accent-glow);
   -webkit-transition: -webkit-transform 0.2s;
   transition: -webkit-transform 0.2s;
   transition: transform 0.2s;
   transition: transform 0.2s, -webkit-transform 0.2s;
-  display: block;
-  text-align: center;
 }
 .btn-leaderboard:hover {
+  -webkit-box-shadow: 0 0 25px var(--highlight);
+          box-shadow: 0 0 25px var(--highlight);
   -webkit-transform: scale(1.05);
       -ms-transform: scale(1.05);
           transform: scale(1.05);
-  -webkit-box-shadow: 0 0 25px var(--highlight);
-          box-shadow: 0 0 25px var(--highlight);
 }
 
 /* --- МОДАЛЬНЕ ВІКНО ЛІДЕРІВ --- */
@@ -2858,10 +2863,6 @@ body[data-theme=light] .pause-overlay h2 {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.9); /* Темний фон за замовчуванням */
-  z-index: 3000;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -2875,33 +2876,37 @@ body[data-theme=light] .pause-overlay h2 {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
-  color: var(--text-color);
+  width: 100%;
+  height: 100%;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.9); /* Темний фон за замовчуванням */
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
+  color: var(--text-color);
 }
 
 .leaderboard-content {
-  background: var(--glass-bg);
-  padding: 25px;
-  border-radius: 20px;
-  border: 2px solid var(--highlight);
+  position: relative;
   width: 90%;
   max-width: 500px;
   max-height: 80vh;
+  padding: 25px;
+  border: 2px solid var(--highlight);
+  border-radius: 20px;
+  background: var(--glass-bg);
   overflow-y: auto;
-  text-align: center;
   -webkit-box-shadow: 0 0 30px var(--accent-glow);
           box-shadow: 0 0 30px var(--accent-glow);
-  position: relative;
+  text-align: center;
 }
 
 .lb-close-btn {
   position: absolute;
   top: 10px;
   right: 20px;
+  color: #ff5555;
   font-size: 28px;
   cursor: pointer;
-  color: #ff5555;
   -webkit-transition: 0.2s;
   transition: 0.2s;
 }
@@ -2918,9 +2923,9 @@ body[data-theme=light] .pause-overlay h2 {
   border-collapse: collapse;
 }
 .lb-table th {
-  color: var(--highlight);
   padding: 10px;
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  color: var(--highlight);
 }
 .lb-table td {
   padding: 10px;
@@ -2938,8 +2943,8 @@ body[data-theme=light] .leaderboard-modal {
   background: rgba(255, 255, 255, 0.6);
 }
 body[data-theme=light] .leaderboard-content {
-  background: rgba(255, 255, 255, 0.9);
   border-color: var(--highlight); /* Фіолетовий */
+  background: rgba(255, 255, 255, 0.9);
 }
 body[data-theme=light] .lb-table th {
   border-bottom-color: rgba(0, 0, 0, 0.1);
@@ -2961,70 +2966,70 @@ body[data-theme=light] .song-locked::after {
 /* --- 1. АНІМАЦІЇ --- */
 @-webkit-keyframes ripple-gold {
   0% {
+    border-color: rgba(255, 215, 0, 0.8);
     -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
             box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
-    border-color: rgba(255, 215, 0, 0.8);
   }
   70% {
+    border-color: rgb(255, 215, 0);
     -webkit-box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
             box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
-    border-color: rgb(255, 215, 0);
   }
   100% {
+    border-color: rgba(255, 215, 0, 0.8);
     -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
             box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
-    border-color: rgba(255, 215, 0, 0.8);
   }
 }
 @keyframes ripple-gold {
   0% {
+    border-color: rgba(255, 215, 0, 0.8);
     -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
             box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
-    border-color: rgba(255, 215, 0, 0.8);
   }
   70% {
+    border-color: rgb(255, 215, 0);
     -webkit-box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
             box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
-    border-color: rgb(255, 215, 0);
   }
   100% {
+    border-color: rgba(255, 215, 0, 0.8);
     -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
             box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
-    border-color: rgba(255, 215, 0, 0.8);
   }
 }
 @-webkit-keyframes ripple-cosmic {
   0% {
+    border-color: #00e5ff;
     -webkit-box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
             box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
-    border-color: #00e5ff;
   }
   50% {
+    border-color: #d500f9;
     -webkit-box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
             box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
-    border-color: #d500f9;
   }
   100% {
+    border-color: #00e5ff;
     -webkit-box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
             box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
-    border-color: #00e5ff;
   }
 }
 @keyframes ripple-cosmic {
   0% {
+    border-color: #00e5ff;
     -webkit-box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
             box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
-    border-color: #00e5ff;
   }
   50% {
+    border-color: #d500f9;
     -webkit-box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
             box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
-    border-color: #d500f9;
   }
   100% {
+    border-color: #00e5ff;
     -webkit-box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
             box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
-    border-color: #00e5ff;
   }
 }
 @-webkit-keyframes flow-legendary {
@@ -3083,24 +3088,24 @@ body[data-theme=light] .song-locked::after {
 }
 /* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА (РАМКА) --- */
 .container-ripple-gold {
-  -webkit-animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
-          animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
   border: 2px solid #FFD700 !important;
   z-index: 15;
+  -webkit-animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+          animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .container-ripple-cosmic {
-  -webkit-animation: ripple-cosmic 1.2s infinite linear;
-          animation: ripple-cosmic 1.2s infinite linear; /* Повільніше */
   border: 3px solid #00e5ff !important;
   z-index: 15;
+  -webkit-animation: ripple-cosmic 1.2s infinite linear;
+          animation: ripple-cosmic 1.2s infinite linear; /* Повільніше */
 }
 
 .container-legendary {
-  -webkit-animation: flow-legendary 2s infinite linear;
-          animation: flow-legendary 2s infinite linear;
   border: 4px solid #FFD700 !important;
   z-index: 20;
+  -webkit-animation: flow-legendary 2s infinite linear;
+          animation: flow-legendary 2s infinite linear;
 }
 
 /* --- 3. СТИЛІ ДЛЯ ТЕКСТУ КОМБО --- */
@@ -3142,8 +3147,8 @@ body[data-theme=light] .song-locked::after {
   -webkit-filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
           filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
   font-size: 3rem !important;
-  letter-spacing: 3px;
   font-weight: 900;
+  letter-spacing: 3px;
   -webkit-transform: none;
       -ms-transform: none;
           transform: none;
@@ -3186,20 +3191,16 @@ body[data-theme=light] .song-locked::after {
   }
 }
 .container-legendary {
-  -webkit-animation: flow-border-smooth 2s infinite ease-in-out;
-          animation: flow-border-smooth 2s infinite ease-in-out;
   border: 4px solid #FFD700 !important;
   z-index: 20;
+  -webkit-animation: flow-border-smooth 2s infinite ease-in-out;
+          animation: flow-border-smooth 2s infinite ease-in-out;
 }
 
 .name-input-modal {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.95);
-  z-index: 3000;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -3213,38 +3214,42 @@ body[data-theme=light] .song-locked::after {
   -webkit-box-pack: center;
       -ms-flex-pack: center;
           justify-content: center;
+  width: 100%;
+  height: 100%;
+  z-index: 3000;
+  background: rgba(0, 0, 0, 0.95);
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
 }
 
 .name-input-content {
-  background: rgba(20, 20, 20, 0.9);
+  position: relative;
+  width: 90%;
+  max-width: 350px;
   padding: 30px;
-  border-radius: 20px;
   border: 2px solid #00d2ff;
+  border-radius: 20px;
+  background: rgba(20, 20, 20, 0.9);
+  color: #fff;
   text-align: center;
   -webkit-box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
           box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
-  width: 90%;
-  max-width: 350px;
-  color: #fff;
   -webkit-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-  position: relative;
 }
 
 .name-input-field {
   width: 100%;
-  padding: 12px;
   margin: 20px 0;
-  background: rgba(255, 255, 255, 0.1);
+  padding: 12px;
   border: 1px solid #fff;
-  color: #fff;
-  font-size: 1.2rem;
   border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  font-family: inherit;
+  font-size: 1.2rem;
   text-align: center;
   outline: none;
-  font-family: inherit;
 }
 .name-input-field:focus {
   border-color: #00d2ff;
@@ -3254,17 +3259,17 @@ body[data-theme=light] .song-locked::after {
 
 .name-submit-btn {
   padding: 12px 30px;
-  background: #00d2ff;
-  color: #000;
   border: none;
   border-radius: 50px;
-  font-weight: 800;
-  cursor: pointer;
+  background: #00d2ff;
+  color: #000;
+  font-family: inherit;
   font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
   -webkit-transition: 0.3s;
   transition: 0.3s;
-  text-transform: uppercase;
-  font-family: inherit;
 }
 .name-submit-btn:hover {
   background: #fff;
@@ -3275,35 +3280,35 @@ body[data-theme=light] .song-locked::after {
           transform: scale(1.05);
 }
 .name-submit-btn:disabled {
+  background: #555;
   opacity: 0.6;
-  cursor: wait;
   -webkit-transform: none;
       -ms-transform: none;
           transform: none;
-  background: #555;
+  cursor: wait;
 }
 
 .input-error-msg {
+  display: none;
+  margin-top: 15px;
   color: #ff3333;
   font-size: 0.9rem;
-  margin-top: 15px;
   font-weight: bold;
-  display: none;
   text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
   -webkit-animation: fadeIn 0.3s ease;
           animation: fadeIn 0.3s ease;
 }
 
 body[data-theme=light] .name-input-content {
-  background: rgba(255, 255, 255, 0.95);
   border-color: var(--highlight);
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-color);
   -webkit-box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
           box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
-  color: var(--text-color);
 }
 body[data-theme=light] .name-input-field {
-  background: rgba(0, 0, 0, 0.05);
   border-color: var(--text-color);
+  background: rgba(0, 0, 0, 0.05);
   color: var(--text-color);
 }
 body[data-theme=light] .name-input-field:focus {
@@ -3327,26 +3332,26 @@ body[data-theme=light] .name-submit-btn:hover {
 /* --- 1. АНІМАЦІЯ ТЕКСТУ (Швидкий блік на металі) --- */
 @-webkit-keyframes vignette-pulse {
   0%, 100% {
-    opacity: 0.7;
     -webkit-box-shadow: inset 0 0 100px #2a003b;
             box-shadow: inset 0 0 100px #2a003b;
+    opacity: 0.7;
   }
   50% {
-    opacity: 1;
     -webkit-box-shadow: inset 0 0 150px #4a0072;
             box-shadow: inset 0 0 150px #4a0072;
+    opacity: 1;
   }
 }
 @keyframes vignette-pulse {
   0%, 100% {
-    opacity: 0.7;
     -webkit-box-shadow: inset 0 0 100px #2a003b;
             box-shadow: inset 0 0 100px #2a003b;
+    opacity: 0.7;
   }
   50% {
-    opacity: 1;
     -webkit-box-shadow: inset 0 0 150px #4a0072;
             box-shadow: inset 0 0 150px #4a0072;
+    opacity: 1;
   }
 }
 #combo-display.combo-legendary {
@@ -3397,10 +3402,10 @@ body[data-theme=light] .name-submit-btn:hover {
 #legendary-border-overlay.active {
   display: block;
   padding: 0; /* Прибираємо рамку, робимо віньєтку */
+  background: transparent;
   -webkit-mask: none;
   -webkit-mask-composite: auto;
           mask-composite: auto;
-  background: transparent;
   -webkit-animation: vignette-pulse 3s infinite ease-in-out;
           animation: vignette-pulse 3s infinite ease-in-out;
   /* Створюємо ефект тунелю */
@@ -3418,10 +3423,10 @@ body[data-theme=light] .name-submit-btn:hover {
   left: 0;
   width: 100%;
   height: 100%;
+  z-index: 5000;
   background: rgba(0, 0, 0, 0.85);
   -webkit-backdrop-filter: blur(8px);
           backdrop-filter: blur(8px);
-  z-index: 5000;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -3436,17 +3441,17 @@ body[data-theme=light] .name-submit-btn:hover {
 }
 
 .secret-lock-content {
-  background: var(--glass-bg);
-  border: 2px solid var(--highlight);
-  border-radius: 24px;
-  padding: 30px;
+  position: relative;
   width: 90%;
   max-width: 400px;
+  padding: 30px;
+  border-radius: 24px;
+  border: 2px solid var(--highlight);
+  background: var(--glass-bg);
+  color: var(--text-color);
   text-align: center;
-  position: relative;
   -webkit-box-shadow: 0 0 30px var(--accent-glow);
           box-shadow: 0 0 30px var(--accent-glow);
-  color: var(--text-color);
 }
 .secret-lock-content .secret-lock-close {
   position: absolute;
@@ -3454,40 +3459,40 @@ body[data-theme=light] .name-submit-btn:hover {
   right: 15px;
   font-size: 2rem;
   cursor: pointer;
-  color: var(--text-color);
   opacity: 0.6;
+  color: var(--text-color);
 }
 .secret-lock-content .secret-lock-close:hover {
-  opacity: 1;
   color: #ff5555;
+  opacity: 1;
 }
 .secret-lock-content .secret-lock-icon {
   font-size: 3rem;
   margin-bottom: 15px;
 }
 .secret-lock-content p {
-  font-size: 1.1rem;
-  line-height: 1.4;
   margin-bottom: 20px;
+  font-size: 1.1rem;
   font-weight: 500;
+  line-height: 1.4;
 }
 .secret-lock-content .secret-lock-btn {
-  background: var(--highlight);
-  color: var(--bg-color);
-  border: none;
   padding: 10px 30px;
+  border: none;
   border-radius: 50px;
+  background: var(--highlight);
+  color: var(--bg-color); /* Адаптується під тему через змінні */
   font-weight: bold;
   cursor: pointer;
   -webkit-transition: 0.3s;
   transition: 0.3s;
 }
 .secret-lock-content .secret-lock-btn:hover {
+  -webkit-box-shadow: 0 0 15px var(--highlight);
+          box-shadow: 0 0 15px var(--highlight);
   -webkit-transform: scale(1.05);
       -ms-transform: scale(1.05);
           transform: scale(1.05);
-  -webkit-box-shadow: 0 0 15px var(--highlight);
-          box-shadow: 0 0 15px var(--highlight);
 }
 
 /* Вимкнення ефектів для адаптації (як ви просили раніше) */
