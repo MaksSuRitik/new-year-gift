@@ -143,10 +143,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let mapTiles = [];
     let activeTiles = [];
+ // ... (код вище) ...
     let particles = [];
     let keyState = [false, false, false, false]; 
     let holdingTiles = [null, null, null, null]; 
     const laneElements = [null, null, null, null]; 
+    
+    // 👇👇👇 ДОДАТИ ЦЕЙ РЯДОК ТУТ 👇👇👇
+    let laneLastInputTime = [0, 0, 0, 0]; 
+    // 👆👆👆 ----------------------- 👆👆👆
     
     let laneBeamAlpha = [0, 0, 0, 0]; 
 
@@ -696,6 +701,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handleInputDown(lane) {
         if (!isPlaying || isPaused) return;
+        const now = Date.now();
+        // Якщо пройшло менше 70мс з минулого натискання - ігноруємо (захист від брязкоту)
+        if (now - laneLastInputTime[lane] < 70) return;
+        laneLastInputTime[lane] = now;
         keyState[lane] = true; 
         if (laneElements[lane]) laneElements[lane].classList.add('active');
         
@@ -928,14 +937,16 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('keyup', e => { const lane = KEYS.indexOf(e.code); if (lane !== -1) handleInputUp(lane); });
 
-        if (canvas) {
+     if (canvas) {
+            // --- ТУТ МИ ЗМІНЮЄМО ЛОГІКУ ДЛЯ ТЕЛЕФОНІВ ---
+            
             canvas.addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
                 const rect = canvas.getBoundingClientRect(); 
                 for (let i=0; i<e.changedTouches.length; i++) {
-                    // --- 🔴 FIX: USE RECT.WIDTH instead of CANVAS.WIDTH ---
-                    // Виправляємо розрахунок координат для телефонів з високою роздільною здатністю
-                    handleInputDown(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))); 
+                    // Вираховуємо лінію і натискаємо
+                    const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
+                    handleInputDown(lane); 
                 }
             }, {passive: false});
 
@@ -943,11 +954,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 e.preventDefault(); 
                 const rect = canvas.getBoundingClientRect(); 
                 for (let i=0; i<e.changedTouches.length; i++) {
-                    handleInputDown(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))); 
-                    setTimeout(() => handleInputUp(Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4))), 50);
+                    const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
+                    
+                    // 🔥 ВАЖЛИВО: Ми прибрали звідси handleInputDown!
+                    // Раніше тут було натискання при відпусканні, що і викликало "Miss"
+                    handleInputUp(lane); 
                 } 
             }, {passive: false});
 
+            // --- ПК ВЕРСІЮ НЕ ЧІПАЄМО (ЗАЛИШАЄМО ЯК БУЛО) ---
             canvas.addEventListener('mousedown', (e) => { 
                 const rect = canvas.getBoundingClientRect();
                 const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
@@ -955,7 +970,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 setTimeout(() => handleInputUp(lane), 150); 
             });
         }
-
         const tBtn = document.getElementById('themeToggle');
         if(tBtn) {
             tBtn.onclick = () => {
