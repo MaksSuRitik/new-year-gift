@@ -1886,3 +1886,329 @@ body[data-theme="light"] {
     color: #555; /* Темний замок */
   }
 }
+
+// ==========================================
+// 🌊 GAME CONTAINER & COMBO EFFECTS (FINAL)
+// ==========================================
+
+/* --- 1. АНІМАЦІЇ --- */
+
+// ЗОЛОТО (200+) - М'які хвилі
+@keyframes ripple-gold {
+  0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5); border-color: rgba(255, 215, 0, 0.8); }
+  70% { box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0); border-color: rgba(255, 215, 0, 1); }
+  100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0); border-color: rgba(255, 215, 0, 0.8); }
+}
+
+// КОСМОС (400+) - Жирні неонові хвилі (УПОВІЛЬНЕНІ)
+@keyframes ripple-cosmic {
+  0% {
+    box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+    border-color: #00e5ff;
+  }
+  50% {
+    box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+    border-color: #d500f9;
+  }
+  100% {
+    box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+    border-color: #00e5ff;
+  }
+}
+
+// ЛЕГЕНДА (800+) - Чорне Золото RGB Flow
+@keyframes flow-legendary {
+  0% {
+    border-color: #FFD700; // Яскраве золото
+    box-shadow: 
+      0 0 20px #FFD700, 
+      inset 0 0 15px #FFD700; // Світіння всередину
+  }
+  25% {
+    border-color: #B8860B; // Темне золото
+    box-shadow: 
+      0 0 10px #B8860B, 
+      inset 0 0 5px #000; // Починає темніти
+  }
+  50% {
+    border-color: #222; // Майже чорний (контур)
+    box-shadow: 
+      0 0 5px #000, 
+      inset 0 0 30px #FFD700; // Але всередині ще жевріє золото
+  }
+  75% {
+    border-color: #f6e200; // Спалах білого (як відблиск на металі)
+    box-shadow: 
+      0 0 30px #FFD700, 
+      0 0 50px #d7bf06;
+  }
+  100% {
+    border-color: #FFD700;
+    box-shadow: 
+      0 0 20px #FFD700, 
+      inset 0 0 15px #FFD700;
+  }
+}
+
+/* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА (РАМКА) --- */
+
+.container-ripple-gold {
+  animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid #FFD700 !important;
+  z-index: 15;
+}
+
+.container-ripple-cosmic {
+  animation: ripple-cosmic 1.2s infinite linear; /* Повільніше */
+  border: 3px solid #00e5ff !important;
+  z-index: 15;
+}
+
+.container-legendary {
+  animation: flow-legendary 2s infinite linear; // Швидке, плавне переливання
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+}
+
+/* --- 3. СТИЛІ ДЛЯ ТЕКСТУ КОМБО --- */
+
+/* (Базові стилі для #combo-display вже є вище в твоєму файлі, тут тільки модифікатори) */
+
+/* --- ВИПРАВЛЕНА АНІМАЦІЯ ТЕКСТУ (FLOW) --- */
+@keyframes text-flow-legendary {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* --- ОНОВЛЕНИЙ СТИЛЬ ТЕКСТУ 800+ --- */
+#combo-display.combo-legendary {
+  // 1. Градієнт: Золото -> Чорний (широкий) -> Білий спалах -> Золото
+  // Кут 120deg робить смуги по діагоналі, так краще видно рух
+  background: linear-gradient(
+    120deg, 
+    #FFD700 10%, 
+    #000000 30%, 
+    #000000 50%, // Чорного тепер БАГАТО (від 30% до 50%)
+    #FFFFFF 60%, // Тонкий білий блік для контрасту
+    #FFD700 80%
+  );
+  
+  // 2. Розмір фону (300%), щоб було куди рухатися
+  background-size: 300% auto;
+  
+  // 3. Анімація руху градієнта (щоб не було "мигання", а саме потік)
+  animation: text-flow-legendary 3s linear infinite;
+
+  // 4. Обрізка по тексту
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+
+  // 5. Тінь: Тільки зовнішнє світіння, щоб не "забруднити" чорний колір всередині
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+
+  // 6. 🔥 ЗМЕНШЕНИЙ РОЗМІР (Було 4.5rem + scale 1.2)
+  font-size: 3rem !important; // Оптимальний розмір
+  letter-spacing: 3px;
+  font-weight: 900; // Дуже жирний, щоб було видно чорну заливку
+  
+  // Прибираємо scale, він робив текст розмитим і гігантським
+  transform: none; 
+  // Або, якщо треба центрування:
+  // transform: translateX(-50%);
+  
+  z-index: 50;
+}
+
+/* --- ПЛАВНІША АНІМАЦІЯ КОНТЕЙНЕРА (РАМКИ) --- */
+@keyframes flow-border-smooth {
+  0% { border-color: #FFD700; box-shadow: 0 0 15px #FFD700; }
+  50% { border-color: #000; box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700; }
+  100% { border-color: #FFD700; box-shadow: 0 0 15px #FFD700; }
+}
+
+.container-legendary {
+  animation: flow-border-smooth 2s infinite ease-in-out; // ease-in-out прибирає різке "мигання"
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+}
+// ==========================================
+// 🕵️ MODAL: ВВЕДЕННЯ ІМЕНІ (SCSS)
+// ==========================================
+
+.name-input-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 3000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  backdrop-filter: blur(10px);
+}
+
+.name-input-content {
+  // Темна тема (Default)
+  background: rgba(20, 20, 20, 0.9);
+  padding: 30px;
+  border-radius: 20px;
+  border: 2px solid #00d2ff; // Неоново-блакитний
+  text-align: center;
+  box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
+  width: 90%;
+  max-width: 350px;
+  color: #fff;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative; 
+}
+
+.name-input-field {
+  width: 100%;
+  padding: 12px;
+  margin: 20px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #fff;
+  color: #fff;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+
+  &:focus {
+    border-color: #00d2ff;
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+  }
+}
+
+.name-submit-btn {
+  padding: 12px 30px;
+  background: #00d2ff;
+  color: #000;
+  border: none;
+  border-radius: 50px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 1.1rem;
+  transition: 0.3s;
+  text-transform: uppercase;
+  font-family: inherit;
+
+  &:hover {
+    background: #fff;
+    box-shadow: 0 0 15px #fff;
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: wait;
+    transform: none;
+    background: #555;
+  }
+}
+
+.input-error-msg {
+  color: #ff3333; // Яскраво-червоний
+  font-size: 0.9rem;
+  margin-top: 15px;
+  font-weight: bold;
+  display: none; // Показуємо через JS
+  text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+  animation: fadeIn 0.3s ease;
+}
+
+// ==========================================
+// ☀️ СВІТЛА ТЕМА (Light Mode Overrides)
+// ==========================================
+body[data-theme="light"] {
+  .name-input-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-color: var(--highlight); // Фіолетовий (#B388EB)
+    box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
+    color: var(--text-color); 
+  }
+
+  .name-input-field {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: var(--text-color);
+    color: var(--text-color);
+
+    &:focus {
+      border-color: var(--highlight);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  }
+
+  .name-submit-btn {
+    background: var(--highlight); // Фіолетовий
+    color: #fff;
+
+    &:hover {
+      background: var(--text-color); // Темно-синій
+      box-shadow: 0 0 15px var(--highlight);
+    }
+  }
+}
+/* ==========================================
+   ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
+   ========================================== */
+
+/* --- 1. АНІМАЦІЯ ТЕКСТУ (Швидкий блік на металі) --- */
+@keyframes vignette-pulse {
+  0%, 100% { opacity: 0.7; box-shadow: inset 0 0 100px #2a003b; }
+  50% { opacity: 1; box-shadow: inset 0 0 150px #4a0072; }
+}
+
+#combo-display.combo-legendary {
+  /* Платиновий градієнт з фіолетовим відливом */
+  background: linear-gradient(
+    110deg, 
+    #ffffff 10%, 
+    #ffffff 45%, 
+    #ffffff 50%, /* Ніжно-фіолетовий блиск */
+    #ffffff 55%, 
+    #ffffff 90%
+  );
+  background-size: 200% auto;
+  animation: platinum-shimmer 2s linear infinite;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+
+  /* Світіння: Біле + Фіолетове */
+  filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
+
+  font-size: 3.2rem !important; /* Зменшений розмір, як ти просив */
+  font-weight: 900;
+  transform: none; 
+  z-index: 50;
+}
+
+/* Анімація удару для тексту (легке збільшення) */
+@keyframes pulse-size {
+    0% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
+/* Це для того HTML div, який ми створили минулого разу */
+
+#legendary-border-overlay.active {
+    display: block;
+    padding: 0; /* Прибираємо рамку, робимо віньєтку */
+    -webkit-mask: none;
+    mask-composite: auto;
+    background: transparent;
+    animation: vignette-pulse 3s infinite ease-in-out;
+    
+    /* Створюємо ефект тунелю */
+    box-shadow: inset 0 0 120px #2a003b;
+    
+    &::before {
+      display: none; /* Вимикаємо обертання */
+    }
+}

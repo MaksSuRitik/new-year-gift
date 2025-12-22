@@ -2948,3 +2948,456 @@ body[data-theme=light] .secret-song-card {
 body[data-theme=light] .song-locked::after {
   color: #555; /* Темний замок */
 }
+
+/* --- 1. АНІМАЦІЇ --- */
+@-webkit-keyframes ripple-gold {
+  0% {
+    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+  70% {
+    -webkit-box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
+            box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
+    border-color: rgb(255, 215, 0);
+  }
+  100% {
+    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
+            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+}
+@keyframes ripple-gold {
+  0% {
+    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+  70% {
+    -webkit-box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
+            box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
+    border-color: rgb(255, 215, 0);
+  }
+  100% {
+    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
+            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
+    border-color: rgba(255, 215, 0, 0.8);
+  }
+}
+@-webkit-keyframes ripple-cosmic {
+  0% {
+    -webkit-box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+            box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+    border-color: #00e5ff;
+  }
+  50% {
+    -webkit-box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+            box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+    border-color: #d500f9;
+  }
+  100% {
+    -webkit-box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+            box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+    border-color: #00e5ff;
+  }
+}
+@keyframes ripple-cosmic {
+  0% {
+    -webkit-box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+            box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+    border-color: #00e5ff;
+  }
+  50% {
+    -webkit-box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+            box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+    border-color: #d500f9;
+  }
+  100% {
+    -webkit-box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+            box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+    border-color: #00e5ff;
+  }
+}
+@-webkit-keyframes flow-legendary {
+  0% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+            box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+  }
+  25% {
+    border-color: #B8860B;
+    -webkit-box-shadow: 0 0 10px #B8860B, inset 0 0 5px #000;
+            box-shadow: 0 0 10px #B8860B, inset 0 0 5px #000;
+  }
+  50% {
+    border-color: #222;
+    -webkit-box-shadow: 0 0 5px #000, inset 0 0 30px #FFD700;
+            box-shadow: 0 0 5px #000, inset 0 0 30px #FFD700;
+  }
+  75% {
+    border-color: #f6e200;
+    -webkit-box-shadow: 0 0 30px #FFD700, 0 0 50px #d7bf06;
+            box-shadow: 0 0 30px #FFD700, 0 0 50px #d7bf06;
+  }
+  100% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+            box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+  }
+}
+@keyframes flow-legendary {
+  0% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+            box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+  }
+  25% {
+    border-color: #B8860B;
+    -webkit-box-shadow: 0 0 10px #B8860B, inset 0 0 5px #000;
+            box-shadow: 0 0 10px #B8860B, inset 0 0 5px #000;
+  }
+  50% {
+    border-color: #222;
+    -webkit-box-shadow: 0 0 5px #000, inset 0 0 30px #FFD700;
+            box-shadow: 0 0 5px #000, inset 0 0 30px #FFD700;
+  }
+  75% {
+    border-color: #f6e200;
+    -webkit-box-shadow: 0 0 30px #FFD700, 0 0 50px #d7bf06;
+            box-shadow: 0 0 30px #FFD700, 0 0 50px #d7bf06;
+  }
+  100% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+            box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+  }
+}
+/* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА (РАМКА) --- */
+.container-ripple-gold {
+  -webkit-animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+          animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid #FFD700 !important;
+  z-index: 15;
+}
+
+.container-ripple-cosmic {
+  -webkit-animation: ripple-cosmic 1.2s infinite linear;
+          animation: ripple-cosmic 1.2s infinite linear; /* Повільніше */
+  border: 3px solid #00e5ff !important;
+  z-index: 15;
+}
+
+.container-legendary {
+  -webkit-animation: flow-legendary 2s infinite linear;
+          animation: flow-legendary 2s infinite linear;
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+}
+
+/* --- 3. СТИЛІ ДЛЯ ТЕКСТУ КОМБО --- */
+/* (Базові стилі для #combo-display вже є вище в твоєму файлі, тут тільки модифікатори) */
+/* --- ВИПРАВЛЕНА АНІМАЦІЯ ТЕКСТУ (FLOW) --- */
+@-webkit-keyframes text-flow-legendary {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+@keyframes text-flow-legendary {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+/* --- ОНОВЛЕНИЙ СТИЛЬ ТЕКСТУ 800+ --- */
+#combo-display.combo-legendary {
+  background: linear-gradient(120deg, #FFD700 10%, #000000 30%, #000000 50%, #FFFFFF 60%, #FFD700 80%);
+  background-size: 300% auto;
+  -webkit-animation: text-flow-legendary 3s linear infinite;
+          animation: text-flow-legendary 3s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  -webkit-filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+          filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+  font-size: 3rem !important;
+  letter-spacing: 3px;
+  font-weight: 900;
+  -webkit-transform: none;
+      -ms-transform: none;
+          transform: none;
+  z-index: 50;
+}
+
+/* --- ПЛАВНІША АНІМАЦІЯ КОНТЕЙНЕРА (РАМКИ) --- */
+@-webkit-keyframes flow-border-smooth {
+  0% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 15px #FFD700;
+            box-shadow: 0 0 15px #FFD700;
+  }
+  50% {
+    border-color: #000;
+    -webkit-box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700;
+            box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700;
+  }
+  100% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 15px #FFD700;
+            box-shadow: 0 0 15px #FFD700;
+  }
+}
+@keyframes flow-border-smooth {
+  0% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 15px #FFD700;
+            box-shadow: 0 0 15px #FFD700;
+  }
+  50% {
+    border-color: #000;
+    -webkit-box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700;
+            box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700;
+  }
+  100% {
+    border-color: #FFD700;
+    -webkit-box-shadow: 0 0 15px #FFD700;
+            box-shadow: 0 0 15px #FFD700;
+  }
+}
+.container-legendary {
+  -webkit-animation: flow-border-smooth 2s infinite ease-in-out;
+          animation: flow-border-smooth 2s infinite ease-in-out;
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+}
+
+.name-input-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.95);
+  z-index: 3000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: vertical;
+  -webkit-box-direction: normal;
+      -ms-flex-direction: column;
+          flex-direction: column;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+}
+
+.name-input-content {
+  background: rgba(20, 20, 20, 0.9);
+  padding: 30px;
+  border-radius: 20px;
+  border: 2px solid #00d2ff;
+  text-align: center;
+  -webkit-box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
+          box-shadow: 0 0 30px rgba(0, 210, 255, 0.5);
+  width: 90%;
+  max-width: 350px;
+  color: #fff;
+  -webkit-transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+  position: relative;
+}
+
+.name-input-field {
+  width: 100%;
+  padding: 12px;
+  margin: 20px 0;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid #fff;
+  color: #fff;
+  font-size: 1.2rem;
+  border-radius: 8px;
+  text-align: center;
+  outline: none;
+  font-family: inherit;
+}
+.name-input-field:focus {
+  border-color: #00d2ff;
+  -webkit-box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+          box-shadow: 0 0 10px rgba(0, 210, 255, 0.5);
+}
+
+.name-submit-btn {
+  padding: 12px 30px;
+  background: #00d2ff;
+  color: #000;
+  border: none;
+  border-radius: 50px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 1.1rem;
+  -webkit-transition: 0.3s;
+  transition: 0.3s;
+  text-transform: uppercase;
+  font-family: inherit;
+}
+.name-submit-btn:hover {
+  background: #fff;
+  -webkit-box-shadow: 0 0 15px #fff;
+          box-shadow: 0 0 15px #fff;
+  -webkit-transform: scale(1.05);
+      -ms-transform: scale(1.05);
+          transform: scale(1.05);
+}
+.name-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+  -webkit-transform: none;
+      -ms-transform: none;
+          transform: none;
+  background: #555;
+}
+
+.input-error-msg {
+  color: #ff3333;
+  font-size: 0.9rem;
+  margin-top: 15px;
+  font-weight: bold;
+  display: none;
+  text-shadow: 0 0 5px rgba(255, 51, 51, 0.5);
+  -webkit-animation: fadeIn 0.3s ease;
+          animation: fadeIn 0.3s ease;
+}
+
+body[data-theme=light] .name-input-content {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--highlight);
+  -webkit-box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
+          box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
+  color: var(--text-color);
+}
+body[data-theme=light] .name-input-field {
+  background: rgba(0, 0, 0, 0.05);
+  border-color: var(--text-color);
+  color: var(--text-color);
+}
+body[data-theme=light] .name-input-field:focus {
+  border-color: var(--highlight);
+  -webkit-box-shadow: 0 0 10px var(--accent-glow);
+          box-shadow: 0 0 10px var(--accent-glow);
+}
+body[data-theme=light] .name-submit-btn {
+  background: var(--highlight);
+  color: #fff;
+}
+body[data-theme=light] .name-submit-btn:hover {
+  background: var(--text-color);
+  -webkit-box-shadow: 0 0 15px var(--highlight);
+          box-shadow: 0 0 15px var(--highlight);
+}
+
+/* ==========================================
+   ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
+   ========================================== */
+/* --- 1. АНІМАЦІЯ ТЕКСТУ (Швидкий блік на металі) --- */
+@-webkit-keyframes vignette-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    -webkit-box-shadow: inset 0 0 100px #2a003b;
+            box-shadow: inset 0 0 100px #2a003b;
+  }
+  50% {
+    opacity: 1;
+    -webkit-box-shadow: inset 0 0 150px #4a0072;
+            box-shadow: inset 0 0 150px #4a0072;
+  }
+}
+@keyframes vignette-pulse {
+  0%, 100% {
+    opacity: 0.7;
+    -webkit-box-shadow: inset 0 0 100px #2a003b;
+            box-shadow: inset 0 0 100px #2a003b;
+  }
+  50% {
+    opacity: 1;
+    -webkit-box-shadow: inset 0 0 150px #4a0072;
+            box-shadow: inset 0 0 150px #4a0072;
+  }
+}
+#combo-display.combo-legendary {
+  /* Платиновий градієнт з фіолетовим відливом */
+  background: linear-gradient(110deg, #ffffff 10%, #ffffff 45%, #ffffff 50%, #ffffff 55%, #ffffff 90%);
+  background-size: 200% auto;
+  -webkit-animation: platinum-shimmer 2s linear infinite;
+          animation: platinum-shimmer 2s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+  /* Світіння: Біле + Фіолетове */
+  -webkit-filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
+          filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
+  font-size: 3.2rem !important; /* Зменшений розмір, як ти просив */
+  font-weight: 900;
+  -webkit-transform: none;
+      -ms-transform: none;
+          transform: none;
+  z-index: 50;
+}
+
+/* Анімація удару для тексту (легке збільшення) */
+@-webkit-keyframes pulse-size {
+  0% {
+    -webkit-transform: scale(1.1);
+            transform: scale(1.1);
+  }
+  100% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+  }
+}
+@keyframes pulse-size {
+  0% {
+    -webkit-transform: scale(1.1);
+            transform: scale(1.1);
+  }
+  100% {
+    -webkit-transform: scale(1);
+            transform: scale(1);
+  }
+}
+/* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
+/* Це для того HTML div, який ми створили минулого разу */
+#legendary-border-overlay.active {
+  display: block;
+  padding: 0; /* Прибираємо рамку, робимо віньєтку */
+  -webkit-mask: none;
+  -webkit-mask-composite: auto;
+          mask-composite: auto;
+  background: transparent;
+  -webkit-animation: vignette-pulse 3s infinite ease-in-out;
+          animation: vignette-pulse 3s infinite ease-in-out;
+  /* Створюємо ефект тунелю */
+  -webkit-box-shadow: inset 0 0 120px #2a003b;
+          box-shadow: inset 0 0 120px #2a003b;
+}
+#legendary-border-overlay.active::before {
+  display: none; /* Вимикаємо обертання */
+}
