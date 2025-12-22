@@ -1743,3 +1743,146 @@ body[data-theme="light"] .pause-overlay h2 {
       pointer-events: none !important;
   }
 }
+// ==========================================
+// 🔒 СЕКРЕТНИЙ РІВЕНЬ ТА ЛІДЕРИ (НОВЕ)
+// ==========================================
+
+/* --- Анімація веселкової рамки для секретної пісні --- */
+@keyframes rainbow-border {
+  0% { border-color: #ff0000; box-shadow: 0 0 10px #ff0000; }
+  20% { border-color: #ffff00; box-shadow: 0 0 10px #ffff00; }
+  40% { border-color: #00ff00; box-shadow: 0 0 10px #00ff00; }
+  60% { border-color: #00ffff; box-shadow: 0 0 10px #00ffff; }
+  80% { border-color: #ff00ff; box-shadow: 0 0 10px #ff00ff; }
+  100% { border-color: #ff0000; box-shadow: 0 0 10px #ff0000; }
+}
+
+.secret-song-card {
+  border: 3px solid transparent;
+  animation: rainbow-border 2s linear infinite;
+  background: rgba(0,0,0,0.6) !important;
+}
+
+/* Заблокована пісня */
+.song-locked {
+  opacity: 0.5;
+  filter: grayscale(100%);
+  pointer-events: none;
+  position: relative;
+  
+  &::after {
+    content: "🔒";
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2rem;
+    color: var(--text-color);
+  }
+}
+
+/* --- КНОПКА ТАБЛИЦІ ЛІДЕРІВ --- */
+.btn-leaderboard {
+  margin: 15px auto;
+  padding: 10px 25px;
+  background: linear-gradient(45deg, var(--highlight), var(--blob-1));
+  color: #fff;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  font-weight: bold;
+  font-family: inherit;
+  box-shadow: 0 0 15px var(--accent-glow);
+  transition: transform 0.2s;
+  display: block;
+  text-align: center;
+
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 25px var(--highlight);
+  }
+}
+
+/* --- МОДАЛЬНЕ ВІКНО ЛІДЕРІВ --- */
+.leaderboard-modal {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.9); /* Темний фон за замовчуванням */
+  z-index: 3000;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  color: var(--text-color);
+  backdrop-filter: blur(10px);
+}
+
+.leaderboard-content {
+  background: var(--glass-bg);
+  padding: 25px;
+  border-radius: 20px;
+  border: 2px solid var(--highlight);
+  width: 90%; max-width: 500px;
+  max-height: 80vh;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 0 30px var(--accent-glow);
+  position: relative;
+}
+
+.lb-close-btn {
+  position: absolute; top: 10px; right: 20px;
+  font-size: 28px; cursor: pointer;
+  color: #ff5555;
+  transition: 0.2s;
+  
+  &:hover { transform: scale(1.2); }
+}
+
+/* Таблиця всередині модалки */
+.lb-table {
+  width: 100%;
+  margin-top: 15px;
+  border-collapse: collapse;
+  
+  th {
+    color: var(--highlight);
+    padding: 10px;
+    border-bottom: 2px solid rgba(255,255,255,0.1);
+  }
+  
+  td {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    color: var(--text-color);
+  }
+}
+
+/* ==========================================
+   ☀️ АДАПТАЦІЯ ПІД СВІТЛУ ТЕМУ (Light Mode)
+   ========================================== */
+body[data-theme="light"] {
+  
+  /* Змінюємо фон модалки на світлий напівпрозорий */
+  .leaderboard-modal {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .leaderboard-content {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--highlight); /* Фіолетовий */
+  }
+
+  .lb-table th {
+    border-bottom-color: rgba(0,0,0,0.1);
+  }
+  
+  .lb-table td {
+    border-bottom-color: rgba(0,0,0,0.05);
+    color: #2c3e50; /* Темний текст */
+  }
+
+  /* Секретна пісня у світлій темі */
+  .secret-song-card {
+    background: rgba(255,255,255,0.8) !important;
+  }
+  
+  .song-locked::after {
+    color: #555; /* Темний замок */
+  }
+}

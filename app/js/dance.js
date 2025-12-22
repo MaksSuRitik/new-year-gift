@@ -1,10 +1,124 @@
 /* ==========================================
-   🎹 NEON PIANO: FIXED INPUT & MOBILE LAYOUT
+   🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
    ========================================== */
+
+// --- FIREBASE IMPORTS (ES MODULES) ---
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+import { getFirestore, collection, addDoc, getDocs, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
+    authDomain: "memebattle-4cb27.firebaseapp.com",
+    projectId: "memebattle-4cb27",
+    storageBucket: "memebattle-4cb27.firebasestorage.app",
+    messagingSenderId: "73285262990",
+    appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+
+// --- INJECT CSS STYLES (Dynamic Styles for New Features) ---
+const styleSheet = document.createElement("style");
+styleSheet.innerText = `
+    /* RGB Border for Secret Song */
+    @keyframes rainbow-border {
+        0% { border-color: red; box-shadow: 0 0 10px red; }
+        20% { border-color: yellow; box-shadow: 0 0 10px yellow; }
+        40% { border-color: lime; box-shadow: 0 0 10px lime; }
+        60% { border-color: cyan; box-shadow: 0 0 10px cyan; }
+        80% { border-color: magenta; box-shadow: 0 0 10px magenta; }
+        100% { border-color: red; box-shadow: 0 0 10px red; }
+    }
+    .secret-song-card {
+        border: 3px solid transparent;
+        animation: rainbow-border 2s linear infinite;
+        background: rgba(0,0,0,0.8) !important;
+    }
+    .song-locked {
+        opacity: 0.5;
+        filter: grayscale(100%);
+        pointer-events: none;
+        position: relative;
+    }
+    .song-locked::after {
+        content: "🔒";
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 3rem;
+        color: #fff;
+    }
+    
+    /* Leaderboard Modal */
+    .leaderboard-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.9); z-index: 2000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        color: #fff; font-family: 'Montserrat', sans-serif;
+    }
+    .leaderboard-content {
+        background: #222; padding: 20px; border-radius: 15px;
+        border: 2px solid #00d2ff; width: 80%; max-width: 500px;
+        max-height: 80vh; overflow-y: auto; text-align: center;
+        box-shadow: 0 0 20px #00d2ff;
+        position: relative;
+    }
+    .lb-close-btn {
+        position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #ff0055; font-weight: bold;
+    }
+    .lb-table { width: 100%; margin-top: 15px; border-collapse: collapse; }
+    .lb-table th, .lb-table td { padding: 10px; border-bottom: 1px solid #444; }
+    .lb-table th { color: #00d2ff; }
+    
+    /* Leaderboard Button */
+    .btn-leaderboard {
+        margin-top: 15px; padding: 10px 20px;
+        background: linear-gradient(45deg, #ff0099, #493240);
+        color: white; border: none; border-radius: 20px;
+        cursor: pointer; font-weight: bold; font-family: inherit;
+        box-shadow: 0 0 10px #ff0099; transition: transform 0.2s;
+        display: block; margin-left: auto; margin-right: auto;
+    }
+    .btn-leaderboard:hover { transform: scale(1.05); }
+
+    /* Extra Stars for 5-Star System */
+    .star-extra { display: none; }
+    .star-extra.visible { display: inline-block; }
+
+    /* Custom Name Input Modal */
+    .name-input-modal {
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.95); z-index: 3000;
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        backdrop-filter: blur(10px);
+    }
+    .name-input-content {
+        background: rgba(20, 20, 20, 0.9); padding: 30px; border-radius: 20px;
+        border: 2px solid #00d2ff; text-align: center;
+        box-shadow: 0 0 30px #00d2ff; width: 300px;
+    }
+    .name-input-field {
+        width: 100%; padding: 10px; margin: 20px 0;
+        background: rgba(255,255,255,0.1); border: 1px solid #fff;
+        color: #fff; font-size: 1.2rem; border-radius: 5px; text-align: center;
+    }
+    .name-submit-btn {
+        padding: 10px 25px; background: #00d2ff; color: #000;
+        border: none; border-radius: 50px; font-weight: bold; cursor: pointer;
+        font-size: 1.1rem; transition: 0.3s;
+    }
+    .name-submit-btn:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+`;
+document.head.appendChild(styleSheet);
+
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- AUDIO SYSTEM SETUP (UI SOUNDS) ---
+    // --- AUDIO SYSTEM SETUP ---
     const sfxClick = new Audio('audio/click.mp3');
     const sfxHover = new Audio('audio/hover.mp3');
     
@@ -17,7 +131,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(bgMusicEl);
     }
 
-    // --- 1. SYNC SETTINGS FROM LOCALSTORAGE ---
+    // --- SYNC SETTINGS ---
     const savedTheme = localStorage.getItem('siteTheme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     const themeBtn = document.getElementById('themeToggle');
@@ -26,15 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentLang = localStorage.getItem('siteLang') || 'UA';
     document.body.setAttribute('data-lang', currentLang);
     const langBtn = document.getElementById('langToggle');
-    if(langBtn) {
-        langBtn.innerText = currentLang === 'MEOW' ? '🐱' : currentLang;
-    }
+    if(langBtn) langBtn.innerText = currentLang === 'MEOW' ? '🐱' : currentLang;
 
     let isMuted = localStorage.getItem('isMuted') === 'true';
     const soundBtn = document.getElementById('soundToggle');
-    if(soundBtn) {
-        soundBtn.innerText = isMuted ? '🔇' : '🔊';
-    }
+    if(soundBtn) soundBtn.innerText = isMuted ? '🔇' : '🔊';
 
     if (!isMuted && bgMusicEl) {
         const savedTime = localStorage.getItem('bgMusicTime');
@@ -46,15 +156,12 @@ document.addEventListener('DOMContentLoaded', () => {
         if(bgMusicEl && !bgMusicEl.paused) localStorage.setItem('bgMusicTime', bgMusicEl.currentTime);
     });
 
-    function playClick() {
-        if (!isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(()=>{}); }
-    }
-    function playHover() {
-        if (!isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(()=>{}); }
-    }
+    function playClick() { if (!isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(()=>{}); } }
+    function playHover() { if (!isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(()=>{}); } }
 
-    // 1. ПОВНИЙ СПИСОК ПІСЕНЬ
+    // --- SONG LIST (Secret Song at Index 0) ---
     const songsDB = [
+        { file: "Secret.mp3", title: "???", artist: "???", isSecret: true }, // Секретна пісня
         { file: "AfterDark.mp3", title: "After Dark", artist: "Mr. Kitty" },
         { file: "AfterHours.mp3", title: "After Hours", artist: "The Weeknd" },
         { file: "BlackSwan.mp3", title: "Black Swan", artist: "BTS" },
@@ -79,6 +186,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const CONFIG = {
         speedStart: 1400, 
         speedEnd: 470,    
+        speedEndSecret: 200, // 5x Speed for secret level
         hitPosition: 0.85, 
         colorsDark: { 
             tap: ['#00d2ff', '#3a7bd5'], 
@@ -104,10 +212,94 @@ document.addEventListener('DOMContentLoaded', () => {
         hitScale: 1.15
     };
 
-    const TRANSLATIONS = {
-        UA: { icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "Комбо", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот..." },
-        RU: { icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "Комбо", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот..." },
-        MEOW: { icon: "🐱", instructions: "Meow meow meow S D J K meow", score: "Meow", combo: "Meow-bo", paused: "MEOW?", resume: "Meow!", quit: "Grrr", complete: "PURRFECT", failed: "HISSS", restart: "Meow-gain", menu: "Meow-nu", perfect: "PURRFECT", good: "MEOW", miss: "SQUEAK", loading: "Meowing..." }
+   const TRANSLATIONS = {
+        UA: { 
+            icon: "UA", 
+            instructions: "Гра здійснюється за допомогою клавіш S D J K", 
+            score: "Рахунок", 
+            combo: "Комбо", 
+            paused: "ПАУЗА", 
+            resume: "Продовжити", 
+            quit: "Вийти", 
+            complete: "ПРОЙДЕНО", 
+            failed: "ПОРАЗКА", 
+            restart: "Ще раз", 
+            menu: "Меню", 
+            perfect: "ІДЕАЛЬНО", 
+            good: "ДОБРЕ", 
+            miss: "ПРОМАХ", 
+            loading: "Створення нот...", 
+            leaderboard: "Таблиця Лідерів", 
+            enterName: "Введіть ваше ім'я для рекорду:", 
+            req: "Пройдіть 5 пісень на 3 зірки!", 
+            namePls: "Введіть ім'я",
+            // 👇 НОВІ СЛОВА ДЛЯ ТАБЛИЦІ
+            lbTitle: "Лідери Секретного Рівня",
+            lbRank: "Ранг",
+            lbName: "Ім'я",
+            lbScore: "Очки",
+            lbNoRecords: "Рекордів ще немає!",
+            lbLoading: "Завантаження...",
+            lbError: "Помилка завантаження"
+        },
+        RU: { 
+            icon: "RU", 
+            instructions: "Игра осуществляется с помощью клавиш S D J K", 
+            score: "Счет", 
+            combo: "Комбо", 
+            paused: "ПАУЗА", 
+            resume: "Продолжить", 
+            quit: "Выйти", 
+            complete: "ПРОЙДЕНО", 
+            failed: "ПОРАЖЕНИЕ", 
+            restart: "Еще раз", 
+            menu: "Меню", 
+            perfect: "ИДЕАЛЬНО", 
+            good: "ХОРОШО", 
+            miss: "МИМО", 
+            loading: "Создание нот...", 
+            leaderboard: "Таблица Лидеров", 
+            enterName: "Введите ваше имя для рекорда:", 
+            req: "Пройдите 5 песен на 3 звезды!", 
+            namePls: "Введите имя",
+            // 👇 НОВІ СЛОВА ДЛЯ ТАБЛИЦІ
+            lbTitle: "Лидеры Секретного Уровня",
+            lbRank: "Ранг",
+            lbName: "Имя",
+            lbScore: "Очки",
+            lbNoRecords: "Рекордов еще нет!",
+            lbLoading: "Загрузка...",
+            lbError: "Ошибка загрузки"
+        },
+        MEOW: { 
+            icon: "🐱", 
+            instructions: "Meow meow meow S D J K meow", 
+            score: "Meow", 
+            combo: "Meow-bo", 
+            paused: "MEOW?", 
+            resume: "Meow!", 
+            quit: "Grrr", 
+            complete: "PURRFECT", 
+            failed: "HISSS", 
+            restart: "Meow-gain", 
+            menu: "Meow-nu", 
+            perfect: "PURRFECT", 
+            good: "MEOW", 
+            miss: "SQUEAK", 
+            loading: "Meowing...", 
+            leaderboard: "Meow-List", 
+            enterName: "Meow name:", 
+            req: "Meow 5 songs 3 stars!", 
+            namePls: "Meow?",
+            // 👇 НОВІ СЛОВА ДЛЯ ТАБЛИЦІ
+            lbTitle: "Meow Leaders",
+            lbRank: "Meow #",
+            lbName: "Meow Name",
+            lbScore: "Meows",
+            lbNoRecords: "No meows yet!",
+            lbLoading: "Meowing...",
+            lbError: "Meow Error"
+        }
     };
 
     // Elements
@@ -119,7 +311,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const ratingContainer = document.getElementById('rating-container');
     const holdEffectsContainer = document.getElementById('hold-effects-container');
     const progressBar = document.getElementById('game-progress-bar');
-    const starsElements = [document.getElementById('star-1'), document.getElementById('star-2'), document.getElementById('star-3')];
+    // Stars elements array (will be modified dynamically for 5 stars)
+    let starsElements = [document.getElementById('star-1'), document.getElementById('star-2'), document.getElementById('star-3')];
     const comboDisplay = document.getElementById('combo-display');
 
     // Game State
@@ -143,16 +336,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let mapTiles = [];
     let activeTiles = [];
- // ... (код вище) ...
     let particles = [];
     let keyState = [false, false, false, false]; 
     let holdingTiles = [null, null, null, null]; 
-    const laneElements = [null, null, null, null]; 
+    let laneElements = [null, null, null, null]; 
     
-    // 👇👇👇 ДОДАТИ ЦЕЙ РЯДОК ТУТ 👇👇👇
     let laneLastInputTime = [0, 0, 0, 0]; 
-    // 👆👆👆 ----------------------- 👆👆👆
-    
     let laneBeamAlpha = [0, 0, 0, 0]; 
 
     const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -211,7 +400,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const resultScreen = document.getElementById('result-screen');
         if (resultScreen) resultScreen.classList.add('hidden');
 
-        starsElements.forEach(s => { if(s) s.classList.remove('active'); });
+        // Reset stars (restore original 3 if needed for menu, handled in startGame)
+        starsElements.forEach(s => { if(s) { s.classList.remove('active'); s.style.display = ''; } });
+        
         laneElements.forEach(el => { if(el) el.classList.remove('active'); });
         
         updateGameText();
@@ -234,20 +425,150 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`neon_rhythm_${songTitle}`, JSON.stringify(data));
     }
 
+    /* --- CUSTOM NAME INPUT MODAL --- */
+    function getNameFromUser() {
+        return new Promise((resolve) => {
+            const modal = document.createElement('div');
+            modal.className = 'name-input-modal';
+            modal.innerHTML = `
+                <div class="name-input-content">
+                    <h2 style="color: #fff; margin-bottom: 10px;">${getText('enterName')}</h2>
+                    <input type="text" id="player-name-input" class="name-input-field" placeholder="${getText('namePls')}" maxlength="15">
+                    <button id="save-name-btn" class="name-submit-btn">OK</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+
+            const input = modal.querySelector('#player-name-input');
+            const btn = modal.querySelector('#save-name-btn');
+
+            function submit() {
+                const name = input.value.trim() || 'Anonymous';
+                localStorage.setItem('playerName', name);
+                modal.remove();
+                resolve(name);
+            }
+
+            btn.onclick = submit;
+            input.onkeypress = (e) => { if(e.key === 'Enter') submit(); };
+            input.focus();
+        });
+    }
+
+ /* --- LEADERBOARD FUNCTIONS --- */
+    async function showLeaderboard() {
+        // Отримуємо модальне вікно
+        let modal = document.getElementById('lb-modal');
+        
+        // 🛠 ВИДАЛЯЄМО старе вікно, щоб текст оновився при зміні мови
+        if (modal) {
+            modal.remove(); 
+            modal = null;
+        }
+
+        if(!modal) {
+            modal = document.createElement('div');
+            modal.id = 'lb-modal';
+            modal.className = 'leaderboard-modal';
+            
+            // 👇 ТУТ ТЕПЕР ВИКОРИСТОВУЄТЬСЯ ПЕРЕКЛАД (getText)
+            modal.innerHTML = `
+                <div class="leaderboard-content">
+                    <span class="lb-close-btn">&times;</span>
+                    <h2 id="lb-title">${getText('lbTitle')}</h2>
+                    <table class="lb-table">
+                        <thead>
+                            <tr>
+                                <th>${getText('lbRank')}</th>
+                                <th>${getText('lbName')}</th>
+                                <th>${getText('lbScore')}</th>
+                            </tr>
+                        </thead>
+                        <tbody id="lb-body">
+                            <tr><td colspan="3">${getText('lbLoading')}</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.querySelector('.lb-close-btn').onclick = () => { modal.style.display = 'none'; };
+        }
+        modal.style.display = 'flex';
+        
+        const tbody = document.getElementById('lb-body');
+        tbody.innerHTML = `<tr><td colspan="3">${getText('lbLoading')}</td></tr>`;
+
+        try {
+            const q = query(collection(db, "secret_leaderboard"), orderBy("score", "desc"), limit(10));
+            const querySnapshot = await getDocs(q);
+            tbody.innerHTML = '';
+            if (querySnapshot.empty) {
+                // 👇 ТУТ ТЕЖ ПЕРЕКЛАД
+                tbody.innerHTML = `<tr><td colspan="3">${getText('lbNoRecords')}</td></tr>`;
+            } else {
+                let rank = 1;
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `<td>#${rank++}</td><td>${data.name}</td><td>${data.score}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        } catch (e) {
+            console.error(e);
+            // 👇 ТУТ ТЕЖ ПЕРЕКЛАД
+            tbody.innerHTML = `<tr><td colspan="3">${getText('lbError')}</td></tr>`;
+        }
+    }
+
     function renderMenu() {
         const list = document.getElementById('song-list');
         if (!list) return;
         list.innerHTML = '';
         
+        // CHECK UNLOCK CONDITION
+        let total3StarSongs = 0;
+        songsDB.forEach(s => {
+            if(!s.isSecret && getSavedData(s.title).stars >= 3) total3StarSongs++;
+        });
+        const isSecretUnlocked = total3StarSongs >= 5;
+
+        // Add Leaderboard Button
+        const lbBtn = document.createElement('button');
+        lbBtn.className = 'btn-leaderboard';
+        lbBtn.innerText = `🏆 ${getText('leaderboard')}`;
+        lbBtn.onclick = showLeaderboard;
+        list.appendChild(lbBtn);
+        
         songsDB.forEach((s, i) => {
             const saved = getSavedData(s.title);
             let starsStr = '';
-            for(let j=0; j<3; j++) starsStr += j < saved.stars ? '★' : '☆';
+            // For secret song, max stars is 5, else 3
+            const maxStars = s.isSecret ? 5 : 3;
+            for(let j=0; j<maxStars; j++) starsStr += j < saved.stars ? '★' : '☆';
             const hasScore = saved.score > 0;
 
             const el = document.createElement('div');
             el.className = 'song-card';
-            el.onclick = () => { playClick(); startGame(i); };
+            
+            // Special Styling for Secret Song
+            if (s.isSecret) {
+                if (!isSecretUnlocked) {
+                    el.classList.add('song-locked');
+                    el.title = getText('req');
+                } else {
+                    el.classList.add('secret-song-card');
+                }
+            }
+
+            el.onclick = () => { 
+                playClick(); 
+                if (s.isSecret && !isSecretUnlocked) {
+                    alert(getText('req'));
+                    return;
+                }
+                startGame(i); 
+            };
             el.onmouseenter = playHover;
 
             el.innerHTML = `
@@ -344,7 +665,12 @@ document.addEventListener('DOMContentLoaded', () => {
         const songTime = (audioCtx.currentTime - startTime) * 1000;
         const durationMs = audioBuffer.duration * 1000;
         const progress = Math.min(1, songTime / durationMs);
-        currentSpeed = CONFIG.speedStart - (progress * (CONFIG.speedStart - CONFIG.speedEnd));
+        
+        // LOGIC FOR SECRET SONG SPEED (1x -> 5x)
+        const isSecret = songsDB[currentSongIndex].isSecret;
+        const targetSpeedEnd = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
+        
+        currentSpeed = CONFIG.speedStart - (progress * (CONFIG.speedStart - targetSpeedEnd));
 
         updateProgressBar(songTime, durationMs);
         
@@ -424,7 +750,6 @@ document.addEventListener('DOMContentLoaded', () => {
                             score += CONFIG.scoreHoldTick;
                             combo++;
                             updateScoreUI();
-                            // Continuous sparks for holding
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good'); 
                         }
                         tile.holding = true;
@@ -454,6 +779,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* --- DRAWING --- */
+   /* --- DRAWING --- */
     function draw(songTime) {
         if (!ctx) return;
         
@@ -461,11 +787,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
         // --- DYNAMIC COMBO COLORS ---
-        let currentPalette = { tap: colors.tap, glow: colors.tap[1] };
+        // За замовчуванням беремо кольори з конфігу (включаючи довгі ноти)
+        let currentPalette = { 
+            tap: colors.tap, 
+            glow: colors.tap[1],
+            long: colors.long 
+        };
+
         if (combo >= 50 && combo < 100) {
-            currentPalette = { tap: ['#d53a9d', '#743ad5'], glow: '#d53a9d' }; // Purple
-        } else if (combo >= 100) {
-            currentPalette = { tap: ['#ffd700', '#ff8c00'], glow: '#ffd700' }; // Gold
+            // Фіолетовий ефект (50+)
+            currentPalette.tap = ['#d53a9d', '#743ad5'];
+            currentPalette.glow = '#d53a9d';
+            // Довгі ноти залишаємо стандартними або можна теж змінити
+        } else if (combo >= 100 && combo < 200) {
+            // Золотий ефект (100+)
+            currentPalette.tap = ['#ffd700', '#ff8c00'];
+            currentPalette.glow = '#ffd700';
+            currentPalette.long = ['#ffd700', '#b8860b']; // Довгі стають повністю золотими
+        } else if (combo >= 200) {
+            // 🔥 ЕЛІТНИЙ ЕФЕКТ (200+) - ЗОЛОТО-ЧОРНИЙ
+            // [0] - це край/градієнт (Золото), [1] - це центр (Чорний)
+            currentPalette.tap = ['#FFD700', '#000000']; 
+            currentPalette.glow = '#FFD700'; // Світіння золоте
+            
+            // Довгі ноти: Чорна основа з золотим кінцем
+            currentPalette.long = ['#000000', '#FFD700']; 
         }
         // ----------------------------
 
@@ -481,37 +827,34 @@ document.addEventListener('DOMContentLoaded', () => {
         const padding = 6; 
         const noteRadius = 15;
 
-        // --- DRAW LANES (With Vibration) ---
+        // --- DRAW LANES ---
         ctx.strokeStyle = colors.laneLine;
         ctx.lineWidth = 2;
         ctx.beginPath();
         
         for(let i=0; i<4; i++) {
-            // Calculate Shake
             let shakeX = 0;
-            if (holdingTiles[i]) {
-                shakeX = (Math.random() - 0.5) * 6; // Column vibration strength
-            }
+            if (holdingTiles[i]) shakeX = (Math.random() - 0.5) * 6;
 
-            // Laser Beam (Fade Out)
             if (laneBeamAlpha[i] > 0) {
                 const beamW = laneW;
                 const beamX = (i * laneW) + shakeX;
-                
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
-                // Beam color based on Combo
-                const beamColor = combo >= 100 ? "rgba(255, 215, 0," : (combo >= 50 ? "rgba(213, 58, 157," : "rgba(102, 252, 241,");
                 
+                // Колір променя лазера залежить від комбо
+                let beamColor = "rgba(102, 252, 241,"; // Стандарт (Ціан)
+                if (combo >= 50) beamColor = "rgba(213, 58, 157,"; // Фіолетовий
+                if (combo >= 100) beamColor = "rgba(255, 215, 0,"; // Золотий
+                if (combo >= 200) beamColor = "rgba(255, 255, 255,"; // Білий (для контрасту з чорним)
+
                 beamGrad.addColorStop(0, beamColor + (laneBeamAlpha[i] * 0.6) + ")");
                 beamGrad.addColorStop(1, "rgba(255,255,255,0)");
 
                 ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, beamW, hitY);
-                
-                laneBeamAlpha[i] -= 0.05; // Fade speed
+                laneBeamAlpha[i] -= 0.05; 
             }
 
-            // Draw Lines
             if (i > 0) {
                 ctx.moveTo(i * laneW + shakeX, 0);
                 ctx.lineTo(i * laneW + shakeX, canvas.height);
@@ -519,8 +862,13 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         ctx.stroke();
 
-        // Hit Line
-        ctx.strokeStyle = combo >= 100 ? "#ffd700" : (combo >= 50 ? "#d53a9d" : colors.laneLine);
+        // Колір лінії удару
+        let hitLineColor = colors.laneLine;
+        if (combo >= 50) hitLineColor = "#d53a9d";
+        if (combo >= 100) hitLineColor = "#ffd700";
+        if (combo >= 200) hitLineColor = "#fff"; // Біла лінія на 200+
+
+        ctx.strokeStyle = hitLineColor;
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); 
@@ -530,11 +878,8 @@ document.addEventListener('DOMContentLoaded', () => {
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
-            // Apply vibration to held long notes
             let tileShake = 0;
-            if (tile.type === 'long' && tile.holding) {
-                tileShake = (Math.random() - 0.5) * 4;
-            }
+            if (tile.type === 'long' && tile.holding) tileShake = (Math.random() - 0.5) * 4;
 
             const x = tile.lane * laneW + padding + tileShake;
             const w = laneW - (padding * 2);
@@ -545,27 +890,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // === TAP NOTE ===
             if (tile.type === 'tap') {
-                let scale = 1;
-                let glow = 0;
-                let color = currentPalette.tap[1]; // Use dynamic palette
+                let scale = 1; let glow = 0; let color = currentPalette.tap[1];
 
                 if (tile.hit) {
-                    scale = CONFIG.hitScale;
-                    glow = 30;
-                    color = isLight ? "#000" : "#fff"; 
+                    scale = CONFIG.hitScale; glow = 30; color = isLight ? "#000" : "#fff"; 
                 }
 
                 ctx.save();
-                const cx = x + w/2; 
-                const cy = yTop + CONFIG.noteHeight/2;
-                ctx.translate(cx, cy); 
-                ctx.scale(scale, scale); 
-                ctx.translate(-cx, -cy);
+                const cx = x + w/2; const cy = yTop + CONFIG.noteHeight/2;
+                ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
 
                 let grad = ctx.createLinearGradient(x, yTop, x, yBottom);
-                grad.addColorStop(0, currentPalette.tap[0]);       
-                grad.addColorStop(0.5, color);         
-                grad.addColorStop(1, currentPalette.tap[0]);       
+                grad.addColorStop(0, currentPalette.tap[0]);        
+                grad.addColorStop(0.5, color);          
+                grad.addColorStop(1, currentPalette.tap[0]);        
 
                 ctx.shadowBlur = glow > 0 ? glow : (isLight ? 0 : 10); 
                 ctx.shadowColor = colors.shadow === 'transparent' ? color : currentPalette.glow;
@@ -576,14 +914,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 else ctx.fillRect(x, yTop, w, CONFIG.noteHeight);
                 ctx.fill();
                 
-                ctx.strokeStyle = colors.stroke;
+                // Обводка
+                ctx.strokeStyle = (combo >= 200) ? '#FFD700' : colors.stroke; // Золота обводка для 200+
                 ctx.lineWidth = tile.hit ? 4 : 2;
                 ctx.stroke();
                 
                 ctx.shadowBlur = 0;
                 ctx.restore();
             } 
-            
             // === LONG NOTE ===
             else if (tile.type === 'long') {
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
@@ -597,7 +935,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 const actualYHeadTop = yHead - headHeight;
                 const tailH = actualYHeadTop - yTail;
 
-                let colorSet = tile.failed ? colors.dead : colors.long;
+                // Використовуємо динамічну палітру для довгих нот
+                let colorSet = tile.failed ? colors.dead : currentPalette.long;
 
                 if (tailH > 0) {
                     let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
@@ -624,7 +963,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.lineWidth = 2;
                 } else {
                     ctx.shadowBlur = 0; 
-                    ctx.strokeStyle = colors.stroke;
+                    ctx.strokeStyle = (combo >= 200) ? '#FFD700' : colors.stroke;
                     ctx.lineWidth = 2;
                 }
 
@@ -645,20 +984,14 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- DRAW PARTICLES ---
         for (let i = particles.length - 1; i >= 0; i--) {
             let p = particles[i];
-            p.x += p.vx; 
-            p.y += p.vy; 
-            p.vy += 0.5; // Gravity
-            p.life -= 0.03;
+            p.x += p.vx; p.y += p.vy; p.vy += 0.5; p.life -= 0.03;
 
             ctx.globalAlpha = Math.max(0, p.life);
             ctx.fillStyle = p.color;
             ctx.beginPath();
             
-            // Draw Sparks/Triangles
             if (p.type === 'perfect') {
-               ctx.moveTo(p.x, p.y);
-               ctx.lineTo(p.x + 4, p.y + 8);
-               ctx.lineTo(p.x - 4, p.y + 8);
+               ctx.moveTo(p.x, p.y); ctx.lineTo(p.x + 4, p.y + 8); ctx.lineTo(p.x - 4, p.y + 8);
                ctx.fill();
             } else {
                ctx.arc(p.x, p.y, Math.random()*5, 0, Math.PI*2);
@@ -677,21 +1010,18 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLight = document.body.getAttribute('data-theme') === 'light';
         
         let finalColor = color;
-        // Override color for high combos
-        if (combo >= 100) finalColor = '#FFD700'; // Gold
+        if (combo >= 100) finalColor = '#FFD700'; 
         else if (combo >= 50 && combo < 100 && type === 'perfect') finalColor = '#ff00ff';
         
         if (isLight) finalColor = (color === '#00ffff' ? '#0088aa' : '#aa0066');
-
-        // Particle Count based on hit type
         const count = type === 'perfect' ? 20 : 8;
 
         for(let i=0; i<count; i++) {
             particles.push({ 
                 x: x + (Math.random() - 0.5) * 50, 
                 y: y, 
-                vx: (Math.random()-0.5) * 15, // Wide explosion
-                vy: (Math.random()-1) * 15 - 5, // Upward initial burst
+                vx: (Math.random()-0.5) * 15, 
+                vy: (Math.random()-1) * 15 - 5, 
                 life: 1.0, 
                 color: finalColor,
                 type: type
@@ -702,18 +1032,15 @@ document.addEventListener('DOMContentLoaded', () => {
     function handleInputDown(lane) {
         if (!isPlaying || isPaused) return;
         const now = Date.now();
-        // Якщо пройшло менше 70мс з минулого натискання - ігноруємо (захист від брязкоту)
         if (now - laneLastInputTime[lane] < 70) return;
         laneLastInputTime[lane] = now;
         keyState[lane] = true; 
         if (laneElements[lane]) laneElements[lane].classList.add('active');
         
-        // --- TRIGGER LASER BEAM ---
         laneBeamAlpha[lane] = 1.0; 
         
         if (holdingTiles[lane]) return; 
 
-        // Bounce Fix
         const activeHold = activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed);
         if (activeHold) {
             holdingTiles[lane] = activeHold;
@@ -730,10 +1057,8 @@ document.addEventListener('DOMContentLoaded', () => {
             if (t.hit || t.completed || t.failed) return false;
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
-
             const diff = t.time - songTime;
             if (diff > 190 || diff < -240) return false;
-            
             return true;
         });
 
@@ -748,9 +1073,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
             let color = target.type === 'long' ? colors.long[1] : colors.tap[1];
 
-            if (target.type === 'tap') {
-                target.hitAnimStart = Date.now(); 
-            }
+            if (target.type === 'tap') target.hitAnimStart = Date.now(); 
 
             if (diff < 70) {
                 score += CONFIG.scorePerfect;
@@ -780,9 +1103,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (laneElements[lane]) laneElements[lane].classList.remove('active');
         toggleHoldEffect(lane, false);
         const tile = holdingTiles[lane];
-        if (tile) { 
-            holdingTiles[lane] = null; 
-        }
+        if (tile) holdingTiles[lane] = null; 
     }
 
     function missNote(tile, isSpawnedMiss) {
@@ -803,17 +1124,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if(scoreEl) scoreEl.innerText = score;
         if(comboDisplay) {
             comboDisplay.innerText = `${getText('combo')} x${combo}`;
-            
-            // Pulse Effect & Color Shift for UI
-            let scale = 1 + Math.min(0.5, combo/40); // Increased scale limit
+            let scale = 1 + Math.min(0.5, combo/40); 
             let opacity = combo > 2 ? 1 : 0;
             let color = '#fff';
-            
             if (combo >= 50) color = '#d53a9d';
-            if (combo >= 100) {
-                color = '#ffd700';
-                scale += 0.2; // Extra pop for high combo
-            }
+            if (combo >= 100) { color = '#ffd700'; scale += 0.2; }
 
             comboDisplay.style.opacity = opacity;
             comboDisplay.style.transform = `scale(${scale})`;
@@ -853,12 +1168,23 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!progressBar) return;
         const pct = Math.min(100, (current / total) * 100);
         progressBar.style.width = `${pct}%`;
-        if (starsElements[0]) pct > 33 ? starsElements[0].classList.add('active') : starsElements[0].classList.remove('active');
-        if (starsElements[1]) pct > 66 ? starsElements[1].classList.add('active') : starsElements[1].classList.remove('active');
-        if (starsElements[2]) pct > 95 ? starsElements[2].classList.add('active') : starsElements[2].classList.remove('active');
+        
+        // 5 Star Logic
+        const isSecret = songsDB[currentSongIndex].isSecret;
+        if (isSecret) {
+            if (starsElements[0]) pct > 20 ? starsElements[0].classList.add('active') : starsElements[0].classList.remove('active');
+            if (starsElements[1]) pct > 40 ? starsElements[1].classList.add('active') : starsElements[1].classList.remove('active');
+            if (starsElements[2]) pct > 60 ? starsElements[2].classList.add('active') : starsElements[2].classList.remove('active');
+            if (starsElements[3]) pct > 80 ? starsElements[3].classList.add('active') : starsElements[3].classList.remove('active');
+            if (starsElements[4]) pct > 96 ? starsElements[4].classList.add('active') : starsElements[4].classList.remove('active');
+        } else {
+            if (starsElements[0]) pct > 33 ? starsElements[0].classList.add('active') : starsElements[0].classList.remove('active');
+            if (starsElements[1]) pct > 66 ? starsElements[1].classList.add('active') : starsElements[1].classList.remove('active');
+            if (starsElements[2]) pct > 95 ? starsElements[2].classList.add('active') : starsElements[2].classList.remove('active');
+        }
     }
 
-    function endGame(victory) {
+    async function endGame(victory) {
         isPlaying = false;
         if (sourceNode) sourceNode.stop();
         if (animationFrameId) cancelAnimationFrame(animationFrameId);
@@ -873,19 +1199,48 @@ document.addEventListener('DOMContentLoaded', () => {
         const scoreEl = document.getElementById('final-score');
         if(scoreEl) scoreEl.innerText = score;
 
+        // 1. Спочатку рахуємо зірки
         let starsCount = 0;
         const ratio = score / (maxPossibleScore || 1); 
+        const isSecret = songsDB[currentSongIndex].isSecret;
 
-        if (ratio > 0.2) starsCount = 1;
-        if (ratio > 0.5) starsCount = 2;
-        if (ratio > 0.8) starsCount = 3; 
+        if (isSecret) {
+             if (ratio > 0.2) starsCount = 1;
+             if (ratio > 0.4) starsCount = 2;
+             if (ratio > 0.6) starsCount = 3;
+             if (ratio > 0.8) starsCount = 4;
+             if (ratio > 0.95) starsCount = 5;
+        } else {
+             if (ratio > 0.2) starsCount = 1;
+             if (ratio > 0.5) starsCount = 2;
+             if (ratio > 0.8) starsCount = 3; 
+        }
 
+        // Якщо виграв, але очок мало - даємо хоча б 1 зірку (втішну)
         if (victory && starsCount === 0) starsCount = 1;
         
+        // 2. ТЕПЕР ПЕРЕВІРЯЄМО УМОВУ ДЛЯ БАЗИ ДАНИХ
+        // Логіка: Якщо це секретний рівень І гравець набрав хоча б 1 зірку (навіть якщо програв)
+        if (isSecret && starsCount >= 1) {
+            const playerName = localStorage.getItem('playerName') || 'Anonymous';
+            console.log(`Trying to save score for ${playerName}: ${score}`);
+            try {
+                await addDoc(collection(db, "secret_leaderboard"), {
+                    name: playerName,
+                    score: score,
+                    date: new Date()
+                });
+                console.log("Score saved successfully!");
+            } catch (e) { console.error("Error adding score: ", e); }
+        }
+
+        // Зберігаємо локально
         if (score > 0) saveGameData(songsDB[currentSongIndex].title, score, starsCount);
 
+        // Малюємо зірки
         let starsStr = "";
-        for(let i=0; i<3; i++) starsStr += i < starsCount ? "★" : "☆";
+        const totalStarsToShow = isSecret ? 5 : 3;
+        for(let i=0; i<totalStarsToShow; i++) starsStr += i < starsCount ? "★" : "☆";
         const starEl = document.getElementById('final-stars');
         if(starEl) starEl.innerText = starsStr;
 
@@ -900,14 +1255,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const lanesContainer = document.getElementById('lanes-bg');
         if (lanesContainer) for(let i=0; i<4; i++) laneElements[i] = lanesContainer.children[i];
         
-        // --- 🔴 MOBILE FIX: FORCE POINTER EVENTS OFF ---
-        // Це критично для телефонів, щоб кліки проходили крізь ефекти
         if(holdEffectsContainer) holdEffectsContainer.style.pointerEvents = 'none';
         const hitLine = document.querySelector('.hit-line');
         if(hitLine) hitLine.style.pointerEvents = 'none';
         const hints = document.querySelector('.lane-hints');
         if(hints) hints.style.pointerEvents = 'none';
-        // ------------------------------------------------
 
         function togglePauseGame() {
             if (!isPlaying) return;
@@ -925,11 +1277,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         window.addEventListener('keydown', e => { 
-            if (e.code === 'Space') {
-                e.preventDefault();
-                togglePauseGame();
-                return;
-            }
+            if (e.code === 'Space') { e.preventDefault(); togglePauseGame(); return; }
             if (!e.repeat) { 
                 const lane = KEYS.indexOf(e.code); 
                 if (lane !== -1) handleInputDown(lane); 
@@ -937,14 +1285,11 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         window.addEventListener('keyup', e => { const lane = KEYS.indexOf(e.code); if (lane !== -1) handleInputUp(lane); });
 
-     if (canvas) {
-            // --- ТУТ МИ ЗМІНЮЄМО ЛОГІКУ ДЛЯ ТЕЛЕФОНІВ ---
-            
+        if (canvas) {
             canvas.addEventListener('touchstart', (e) => { 
                 e.preventDefault(); 
                 const rect = canvas.getBoundingClientRect(); 
                 for (let i=0; i<e.changedTouches.length; i++) {
-                    // Вираховуємо лінію і натискаємо
                     const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
                     handleInputDown(lane); 
                 }
@@ -955,14 +1300,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 const rect = canvas.getBoundingClientRect(); 
                 for (let i=0; i<e.changedTouches.length; i++) {
                     const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
-                    
-                    // 🔥 ВАЖЛИВО: Ми прибрали звідси handleInputDown!
-                    // Раніше тут було натискання при відпусканні, що і викликало "Miss"
                     handleInputUp(lane); 
                 } 
             }, {passive: false});
 
-            // --- ПК ВЕРСІЮ НЕ ЧІПАЄМО (ЗАЛИШАЄМО ЯК БУЛО) ---
             canvas.addEventListener('mousedown', (e) => { 
                 const rect = canvas.getBoundingClientRect();
                 const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
@@ -1019,18 +1360,10 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const backBtn = document.getElementById('global-back-btn');
         if(backBtn) {
-            backBtn.style.position = 'fixed';
-            backBtn.style.top = '20px';
-            backBtn.style.left = '20px';
-            backBtn.style.zIndex = '1000'; 
-            backBtn.style.background = 'rgba(0,0,0,0.6)';
-            backBtn.style.color = '#fff';
-            backBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-            backBtn.style.borderRadius = '30px';
-            backBtn.style.padding = '8px 20px';
-            backBtn.style.cursor = 'pointer';
-            backBtn.style.backdropFilter = 'blur(5px)';
-            backBtn.style.fontFamily = 'Montserrat, sans-serif';
+            backBtn.style.position = 'fixed'; backBtn.style.top = '20px'; backBtn.style.left = '20px'; backBtn.style.zIndex = '1000'; 
+            backBtn.style.background = 'rgba(0,0,0,0.6)'; backBtn.style.color = '#fff'; backBtn.style.border = '1px solid rgba(255,255,255,0.2)';
+            backBtn.style.borderRadius = '30px'; backBtn.style.padding = '8px 20px'; backBtn.style.cursor = 'pointer';
+            backBtn.style.backdropFilter = 'blur(5px)'; backBtn.style.fontFamily = 'Montserrat, sans-serif';
             
             backBtn.onclick = () => { 
                 playClick();
@@ -1070,13 +1403,68 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if(localStorage.getItem('siteLang')) { currentLang = localStorage.getItem('siteLang'); document.body.setAttribute('data-lang', currentLang); }
 
-    function startGame(idx) {
-        if(bgMusicEl) bgMusicEl.pause();
+    async function startGame(idx) {
+        // ASK FOR NAME IF SECRET LEVEL
+        const song = songsDB[idx];
+        if (song.isSecret) {
+            let playerName = localStorage.getItem('playerName');
+            if (!playerName) {
+                // Використовуємо наш новий кастомний модал
+                playerName = await getNameFromUser();
+                if(!playerName) return; // Якщо якимось дивом нічого не повернулось
+            }
+        }
 
+        if(bgMusicEl) bgMusicEl.pause();
         resetGameState();
+
+        // INJECT EXTRA STARS FOR 5-STAR UI IF SECRET
+        if (song.isSecret) {
+            const starContainer = document.querySelector('.stars-container');
+            if(starContainer) {
+                // Remove existing to rebuild correctly
+                starContainer.innerHTML = '';
+                // Create 5 stars
+                for(let i=1; i<=5; i++) {
+                    const s = document.createElement('div');
+                    s.id = `star-${i}`;
+                    // 🔥 ВИПРАВЛЕНО: Був клас 'star', а в CSS 'star-marker'
+                    s.className = 'star-marker'; 
+                    s.innerHTML = '★';
+                    // 🔥 ВИПРАВЛЕНО: Додано позиціювання, щоб не висіли вертикально
+                    s.style.left = `${(i) * 19}%`; // 19%, 38%, 57%...
+                    starContainer.appendChild(s);
+                }
+                // Update reference array
+                starsElements = [
+                    document.getElementById('star-1'), document.getElementById('star-2'), 
+                    document.getElementById('star-3'), document.getElementById('star-4'), 
+                    document.getElementById('star-5')
+                ];
+            }
+        } else {
+             // Revert to 3 stars if normal song
+             const starContainer = document.querySelector('.stars-container');
+             if(starContainer && starsElements.length === 5) {
+                 starContainer.innerHTML = '';
+                 for(let i=1; i<=3; i++) {
+                     const s = document.createElement('div');
+                     s.id = `star-${i}`;
+                     s.className = 'star-marker';
+                     s.innerHTML = '★';
+                     // Відновлюємо стандартні позиції
+                     if(i===1) s.style.left = '33%';
+                     if(i===2) s.style.left = '66%';
+                     if(i===3) s.style.left = '95%';
+                     starContainer.appendChild(s);
+                 }
+                 starsElements = [document.getElementById('star-1'), document.getElementById('star-2'), document.getElementById('star-3')];
+             }
+        }
+
         const mySession = currentSessionId;
         currentSongIndex = idx;
-        const song = songsDB[idx];
+        
         if(menuLayer) menuLayer.classList.add('hidden');
         if(gameContainer) gameContainer.classList.remove('hidden');
         if(loader) loader.classList.remove('hidden');
