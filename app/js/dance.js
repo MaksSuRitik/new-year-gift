@@ -1091,7 +1091,7 @@ function spawnSparks(lane, y, color, type = 'good') {
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
-            if (diff > 190 || diff < -240) return false;
+            if (diff > 230 || diff < -240) return false;
             return true;
         });
 
@@ -1609,6 +1609,7 @@ function updateScoreUI(isHit = false) {
         isPlaying = true; isPaused = false;
         animationFrameId = requestAnimationFrame(gameLoop);
     }
+// ... (попередня функція startGame закінчилася тут)
 
     function quitGame() {
         if(bgMusicEl && !isMuted) bgMusicEl.play().catch(()=>{});
@@ -1619,24 +1620,30 @@ function updateScoreUI(isHit = false) {
         renderMenu();
     }
 
-    initControls();
+    // Функція модального вікна (має бути ТУТ, всередині DOMContentLoaded)
     function showSecretLockModal() {
-    const modal = document.createElement('div');
-    modal.className = 'secret-lock-modal';
-    modal.innerHTML = `
-        <div class="secret-lock-content">
-            <span class="secret-lock-close">&times;</span>
-            <div class="secret-lock-icon">🔒</div>
-            <p>${getText('secretLockMsg')}</p>
-            <button class="secret-lock-btn">${getText('close')}</button>
-        </div>
-    `;
-    document.body.appendChild(modal);
+        const modal = document.createElement('div');
+        modal.className = 'secret-lock-modal';
+        modal.innerHTML = `
+            <div class="secret-lock-content">
+                <span class="secret-lock-close">&times;</span>
+                <div class="secret-lock-icon">🔒</div>
+                <p>${getText('secretLockMsg')}</p>
+                <button class="secret-lock-btn">${getText('close')}</button>
+            </div>
+        `;
+        document.body.appendChild(modal);
 
-    // Закриття
-    const close = () => modal.remove();
-    modal.querySelector('.secret-lock-close').onclick = close;
-    modal.querySelector('.secret-lock-btn').onclick = close;
-    modal.onclick = (e) => { if(e.target === modal) close(); };
-}
-});
+        const close = () => modal.remove();
+        modal.querySelector('.secret-lock-close').onclick = close;
+        modal.querySelector('.secret-lock-btn').onclick = close;
+        modal.onclick = (e) => { if(e.target === modal) close(); };
+    }
+
+    // Ініціалізація управління
+    initControls();
+    
+    // ПЕРШИЙ ЗАПУСК МЕНЮ (якщо цього рядка немає, список не з'явиться)
+    renderMenu(); 
+
+}); // ЦЯ ДУЖКА ЗАКРИВАЄ document.addEventListener('DOMContentLoaded', ...
