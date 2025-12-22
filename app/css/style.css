@@ -2723,6 +2723,15 @@ body[data-theme=light] .pause-overlay h2 {
   .click-effect {
     pointer-events: none !important;
   }
+  /* ВИМИКАЄМО ЕФЕКТИ КРАЇВ ГРИ ДЛЯ МОБІЛОК */
+  #game-container.container-ripple-gold,
+  #game-container.container-ripple-cosmic {
+    -webkit-animation: none !important;
+            animation: none !important;
+    border: none !important;
+    -webkit-box-shadow: none !important;
+            box-shadow: none !important;
+  }
 }
 /* --- Анімація веселкової рамки для секретної пісні --- */
 @-webkit-keyframes rainbow-border {
@@ -3400,4 +3409,95 @@ body[data-theme=light] .name-submit-btn:hover {
 }
 #legendary-border-overlay.active::before {
   display: none; /* Вимикаємо обертання */
+}
+
+/* --- МОДАЛЬНЕ ВІКНО БЛОКУВАННЯ СЕКРЕТУ --- */
+.secret-lock-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  -webkit-backdrop-filter: blur(8px);
+          backdrop-filter: blur(8px);
+  z-index: 5000;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-align: center;
+      -ms-flex-align: center;
+          align-items: center;
+  -webkit-box-pack: center;
+      -ms-flex-pack: center;
+          justify-content: center;
+  -webkit-animation: fadeIn 0.3s ease;
+          animation: fadeIn 0.3s ease;
+}
+
+.secret-lock-content {
+  background: var(--glass-bg);
+  border: 2px solid var(--highlight);
+  border-radius: 24px;
+  padding: 30px;
+  width: 90%;
+  max-width: 400px;
+  text-align: center;
+  position: relative;
+  -webkit-box-shadow: 0 0 30px var(--accent-glow);
+          box-shadow: 0 0 30px var(--accent-glow);
+  color: var(--text-color);
+}
+.secret-lock-content .secret-lock-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 2rem;
+  cursor: pointer;
+  color: var(--text-color);
+  opacity: 0.6;
+}
+.secret-lock-content .secret-lock-close:hover {
+  opacity: 1;
+  color: #ff5555;
+}
+.secret-lock-content .secret-lock-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+}
+.secret-lock-content p {
+  font-size: 1.1rem;
+  line-height: 1.4;
+  margin-bottom: 20px;
+  font-weight: 500;
+}
+.secret-lock-content .secret-lock-btn {
+  background: var(--highlight);
+  color: var(--bg-color);
+  border: none;
+  padding: 10px 30px;
+  border-radius: 50px;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-transition: 0.3s;
+  transition: 0.3s;
+}
+.secret-lock-content .secret-lock-btn:hover {
+  -webkit-transform: scale(1.05);
+      -ms-transform: scale(1.05);
+          transform: scale(1.05);
+  -webkit-box-shadow: 0 0 15px var(--highlight);
+          box-shadow: 0 0 15px var(--highlight);
+}
+
+/* Вимкнення ефектів для адаптації (як ви просили раніше) */
+@media (max-width: 768px) {
+  #game-container.container-ripple-gold,
+  #game-container.container-ripple-cosmic {
+    -webkit-animation: none !important;
+            animation: none !important;
+    border: none !important;
+    -webkit-box-shadow: none !important;
+            box-shadow: none !important;
+  }
 }

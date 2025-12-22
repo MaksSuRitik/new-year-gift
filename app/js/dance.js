@@ -157,7 +157,9 @@ document.addEventListener('DOMContentLoaded', () => {
             lbLoading: "Завантаження...",
             lbError: "Помилка завантаження",
             nameTaken: "Це ім'я вже зайнято! Оберіть інше.",
-            checking: "Перевірка..."
+            checking: "Перевірка...",
+            secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень",
+            close: "Закрити"
             
         },
         RU: { 
@@ -189,7 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
             lbLoading: "Загрузка...",
             lbError: "Ошибка загрузки",
             nameTaken: "Это имя уже занято! Выберите другое.",
-            checking: "Проверка..."
+            checking: "Проверка...",
+            secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень",
+            close: "Закрыть"
         },
         MEOW: { 
             icon: "🐱", 
@@ -220,7 +224,9 @@ document.addEventListener('DOMContentLoaded', () => {
             lbLoading: "Meowing...",
             lbError: "Meow Weow",
             nameTaken: "MEOW! Meow! Meow weow!",
-            checking: "Weow..."
+            checking: "Weow...",
+            secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow",
+            close: "Meow"
         }
     };
 
@@ -513,14 +519,14 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!list) return;
         list.innerHTML = '';
         
-        // CHECK UNLOCK CONDITION
+        // Перевірка умов розблокування (5 пісень на 3 зірки)
         let total3StarSongs = 0;
         songsDB.forEach(s => {
             if(!s.isSecret && getSavedData(s.title).stars >= 3) total3StarSongs++;
         });
         const isSecretUnlocked = total3StarSongs >= 5;
 
-        // Add Leaderboard Button
+        // Кнопка таблиці лідерів
         const lbBtn = document.createElement('button');
         lbBtn.className = 'btn-leaderboard';
         lbBtn.innerText = `🏆 ${getText('leaderboard')}`;
@@ -530,7 +536,6 @@ document.addEventListener('DOMContentLoaded', () => {
         songsDB.forEach((s, i) => {
             const saved = getSavedData(s.title);
             let starsStr = '';
-            // For secret song, max stars is 5, else 3
             const maxStars = s.isSecret ? 5 : 3;
             for(let j=0; j<maxStars; j++) starsStr += j < saved.stars ? '★' : '☆';
             const hasScore = saved.score > 0;
@@ -538,26 +543,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.createElement('div');
             el.className = 'song-card';
             
-            // Special Styling for Secret Song
+            // Стилізація для секретної пісні
             if (s.isSecret) {
                 if (!isSecretUnlocked) {
                     el.classList.add('song-locked');
-                    el.title = getText('req');
                 } else {
                     el.classList.add('secret-song-card');
                 }
             }
 
+            // --- КРИТИЧНЕ ВИПРАВЛЕННЯ ТУТ ---
             el.onclick = () => { 
                 playClick(); 
+                // Якщо пісня секретна і не розблокована - показуємо модалку
                 if (s.isSecret && !isSecretUnlocked) {
-                    alert(getText('req'));
+                    showSecretLockModal();
                     return;
                 }
                 startGame(i); 
             };
-            el.onmouseenter = playHover;
+            // -------------------------------
 
+            el.onmouseenter = playHover;
             el.innerHTML = `
                 <div class="song-info">
                     <h3>${s.title}</h3>
@@ -1613,5 +1620,25 @@ function updateScoreUI(isHit = false) {
     }
 
     initControls();
+    function showSecretLockModal() {
+    const modal = document.createElement('div');
+    modal.className = 'secret-lock-modal';
+    modal.innerHTML = `
+        <div class="secret-lock-content">
+            <span class="secret-lock-close">&times;</span>
+            <div class="secret-lock-icon">🔒</div>
+            <p>${getText('secretLockMsg')}</p>
+            <button class="secret-lock-btn">${getText('close')}</button>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    // Закриття
+    const close = () => modal.remove();
+    modal.querySelector('.secret-lock-close').onclick = close;
+    modal.querySelector('.secret-lock-btn').onclick = close;
+    modal.onclick = (e) => { if(e.target === modal) close(); };
+}
+
     renderMenu();
 });
