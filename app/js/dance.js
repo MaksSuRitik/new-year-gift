@@ -749,7 +749,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             score += Math.round(CONFIG.scoreHoldTick * mult);
                             
                             // 🔥 ЗМІНА КОМБО: +5 ЗАМІСТЬ +1
-                            combo += 100; 
+                            combo += 5; 
                             
                             updateScoreUI();
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good'); 
