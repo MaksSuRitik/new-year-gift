@@ -1639,6 +1639,4 @@ function updateScoreUI(isHit = false) {
     modal.querySelector('.secret-lock-btn').onclick = close;
     modal.onclick = (e) => { if(e.target === modal) close(); };
 }
-
-    renderMenu();
 });
