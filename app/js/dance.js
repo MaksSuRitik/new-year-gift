@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SONG LIST (Secret Song at Index 0) ---
     const songsDB = [
-        { file: "Secret.mp3", title: "???", artist: "???", isSecret: true }, // Секретна пісня
+        { file: "secret.mp3", title: "???", artist: "???", isSecret: true }, // Секретна пісня
         { file: "AfterDark.mp3", title: "After Dark", artist: "Mr. Kitty" },
         { file: "AfterHours.mp3", title: "After Hours", artist: "The Weeknd" },
         { file: "BlackSwan.mp3", title: "Black Swan", artist: "BTS" },
