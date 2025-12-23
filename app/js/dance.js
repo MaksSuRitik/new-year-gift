@@ -101,8 +101,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const CONFIG = {
         speedStart: 1400,//1400
         speedEnd: 700,
-        speedStartSecret: 1200, // 2x (Починаємо вже швидко)
-        speedEndSecret: 600,
+        speedStartSecret: 1000, // 2x (Починаємо вже швидко)
+        speedEndSecret: 500,
         hitPosition: 0.85,
         colorsDark: {
             tap: ['#00d2ff', '#3a7bd5'],
