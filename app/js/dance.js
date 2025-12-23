@@ -76,13 +76,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- SONG LIST (Secret Song at Index 0) ---
     const songsDB = [
-        { file: "secret.mp3", title: "???", artist: "???", isSecret: true }, // Секретна пісня
+        // 🔒 SECRET LEVEL
+        { file: "secret.mp3", title: "???", artist: "???", isSecret: true }, 
+
+        // 🆕 NEW SONGS
+        { file: "AlexAngelofDarkness.mp3", title: "Angel of Darkness", artist: "Alex C. feat. Yasmin K." },
+        { file: "SafeandSound.mp3", title: "Safe and Sound", artist: "Capital Cities" },
+        { file: "Ronald.mp3", title: "Ronald", artist: "Falling in Reverse" }, // Виправив автора
+        { file: "IWillSurvive.mp3", title: "I Will Survive", artist: "Demi Lovato" },
+        { file: "BorderLine.mp3", title: "Borderline", artist: "Tame Impala" },
+        { file: "TheWorldWeKnow.mp3", title: "The World We Knew", artist: "Frank Sinatra" }, // Виправив назву пісні
+        { file: "LetDown.mp3", title: "Let Down", artist: "Radiohead" },
+        { file: "LatInHappen.mp3", title: "Let It Happen", artist: "Tame Impala" }, // Тільки не забудь докачати файл!
+
+        // 🎵 OLD SONGS (Перевірені)
         { file: "AfterDark.mp3", title: "After Dark", artist: "Mr. Kitty" },
         { file: "AfterHours.mp3", title: "After Hours", artist: "The Weeknd" },
         { file: "BlackSwan.mp3", title: "Black Swan", artist: "BTS" },
         { file: "DirtyDiana.mp3", title: "Dirty Diana", artist: "Michael Jackson" },
         { file: "DrinkUpMeHeartiesYoHo.mp3", title: "Pirates", artist: "Hans Zimmer" },
-        { file: "Give.mp3", title: "Give", artist: "Unknown" },
+        { file: "Give.mp3", title: "Give", artist: "Sleep Token" }, // Дописав Sleep Token (це їх пісня)
         { file: "GoldenBrown.mp3", title: "Golden Brown", artist: "The Stranglers" },
         { file: "Hijodelaluna.mp3", title: "Hijo de la luna", artist: "Mecano" },
         { file: "LivingLegend.mp3", title: "Living Legend", artist: "Lana Del Rey" },
