@@ -1285,7 +1285,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
-            // === LONG NOTE ===
+           // === LONG NOTE ===
             else if (tile.type === 'long') {
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
                 
@@ -1302,10 +1302,10 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 const actualYHeadTop = yHead - headH;
                 const tailH = actualYHeadTop - yTail;
                 
+                // 1. Визначаємо базовий набір кольорів (сірий, якщо fail)
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
-                // 🔥 FIX 2: ПРИБИРАННЯ СМІТТЯ (Ghost Tail)
-                // Якщо хвіст менше 1 пікселя або нота вже "мертва" і пролетіла - не малюємо хвіст
+                // FIX GHOST TAIL: Якщо хвіст мікроскопічний - не малюємо
                 if (tailH > 1) {
                     const isMobile = window.innerWidth < 768;
                     if (isMobile) {
@@ -1313,25 +1313,31 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                     } else {
                         let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
                         grad.addColorStop(0, "rgba(0,0,0,0)");
+                        // Використовуємо colorSet (який стане сірим при помилці)
                         grad.addColorStop(0.2, colorSet[1]);
                         grad.addColorStop(1, colorSet[0]);
                         ctx.fillStyle = grad;
                     }
 
                     const tPad = 10;
-                    ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10); // +10 перекриття
+                    ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10); 
                     
-                    // Струна
-                    ctx.fillStyle = (combo >= 200) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
+                    // Струна стає тьмяною, якщо помилка
+                    ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
 
-                // Голова
-                let headColors = (combo >= 200) ? p.tapColor : colorSet;
+                // 🔥 ГОЛОВНИЙ ФІКС ТУТ:
+                // Було: let headColors = (combo >= 200) ? p.tapColor : colorSet;
+                // Стало: Перевіряємо !tile.failed. Якщо fail - беремо сірий колір (colorSet).
+                let headColors = (combo >= 200 && !tile.failed) ? p.tapColor : colorSet;
+                
                 let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
-                hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
+                hGrad.addColorStop(0, headColors[0]); 
+                hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
+                // Тінь (світіння) вимикається, якщо ми не тримаємо ноту
                 if (window.innerWidth >= 768) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
@@ -1342,7 +1348,10 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 else ctx.fillRect(x, actualYHeadTop, w, headH);
                 ctx.fill();
 
-                ctx.strokeStyle = p.border; ctx.lineWidth = 3; ctx.stroke();
+                // Якщо провалили - рамка теж стає сірою, інакше - кольорова
+                ctx.strokeStyle = tile.failed ? colors.dead[0] : p.border; 
+                ctx.lineWidth = 3; 
+                ctx.stroke();
             }
         });
 
