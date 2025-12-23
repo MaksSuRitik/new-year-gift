@@ -1735,6 +1735,9 @@ body[data-theme="light"] .pause-overlay h2 {
   #hold-effects-container, .hit-line, .lane-hints {
       pointer-events: none !important;
   }
+  #song-search-input {
+    font-size: 16px !important; /* Запобігає авто-зуму в iOS при натисканні */
+}
 }
 
 // ==========================================
@@ -2629,4 +2632,65 @@ body[data-theme="light"] {
   border-radius: 4px;
   margin-left: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* ==========================================
+   🔍 SEARCH BAR STYLES
+   ========================================== */
+
+.search-container {
+  width: 90%;
+  max-width: 500px;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 20;
+}
+
+#song-search-input {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px; /* Круглі краї */
+  backdrop-filter: blur(10px);
+  outline: none;
+  transition: all 0.3s ease;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+  }
+
+  &:focus {
+    background: var(--glass-bg);
+    border-color: var(--highlight);
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: scale(1.02);
+  }
+}
+
+/* Адаптація під Світлу Тему */
+body[data-theme="light"] {
+  #song-search-input {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
+    border-color: rgba(0,0,0,0.1);
+
+    &::placeholder {
+      color: rgba(0,0,0,0.4);
+    }
+
+    &:focus {
+      background: #fff;
+      border-color: var(--highlight);
+    }
+  }
+  
+  #no-songs-msg {
+      color: var(--text-color) !important;
+  }
 }

@@ -2672,6 +2672,9 @@ body[data-theme=light] .pause-overlay h2 {
   #hold-effects-container, .hit-line, .lane-hints {
     pointer-events: none !important;
   }
+  #song-search-input {
+    font-size: 16px !important; /* Запобігає авто-зуму в iOS при натисканні */
+  }
 }
 @media (max-width: 768px) {
   /* 1. Блокуємо системні дії */
@@ -3824,4 +3827,92 @@ body[data-theme=light] #cancel-name-btn:hover {
   border-radius: 4px;
   margin-left: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ==========================================
+   🔍 SEARCH BAR STYLES
+   ========================================== */
+.search-container {
+  width: 90%;
+  max-width: 500px;
+  margin-bottom: 15px;
+  position: relative;
+  z-index: 20;
+}
+
+#song-search-input {
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px; /* Круглі краї */
+  -webkit-backdrop-filter: blur(10px);
+          backdrop-filter: blur(10px);
+  outline: none;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  text-align: center;
+  -webkit-box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+#song-search-input::-webkit-input-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+#song-search-input::-moz-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+#song-search-input:-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+#song-search-input::-ms-input-placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+#song-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+#song-search-input:focus {
+  background: var(--glass-bg);
+  border-color: var(--highlight);
+  -webkit-box-shadow: 0 0 20px var(--accent-glow);
+          box-shadow: 0 0 20px var(--accent-glow);
+  -webkit-transform: scale(1.02);
+      -ms-transform: scale(1.02);
+          transform: scale(1.02);
+}
+
+/* Адаптація під Світлу Тему */
+body[data-theme=light] #song-search-input {
+  background: rgba(255, 255, 255, 0.5);
+  color: var(--text-color);
+  border-color: rgba(0, 0, 0, 0.1);
+}
+body[data-theme=light] #song-search-input::-webkit-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] #song-search-input::-moz-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] #song-search-input:-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] #song-search-input::-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] #song-search-input::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] #song-search-input:focus {
+  background: #fff;
+  border-color: var(--highlight);
+}
+body[data-theme=light] #no-songs-msg {
+  color: var(--text-color) !important;
 }

@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     window.addEventListener('beforeunload', () => {
+        
         if (bgMusicEl && !bgMusicEl.paused) localStorage.setItem('bgMusicTime', bgMusicEl.currentTime);
     });
 
@@ -252,7 +253,10 @@ document.addEventListener('DOMContentLoaded', () => {
             enterNewName: "Введіть нове ім'я:",
             migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!",
             btnOk: "ОК",
-            btnCancel: "Скасувати"
+            btnCancel: "Скасувати",
+            searchPlaceholder: "🔍 Пошук пісні або автора...",
+            noSongsFound: "🚫 Жодних пісень не знайдено",
+            checking: "Перевірка..."
 
         },
 
@@ -293,7 +297,10 @@ document.addEventListener('DOMContentLoaded', () => {
             enterNewName: "Введите новое имя:",
             migrationSuccess: "Ваш старый рекорд найден и привязан!",
             btnOk: "ОК",
-            btnCancel: "Отмена"
+            btnCancel: "Отмена",
+            searchPlaceholder: "🔍 Поиск песни или автора...",
+            noSongsFound: "🚫 Песен не найдено",
+            checking: "Проверка..."
         },
 
         MEOW: {
@@ -333,7 +340,10 @@ document.addEventListener('DOMContentLoaded', () => {
             enterNewName: "Meow new meow:",
             migrationSuccess: "Meow weow meow!",
             btnOk: "Meow!",
-            btnCancel: "Grrr..."
+            btnCancel: "Grrr...",
+            searchPlaceholder: "🔍 Meow search...",
+            noSongsFound: "🚫 Meow weow grrr",
+            checking: "Weow..."
         }
 
     };
@@ -395,7 +405,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateGameText() {
         const t = TRANSLATIONS[currentLang];
-        const instr = document.querySelector('.instruction-text'); if (instr) instr.innerText = t.instructions;
+        const searchInput = document.getElementById('song-search-input');
+        if (searchInput) searchInput.placeholder = t.searchPlaceholder;
+
+        const noSongsMsg = document.querySelector('#no-songs-msg h3');
+        if (noSongsMsg) noSongsMsg.innerText = t.noSongsFound;
+
+        // Інші переклади (залиш як було)
+        const instr = document.querySelector('.instruction-text'); 
+        if (instr) instr.innerText = t.instructions;
         const pauseTitle = document.querySelector('#pause-modal h2'); if (pauseTitle) pauseTitle.innerText = t.paused;
         const btnResume = document.getElementById('btn-resume'); if (btnResume) btnResume.innerText = t.resume;
         const btnQuit = document.getElementById('btn-quit'); if (btnQuit) btnQuit.innerText = t.quit;
@@ -1809,7 +1827,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     }
 
     /* --- INIT --- */
-    function initControls() {
+  function initControls() {
         const lanesContainer = document.getElementById('lanes-bg');
         if (lanesContainer) for (let i = 0; i < 4; i++) laneElements[i] = lanesContainer.children[i];
 
@@ -1819,6 +1837,43 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
         const hints = document.querySelector('.lane-hints');
         if (hints) hints.style.pointerEvents = 'none';
 
+        // --- ЛОГІКА ПОШУКУ ---
+        const searchInput = document.getElementById('song-search-input');
+        const noSongsMsg = document.getElementById('no-songs-msg');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                const songList = document.getElementById('song-list');
+                if (!songList) return;
+                
+                const cards = songList.querySelectorAll('.song-card');
+                let visibleCount = 0;
+
+                cards.forEach(card => {
+                    const songText = card.innerText; 
+                    if (isFuzzyMatch(query, songText)) {
+                        card.style.display = 'flex';
+                        if (card.classList.contains('song-xmas') || card.classList.contains('song-gold')) {
+                             card.style.animationPlayState = 'running';
+                        }
+                        visibleCount++;
+                    } else {
+                        card.style.display = 'none';
+                    }
+                });
+
+                if (noSongsMsg) {
+                    if (visibleCount === 0 && query !== '') {
+                        noSongsMsg.classList.remove('hidden');
+                    } else {
+                        noSongsMsg.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // --- КЕРУВАННЯ ТА ПАУЗА ---
         function togglePauseGame() {
             if (!isPlaying) return;
             isPaused = !isPaused;
@@ -1834,59 +1889,67 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             playClick();
         }
 
+        // Обробка клавіш
         window.addEventListener('keydown', e => {
+            // Не ставимо на паузу, якщо гравець пише в пошуку
+            if (e.code === 'Space' && document.activeElement.id === 'song-search-input') return;
+
             if (e.code === 'Space') { e.preventDefault(); togglePauseGame(); return; }
+            
             if (!e.repeat) {
                 const lane = KEYS.indexOf(e.code);
                 if (lane !== -1) handleInputDown(lane);
             }
         });
-        window.addEventListener('keyup', e => { const lane = KEYS.indexOf(e.code); if (lane !== -1) handleInputUp(lane); });
 
-        if (canvas) {
-            canvas.addEventListener('touchstart', (e) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
-                    handleInputDown(lane);
-                }
-            }, { passive: false });
+        window.addEventListener('keyup', e => { 
+            const lane = KEYS.indexOf(e.code); 
+            if (lane !== -1) handleInputUp(lane); 
+        });
 
-            canvas.addEventListener('touchend', (e) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                for (let i = 0; i < e.changedTouches.length; i++) {
-                    const lane = Math.floor((e.changedTouches[i].clientX - rect.left) / (rect.width / 4));
-                    handleInputUp(lane);
-                }
-            }, { passive: false });
-
-            canvas.addEventListener('mousedown', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
-                handleInputDown(lane);
-                setTimeout(() => handleInputUp(lane), 150);
-            });
-        }
+// --- КНОПКА ТЕМИ (ВИПРАВЛЕНО) ---
         const tBtn = document.getElementById('themeToggle');
         if (tBtn) {
             tBtn.onclick = () => {
                 playClick();
-                const b = document.body;
-                const isDark = b.getAttribute('data-theme') === 'dark' || !b.getAttribute('data-theme');
-                const newTheme = isDark ? 'light' : 'dark';
-                b.setAttribute('data-theme', newTheme);
-                tBtn.innerText = isDark ? '☀️' : '🌙';
+                const body = document.body;
+                const currentTheme = body.getAttribute('data-theme') || 'dark';
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                
+                body.setAttribute('data-theme', newTheme);
                 localStorage.setItem('siteTheme', newTheme);
+                tBtn.innerText = newTheme === 'dark' ? '🌙' : '☀️';
             };
             tBtn.onmouseenter = playHover;
         }
 
+        // --- КНОПКА ЗВУКУ (ВИПРАВЛЕНО) ---
+        const sBtn = document.getElementById('soundToggle');
+        if (sBtn) {
+            sBtn.onclick = () => {
+                playClick();
+                isMuted = !isMuted;
+                localStorage.setItem('isMuted', isMuted);
+                
+                if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
+                sBtn.innerText = isMuted ? '🔇' : '🔊';
+                
+                if (bgMusicEl) {
+                    if (isMuted) bgMusicEl.pause();
+                    else if (!isPlaying) bgMusicEl.play().catch(() => {});
+                }
+            };
+            sBtn.onmouseenter = playHover;
+        }
+
+        // --- МОВА ---
         const lBtn = document.getElementById('langToggle');
         if (lBtn) {
-            lBtn.onclick = (e) => { playClick(); e.stopPropagation(); document.querySelector('.lang-wrapper').classList.toggle('open'); };
-            lBtn.onmouseenter = playHover;
+            lBtn.onclick = (e) => { 
+                playClick(); 
+                e.stopPropagation(); 
+                document.querySelector('.lang-wrapper').classList.toggle('open'); 
+            };
         }
 
         document.querySelectorAll('.lang-dropdown button').forEach(b => {
@@ -1895,26 +1958,12 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 currentLang = b.dataset.lang;
                 localStorage.setItem('siteLang', currentLang);
                 document.body.setAttribute('data-lang', currentLang);
+                
+                // Оновлюємо текст інтерфейсу та пошуку
                 updateGameText();
+                updateLangDisplay();
             };
-            b.onmouseenter = playHover;
         });
-
-        const sBtn = document.getElementById('soundToggle');
-        if (sBtn) {
-            sBtn.onclick = () => {
-                playClick();
-                isMuted = !isMuted;
-                localStorage.setItem('isMuted', isMuted);
-                if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
-                sBtn.innerText = isMuted ? '🔇' : '🔊';
-                if (bgMusicEl) {
-                    if (isMuted) bgMusicEl.pause();
-                    else if (!isPlaying) bgMusicEl.play().catch(() => { });
-                }
-            };
-            sBtn.onmouseenter = playHover;
-        }
 
         const backBtn = document.getElementById('global-back-btn');
         if (backBtn) {
@@ -2070,15 +2119,23 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     }
     // ... (попередня функція startGame закінчилася тут)
 
-    function quitGame() {
+   function quitGame() {
         if (bgMusicEl && !isMuted) bgMusicEl.play().catch(() => { });
 
         resetGameState();
         if (gameContainer) gameContainer.classList.add('hidden');
         if (menuLayer) menuLayer.classList.remove('hidden');
         renderMenu();
-    }
 
+        // Очищення пошуку при виході
+        const searchInput = document.getElementById('song-search-input');
+        if (searchInput) {
+            searchInput.value = ''; 
+            // Оновлюємо список, щоб показати всі пісні
+            const noSongsMsg = document.getElementById('no-songs-msg');
+            if (noSongsMsg) noSongsMsg.classList.add('hidden');
+        }
+    }
     // Функція модального вікна (має бути ТУТ, всередині DOMContentLoaded)
     function showSecretLockModal() {
         const modal = document.createElement('div');
@@ -2104,5 +2161,59 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
 
     // ПЕРШИЙ ЗАПУСК МЕНЮ (якщо цього рядка немає, список не з'явиться)
     renderMenu();
+
+    /* ==========================================
+   🔍 FUZZY SEARCH LOGIC (TRIGRAMS)
+   ========================================== */
+
+// 1. Нормалізація тексту (прибираємо пробіли, спецсимволи, робимо маленькі літери)
+// "Linkin Park - Numb" -> "linkinparknumb"
+function normalizeSearchText(str) {
+    return str.toLowerCase().replace(/[^a-zа-я0-9їієґ]/g, '');
+}
+
+// 2. Генерація триграм (розбивка по 3 літери)
+// "hello" -> ['hel', 'ell', 'llo']
+function getTrigrams(str) {
+    const trigrams = [];
+    if (str.length < 3) return [str]; // Якщо слово коротке, повертаємо як є
+    for (let i = 0; i < str.length - 2; i++) {
+        trigrams.push(str.slice(i, i + 3));
+    }
+    return trigrams;
+}
+
+// 3. Порівняння (твоя умова про 50%)
+function isFuzzyMatch(query, target) {
+    const qNorm = normalizeSearchText(query);
+    const tNorm = normalizeSearchText(target);
+
+    // Якщо запит порожній - показуємо все
+    if (qNorm.length === 0) return true;
+
+    // Якщо запит дуже короткий (1-2 літери), триграми не працюють, 
+    // тому використовуємо звичайний пошук (includes)
+    if (qNorm.length < 3) {
+        return tNorm.includes(qNorm);
+    }
+
+    const qTrigrams = getTrigrams(qNorm);
+    const tTrigrams = getTrigrams(tNorm);
+
+    let matches = 0;
+    
+    // Рахуємо, скільки блоків з запиту є в назві пісні
+    qTrigrams.forEach(tri => {
+        if (tTrigrams.includes(tri)) {
+            matches++;
+        }
+    });
+
+    // Відсоток збігу (кількість знайдених блоків / кількість блоків у запиті)
+    const similarity = matches / qTrigrams.length;
+
+    // Якщо збіглося 50% (0.5) або більше блоків - це воно!
+    return similarity >= 0.5;
+}
 
 }); // ЦЯ ДУЖКА ЗАКРИВАЄ document.addEventListener('DOMContentLoaded', ...
