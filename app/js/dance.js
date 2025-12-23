@@ -1298,8 +1298,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = canvas.width / 4;
         const x = lane * laneW + laneW / 2;
-        const limit = isMobile ? 40 : 150; 
-        if (particles.length > limit) return;
+    
 
         let finalColor = '#cfd8dc';
 
@@ -1448,7 +1447,6 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     function updateScoreUI(isHit = false) {
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
-        const isMobile = window.innerWidth < 768;
 
         const gameContainer = document.getElementById('game-container');
         // Отримуємо наш новий шар для рамки
@@ -1459,13 +1457,6 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             const textStr = `${getText('combo')} ${combo} (x${mult})`;
             comboDisplay.innerText = textStr;
             comboDisplay.setAttribute('data-text', textStr);
-            
-            if (isMobile && combo > 50) {
-                 // Просто оновлюємо текст, не чіпаючи класи анімацій
-                 comboDisplay.innerText = textStr;
-                 comboDisplay.style.opacity = 1;
-                 return; // <--- ВИХОДИМО, щоб не навантажувати CSS
-            }
 
             // 1. Очищення старих класів
             comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
