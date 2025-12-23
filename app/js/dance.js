@@ -1225,20 +1225,33 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 const tailH = actualYHeadTop - yTail;
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
-                if (tailH > 0) {
+               if (tailH > 0) {
+                // 🔥 ОПТИМІЗАЦІЯ ДЛЯ REDMI NOTE:
+                // Перевіряємо ширину екрану. Якщо це телефон (< 768px) - вимикаємо градієнти.
+                const isMobile = window.innerWidth < 768;
+
+                if (isMobile) {
+                    // 🚀 ШВИДКИЙ РЕЖИМ: Просто суцільний колір
+                    // Це працює в 10 разів швидше за градієнт
+                    ctx.fillStyle = colorSet[1]; 
+                } else {
+                    // 🎨 РЕЖИМ ПК: Красивий градієнт
+                    // Цей код виконується тільки на комп'ютерах
                     let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
                     grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
                     ctx.fillStyle = grad;
-
-                    const tPad = 10;
-                    ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10);
-
-                    // Струна
-                    ctx.fillStyle = (combo >= 200) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
-                    ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
+
+                const tPad = 10;
+                // Малюємо хвіст
+                ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10);
+
+                // Струна посередині (тоненька лінія)
+                ctx.fillStyle = (combo >= 200) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
+                ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
+            }
 
                 // Голова
                 let headColors = (combo >= 200) ? p.tapColor : colorSet;
@@ -1274,7 +1287,6 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 ctx.fillRect(-3, -1, 6, 2); // Горизонтальна риска
                 ctx.fillRect(-1, -3, 2, 6); // Вертикальна риска (вийде плюсик)
                 ctx.restore();
-            } else if (combo >= 400) {
             } else if (combo >= 400) {
                 // ⭐️ ЗІРОЧКИ ДЛЯ КОСМОСУ
                 ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5);
