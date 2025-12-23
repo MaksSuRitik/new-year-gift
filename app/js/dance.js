@@ -99,10 +99,10 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const CONFIG = {
-        speedStart: 1400,
-        speedEnd: 470,
-        speedStartSecret: 700, // 2x (Починаємо вже швидко)
-        speedEndSecret: 350,
+        speedStart: 1400,//1400
+        speedEnd: 700,
+        speedStartSecret: 1200, // 2x (Починаємо вже швидко)
+        speedEndSecret: 600,
         hitPosition: 0.85,
         colorsDark: {
             tap: ['#00d2ff', '#3a7bd5'],
@@ -581,77 +581,294 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGameText();
     }
 
-    /* --- GENERATION --- */
-    async function analyzeAudio(url, sessionId) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (!masterGain) {
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = isMuted ? 0 : 1;
-            masterGain.connect(audioCtx.destination);
-        }
+/* =================================================================
+   🏴‍☠️ PULSE ENGINE V4.2: NO OVERLAP + HIGH DENSITY
+   ================================================================= */
 
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
+async function analyzeAudio(url, sessionId) {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (!masterGain) {
+        masterGain = audioCtx.createGain();
+        masterGain.gain.value = isMuted ? 0 : 1;
+        masterGain.connect(audioCtx.destination);
+    }
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error("File not found");
+        const arrayBuffer = await response.arrayBuffer();
+        
+        if (sessionId !== currentSessionId) return null;
+        const decodedAudio = await audioCtx.decodeAudioData(arrayBuffer);
+        if (sessionId !== currentSessionId) return null;
+
+        // --- CONFIG ---
+        let isSecret = false;
+        let startSpeedMs = 1400, endSpeedMs = 600;
+        // Стандартна висота ноти (візуальна), має співпадати з CONFIG.noteHeight
+        let noteH = 210; 
+        let hitPos = 0.85;
 
         try {
-            const response = await fetch(url);
-            if (!response.ok) throw new Error("File not found");
-            const arrayBuffer = await response.arrayBuffer();
-            if (sessionId !== currentSessionId) return null;
-            const decodedAudio = await audioCtx.decodeAudioData(arrayBuffer);
-            if (sessionId !== currentSessionId) return null;
+            if (typeof songsDB !== 'undefined' && songsDB[currentSongIndex]) isSecret = songsDB[currentSongIndex].isSecret;
+            if (typeof CONFIG !== 'undefined') {
+                startSpeedMs = isSecret ? CONFIG.speedStartSecret : CONFIG.speedStart;
+                endSpeedMs = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
+                hitPos = CONFIG.hitPosition || 0.85;
+                noteH = CONFIG.noteHeight || 210;
+            }
+        } catch(e) {}
 
-            const rawData = decodedAudio.getChannelData(0);
-            const sampleRate = decodedAudio.sampleRate;
-            let sum = 0; const sampleStep = Math.floor(rawData.length / 1000);
-            for (let i = 0; i < rawData.length; i += sampleStep) sum += rawData[i] * rawData[i];
-            const rms = Math.sqrt(sum / 1000); let threshold = Math.max(0.05, rms * 1.5);
-            const tiles = []; const step = 4410; let lastTime = 0; maxPossibleScore = 0;
-            const MIN_GAP = 0.35;
+        // --- DATA PREP ---
+        const rawDataOriginal = decodedAudio.getChannelData(0);
+        const normalizedData = normalizeBufferAggressive(rawDataOriginal);
+        
+        const sampleRate = decodedAudio.sampleRate;
+        const duration = decodedAudio.duration;
+        const tiles = [];
 
-            for (let i = 0; i < rawData.length; i += step) {
-                let localMax = 0;
-                for (let j = 0; j < step && i + j < rawData.length; j += 10) if (Math.abs(rawData[i + j]) > localMax) localMax = Math.abs(rawData[i + j]);
-                if (localMax > threshold) {
-                    const time = i / sampleRate;
-                    if (time - lastTime > MIN_GAP) {
-                        const isLong = Math.random() < 0.25;
-                        let duration = 0; let type = 'tap';
-                        let noteScore = CONFIG.scorePerfect;
+        // --- VARIABLES ---
+        const STEP_SIZE = Math.floor(sampleRate / 100); // 10ms
+        let laneFreeTime = [0, 0, 0, 0];
+        let lastGenerationTime = 0;
+        let lastLane = -1;
+        let maxPossibleScoreTemp = 0;
 
-                        if (isLong) {
-                            const isSuperLong = Math.random() < 0.2; duration = isSuperLong ? 2.5 : 0.8; type = 'long';
-                            noteScore += (duration * 1000 / 220 * CONFIG.scoreHoldTick) + (CONFIG.scoreHoldTick * 2);
-                        }
-                        const isDouble = Math.random() < 0.20;
-                        const numberOfNotes = isDouble ? 2 : 1;
+        // Вираховуємо висоту треку для точного розрахунку колізій
+        const trackHeight = (canvas && canvas.height) ? (canvas.height * hitPos) : 600;
+        // Яку частку екрану займає одна нота (візуально)
+        const noteSizeFraction = noteH / trackHeight;
 
-                        let lanes = [];
-                        while (lanes.length < numberOfNotes) {
-                            let l = Math.floor(Math.random() * 4);
-                            if (!lanes.includes(l)) lanes.push(l);
-                        }
+        // --- MAIN LOOP ---
+        for (let i = STEP_SIZE; i < normalizedData.length; i += STEP_SIZE) {
+            const time = i / sampleRate;
 
-                        lanes.forEach(lane => {
-                            maxPossibleScore += noteScore;
-                            tiles.push({
-                                time: time * 1000, duration: duration * 1000, endTime: (time + duration) * 1000,
-                                lane: lane, type: type,
-                                hit: false, holding: false, completed: false, failed: false, holdTicks: 0,
-                                hitAnimStart: 0, lastValidHoldTime: 0
-                            });
+            // 1. INSTANT ENERGY
+            let energy = 0;
+            for (let j = 0; j < STEP_SIZE; j += 10) {
+                const idx = i - j;
+                if (idx >= 0 && idx < normalizedData.length) energy += Math.abs(normalizedData[idx]);
+            }
+            energy /= (STEP_SIZE / 10);
+
+            // 2. FLUX
+            let prevEnergy = 0;
+            const prevIndex = i - (STEP_SIZE * 4);
+            if (prevIndex > 0) {
+                 for (let j = 0; j < STEP_SIZE; j += 10) {
+                    const idx = prevIndex - j;
+                    if (idx >= 0) prevEnergy += Math.abs(normalizedData[idx]);
+                 }
+                 prevEnergy /= (STEP_SIZE / 10);
+            }
+            let flux = energy - prevEnergy;
+            if (flux < 0) flux = 0;
+
+            // 3. ADAPTIVE THRESHOLD
+            let localAvg = getLocalAverage(normalizedData, i, sampleRate, 2.0);
+            
+            let thresholdMultiplier = 0.6;
+            if (localAvg > 0.4) thresholdMultiplier = 0.25; 
+            if (localAvg > 0.6) thresholdMultiplier = 0.15; 
+            
+            let threshold = localAvg * thresholdMultiplier;
+            if (threshold < 0.04) threshold = 0.04; 
+
+            // 4. DENSITY & SPEED CALCULATION
+            const progress = time / duration;
+            // Розраховуємо поточну швидкість нот (ms)
+            const currentSpeedMs = startSpeedMs - (progress * (startSpeedMs - endSpeedMs));
+            
+            // 🔥 PHYSICS FIX: Час, який нота фізично займає на екрані
+            // Це гарантує, що наступна нота не з'явиться, поки попередня не проїде свою висоту
+            const noteBlockTime = (currentSpeedMs / 1000) * noteSizeFraction;
+
+            let minGap = noteBlockTime + 0.02; // Мінімальний технічний зазор
+
+            // TURBO Logic (дозволяємо щільніше, але НЕ щільніше ніж фізичний розмір ноти)
+            if (energy > 0.6 || localAvg > 0.5) {
+                // Тут ми трохи ризикуємо заради драйву, але smartLaneAllocator не дасть налізти
+                minGap = noteBlockTime * 0.8; 
+            } else if (energy > 0.4) {
+                minGap = noteBlockTime + 0.05;
+            }
+
+            // --- DECISION ---
+            const timeSinceLast = time - lastGenerationTime;
+            const isHit = (flux > threshold);
+            const isStream = (energy > localAvg * 0.9) && (energy > 0.35) && (timeSinceLast > minGap);
+
+            if ((isHit && timeSinceLast > minGap) || isStream) {
+                
+                // --- NOTE TYPE ---
+                const sustainInfo = checkSustain(normalizedData, i, sampleRate, energy, localAvg);
+                let type = 'tap';
+                let dur = 0;
+
+                if (sustainInfo.isLong) {
+                    type = 'long';
+                    dur = sustainInfo.duration;
+                    if (dur < 0.4) { type = 'tap'; dur = 0; } 
+                    else { if (dur > 2.0) dur = 2.0; }
+                }
+
+                // --- COUNT ---
+                let notesCount = 1;
+                // Double notes logic
+                if ((flux > 0.2 || energy > 0.8) && Math.random() > 0.6) {
+                    notesCount = 2;
+                }
+                if (type === 'long') notesCount = 1;
+
+                // --- PLACEMENT (SMART) ---
+                // Ми передаємо поточний час. Функція поверне тільки ті лінії, 
+                // які вже вільні від попередніх нот (враховуючи їх розмір!)
+                let lanes = smartLaneAllocator(laneFreeTime, notesCount, time, lastLane);
+
+                if (lanes && lanes.length > 0) {
+                    lanes.forEach(lane => {
+                        let noteScore = 50; 
+                        if (type === 'long') noteScore += (dur * 1000 / 220 * 5) + 10;
+                        maxPossibleScoreTemp += noteScore;
+
+                        tiles.push({
+                            time: time * 1000,
+                            duration: dur * 1000,
+                            endTime: (time + dur) * 1000,
+                            lane: lane,
+                            type: type,
+                            hit: false, holding: false, completed: false, failed: false, holdTicks: 0,
+                            hitAnimStart: 0, lastValidHoldTime: 0
                         });
-                        lastTime = time + duration + 0.15;
-                    }
+
+                        // 🔥 KEY FIX: Блокуємо лінію рівно на:
+                        // 1. Час звучання ноти (dur)
+                        // 2. ПЛЮС час, який нота візуально їде по екрану (noteBlockTime)
+                        // 3. ПЛЮС маленький зазор (0.05s), щоб вони не злипалися
+                        
+                        let visualBuffer = noteBlockTime; 
+                        // Для довгих нот буфер трохи менший, щоб хвіст міг бути ближче до наступної
+                        if (type === 'long') visualBuffer = noteBlockTime * 0.5; 
+
+                        laneFreeTime[lane] = time + dur + visualBuffer + 0.05; 
+                        
+                        lastLane = lane;
+                    });
+
+                    // Оновлюємо глобальний таймер
+                    lastGenerationTime = (type === 'long') ? time + (dur * 0.5) : time;
                 }
             }
-            audioBuffer = decodedAudio;
-            return tiles;
-        } catch (error) {
-            console.error(error);
-            if (sessionId === currentSessionId) { alert(`Помилка: ${url}`); quitGame(); }
-            return null;
         }
+
+        maxPossibleScore = maxPossibleScoreTemp;
+        audioBuffer = decodedAudio;
+        console.log(`✅ PULSE ENGINE V4.2: Generated ${tiles.length} notes (No Overlap)`);
+        return tiles;
+
+    } catch (error) {
+        console.error("GEN ERROR DETAILED:", error);
+        if (sessionId === currentSessionId) { alert("Generation Error: " + error.message); quitGame(); }
+        return null;
     }
+}
+// ==========================================
+// 👇 HELPER FUNCTIONS (Вставте в кінець файлу)
+// ==========================================
+
+function normalizeBufferAggressive(buffer) {
+    const newData = new Float32Array(buffer.length);
+    let maxAmp = 0;
+    // Знаходимо пік
+    for (let i = 0; i < buffer.length; i += 500) {
+        const val = Math.abs(buffer[i]);
+        if (val > maxAmp) maxAmp = val;
+    }
+    const mult = 1.0 / (maxAmp || 0.01);
+    
+    for (let i = 0; i < buffer.length; i++) {
+        // Linear normalize + slight gamma to boost mids
+        let val = Math.abs(buffer[i] * mult);
+        // Менш агресивна степінь (0.95), щоб не вбивати динаміку приспіву
+        newData[i] = Math.pow(val, 0.95); 
+    }
+    return newData;
+}
+
+function getLocalAverage(data, index, sampleRate, windowSec) {
+    const windowSamples = Math.floor(sampleRate * windowSec);
+    const start = Math.max(0, index - windowSamples / 2);
+    const end = Math.min(data.length, index + windowSamples / 2);
+    let sum = 0, count = 0;
+    // Оптимізація: стрибаємо через 2000 семплів
+    for (let k = start; k < end; k += 2000) {
+        sum += Math.abs(data[k]);
+        count++;
+    }
+    return count > 0 ? sum / count : 0.001;
+}
+
+function checkSustain(data, index, sampleRate, attackEnergy, localAvg) {
+    // 🔥 Збільшуємо вікно перевірки до 0.5с
+    const lookAheadSamples = Math.floor(sampleRate * 0.5); 
+    const startScan = index + Math.floor(sampleRate * 0.05);
+    const endScan = Math.min(data.length, index + lookAheadSamples);
+    
+    let sum = 0, count = 0;
+    for(let k = startScan; k < endScan; k += 100) {
+        sum += Math.abs(data[k]);
+        count++;
+    }
+    const sustainLevel = count > 0 ? sum / count : 0;
+    
+    // Більш сувора умова: сустейн має бути на рівні 65% від атаки
+    const isLong = (sustainLevel > attackEnergy * 0.65) || (sustainLevel > localAvg * 1.2);
+    
+    if (!isLong) return { isLong: false, duration: 0 };
+
+    let endIndex = index;
+    // Макс довжина 3 сек
+    const maxDurSamples = sampleRate * 3.0; 
+    
+    for(let k = startScan; k < index + maxDurSamples; k += Math.floor(sampleRate * 0.1)) {
+        if (k >= data.length) break;
+        const val = Math.abs(data[k]);
+        
+        // Кінець, якщо впало нижче 30% атаки або нижче середнього фону
+        if (val < attackEnergy * 0.3 && val < localAvg) {
+            endIndex = k;
+            break;
+        }
+        endIndex = k;
+    }
+    return { isLong: true, duration: (endIndex - index) / sampleRate };
+}
+
+function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
+    let available = [];
+    for (let l = 0; l < 4; l++) {
+        // Головна перевірка: чи настав вже час, коли лінія звільнилася?
+        if (currentTime > laneFreeTimes[l]) available.push(l);
+    }
+    
+    if (available.length < count) count = available.length;
+    if (count === 0) return [];
+
+    // Перемішуємо (Рандом), щоб не було скучно
+    for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+    }
+    
+    // Якщо треба 2 ноти, беремо крайні (для зручності пальців)
+    if (count === 2 && available.length >= 2) {
+        available.sort((a,b) => a - b);
+        return [available[0], available[available.length - 1]]; 
+    }
+
+    return available.slice(0, count);
+}
 
     /* --- LOGIC --- */
     function gameLoop() {
