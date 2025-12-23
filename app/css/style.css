@@ -3710,3 +3710,118 @@ body[data-theme=light] #cancel-name-btn {
 body[data-theme=light] #cancel-name-btn:hover {
   background: #aaa !important;
 }
+
+/* ==========================================
+   🎄 CHRISTMAS & GOLD SONGS STYLES
+   ========================================== */
+/* --- Анімація для НОВОРІЧНИХ пісень (Червоний-Зелений-Золотий) --- */
+@-webkit-keyframes xmas-border {
+  0% {
+    border-color: #ff0000; /* Червоний */
+    -webkit-box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+            box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+  33% {
+    border-color: #00ff00; /* Зелений */
+    -webkit-box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+            box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+  }
+  66% {
+    border-color: #ffd700; /* Золотий */
+    -webkit-box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+            box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+  }
+  100% {
+    border-color: #ff0000;
+    -webkit-box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+            box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+}
+@keyframes xmas-border {
+  0% {
+    border-color: #ff0000; /* Червоний */
+    -webkit-box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+            box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+  33% {
+    border-color: #00ff00; /* Зелений */
+    -webkit-box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+            box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+  }
+  66% {
+    border-color: #ffd700; /* Золотий */
+    -webkit-box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+            box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+  }
+  100% {
+    border-color: #ff0000;
+    -webkit-box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+            box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+}
+.song-card.song-xmas {
+  background: -webkit-gradient(linear, left top, right top, from(rgba(20, 0, 0, 0.8)), to(rgba(0, 20, 0, 0.8)));
+  background: linear-gradient(to right, rgba(20, 0, 0, 0.8), rgba(0, 20, 0, 0.8));
+  border: 2px solid transparent;
+  -webkit-animation: xmas-border 3s linear infinite;
+          animation: xmas-border 3s linear infinite;
+}
+
+/* Додаємо сніжинку біля назви новорічних пісень */
+.song-card.song-xmas h3::before {
+  content: "🎄 ";
+}
+
+/* --- Анімація для ЗОЛОТИХ (Перевірених) пісень --- */
+@-webkit-keyframes gold-shimmer-border {
+  0% {
+    border-color: #b8860b;
+    -webkit-box-shadow: 0 0 5px #b8860b;
+            box-shadow: 0 0 5px #b8860b;
+  }
+  50% {
+    border-color: #ffd700;
+    -webkit-box-shadow: 0 0 15px #ffd700;
+            box-shadow: 0 0 15px #ffd700;
+  }
+  100% {
+    border-color: #b8860b;
+    -webkit-box-shadow: 0 0 5px #b8860b;
+            box-shadow: 0 0 5px #b8860b;
+  }
+}
+@keyframes gold-shimmer-border {
+  0% {
+    border-color: #b8860b;
+    -webkit-box-shadow: 0 0 5px #b8860b;
+            box-shadow: 0 0 5px #b8860b;
+  }
+  50% {
+    border-color: #ffd700;
+    -webkit-box-shadow: 0 0 15px #ffd700;
+            box-shadow: 0 0 15px #ffd700;
+  }
+  100% {
+    border-color: #b8860b;
+    -webkit-box-shadow: 0 0 5px #b8860b;
+            box-shadow: 0 0 5px #b8860b;
+  }
+}
+.song-card.song-gold {
+  border: 1px solid #ffd700;
+  background: rgba(40, 30, 10, 0.6); /* Легкий золотий відтінок фону */
+  -webkit-animation: gold-shimmer-border 2s ease-in-out infinite;
+          animation: gold-shimmer-border 2s ease-in-out infinite;
+}
+
+/* --- Стиль для тривалості пісні (Час) --- */
+.song-duration {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}

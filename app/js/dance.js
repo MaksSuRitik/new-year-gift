@@ -74,41 +74,76 @@ document.addEventListener('DOMContentLoaded', () => {
     function playClick() { if (!isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(() => { }); } }
     function playHover() { if (!isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(() => { }); } }
 
-    // --- SONG LIST (Secret Song at Index 0) ---
+   // --- SONG LIST ---
     const songsDB = [
-        // 🔒 SECRET LEVEL
-        { file: "secret.mp3", title: "???", artist: "???", isSecret: true }, 
+        // 🔒 SECRET LEVEL (Index 0 - Fixed)
+        { file: "secret.mp3", title: "???", artist: "???", isSecret: true, duration: "??:??" }, 
 
-        // 🆕 NEW SONGS
-        { file: "AlexAngelofDarkness.mp3", title: "Angel of Darkness", artist: "Alex C. feat. Yasmin K." },
-        { file: "SafeandSound.mp3", title: "Safe and Sound", artist: "Capital Cities" },
-        { file: "Ronald.mp3", title: "Ronald", artist: "Falling in Reverse" }, // Виправив автора
-        { file: "IWillSurvive.mp3", title: "I Will Survive", artist: "Demi Lovato" },
-        { file: "BorderLine.mp3", title: "Borderline", artist: "Tame Impala" },
-        { file: "TheWorldWeKnow.mp3", title: "The World We Knew", artist: "Frank Sinatra" }, // Виправив назву пісні
-        { file: "LetDown.mp3", title: "Let Down", artist: "Radiohead" },
-        { file: "LatInHappen.mp3", title: "Let It Happen", artist: "Tame Impala" }, // Тільки не забудь докачати файл!
+        // 🎄 CHRISTMAS SPECIALS (Закріплені зверху)
+        { file: "Frank Sinatra - Let It Snow!.mp3", title: "Let It Snow!", artist: "Frank Sinatra", duration: "2m 35s", tag: "xmas" },
+        { file: "Mariah Carey & Justin Bieber - All I Want For Christmas Is You.mp3", title: "All I Want For Christmas Is You", artist: "Mariah Carey", duration: "4m 01s", tag: "xmas" },
+        { file: "Wham! - Last Christmas.mp3", title: "Last Christmas", artist: "Wham!", duration: "4m 22s", tag: "xmas" },
 
-        // 🎵 OLD SONGS (Перевірені)
-        { file: "AfterDark.mp3", title: "After Dark", artist: "Mr. Kitty" },
-        { file: "AfterHours.mp3", title: "After Hours", artist: "The Weeknd" },
-        { file: "BlackSwan.mp3", title: "Black Swan", artist: "BTS" },
-        { file: "DirtyDiana.mp3", title: "Dirty Diana", artist: "Michael Jackson" },
-        { file: "DrinkUpMeHeartiesYoHo.mp3", title: "Pirates", artist: "Hans Zimmer" },
-        { file: "Give.mp3", title: "Give", artist: "Sleep Token" }, // Дописав Sleep Token (це їх пісня)
-        { file: "GoldenBrown.mp3", title: "Golden Brown", artist: "The Stranglers" },
-        { file: "Hijodelaluna.mp3", title: "Hijo de la luna", artist: "Mecano" },
-        { file: "LivingLegend.mp3", title: "Living Legend", artist: "Lana Del Rey" },
-        { file: "Peppers.mp3", title: "Peppers", artist: "Lana Del Rey" },
-        { file: "PiedPiper.mp3", title: "Pied Piper", artist: "BTS" },
-        { file: "Provider.mp3", title: "Provider", artist: "Frank Ocean" },
-        { file: "Rain.mp3", title: "Rain", artist: "Sleep Token" },
-        { file: "RedTerror.mp3", title: "Red Terror", artist: "Unknown" },
-        { file: "SantanaMedley.mp3", title: "Santana Medley", artist: "Santana" },
-        { file: "Softcore.mp3", title: "Softcore", artist: "The Neighbourhood" },
-        { file: "TakeMeBackToEden.mp3", title: "Take Me Back", artist: "Sleep Token" },
-        { file: "TheAbyss.mp3", title: "The Abyss", artist: "Unknown" },
-        { file: "TheApparition.mp3", title: "The Apparition", artist: "Sleep Token" }
+        // 📀 GOLD COLLECTION & NEW HITS (Sorted Alphabetically)
+        { file: "AfterDark.mp3", title: "After Dark", artist: "Mr. Kitty", duration: "4m 17s", tag: "gold" },
+        { file: "AfterHours.mp3", title: "After Hours", artist: "The Weeknd", duration: "6m 01s", tag: "gold" },
+        { file: "AlexAngel of Darkness.mp3", title: "Angel of Darkness", artist: "Alex C. feat. Yasmin K.", duration: "3m 33s" },
+        { file: "Benny Drugs.mp3", title: "Benny Drugs", artist: "Benny", duration: "3m 15s" },
+        { file: "BlackSwan.mp3", title: "Black Swan", artist: "BTS", duration: "3m 18s", tag: "gold" },
+        { file: "BorderLine.mp3", title: "Borderline", artist: "Tame Impala", duration: "3m 57s" },
+        { file: "Little V. Bury The Light (Dmc5).mp3", title: "Bury the Light", artist: "Casey Edwards ft. Victor Borba", duration: "9m 42s" },
+        { file: "Miyagi Captain.mp3", title: "Captain", artist: "MiyaGi", duration: "3m 35s" },
+        { file: "DirtyDiana.mp3", title: "Dirty Diana", artist: "Michael Jackson", duration: "4m 41s", tag: "gold" },
+        { file: "Missio - Everybody Gets High.mp3", title: "Everybody Gets High", artist: "MISSIO", duration: "3m 32s" },
+        { file: "Give.mp3", title: "Give", artist: "Sleep Token", duration: "3m 56s", tag: "gold" },
+        { file: "Jann Gladiator.mp3", title: "Gladiator", artist: "Jann", duration: "2m 55s" },
+        { file: "GoldenBrown.mp3", title: "Golden Brown", artist: "The Stranglers", duration: "3m 28s", tag: "gold" },
+        { file: "Chappell Roan Good Luck, Babe!.mp3", title: "Good Luck, Babe!", artist: "Chappell Roan", duration: "3m 18s" },
+        { file: "Twenty One Pilots - Heathens.mp3", title: "Heathens", artist: "twenty one pilots", duration: "3m 15s" },
+        { file: "Hijodelaluna.mp3", title: "Hijo de la luna", artist: "Mecano", duration: "4m 20s", tag: "gold" },
+        { file: "IWillSurvive.mp3", title: "I Will Survive", artist: "Demi Lovato", duration: "4m 07s" },
+        { file: "Mili In Hell We Live, Lament.mp3", title: "In Hell We Live, Lament", artist: "Mili", duration: "3m 45s" },
+        { file: "Bad_Computer_-_Just_Dance_Monstercat_Release.mp3", title: "Just Dance", artist: "Bad Computer", duration: "3m 33s" },
+        { file: "Odetari Keep Following.mp3", title: "KEEP FOLLOWING", artist: "Odetari", duration: "2m 15s" },
+        { file: "LetDown.mp3", title: "Let Down", artist: "Radiohead", duration: "4m 59s" },
+        { file: "LatInHappen.mp3", title: "Let It Happen", artist: "Tame Impala", duration: "7m 46s" },
+        { file: "LivingLegend.mp3", title: "Living Legend", artist: "Lana Del Rey", duration: "4m 00s", tag: "gold" },
+        { file: "Moonlight Sonata - Ludwig van Beethoven.mp3", title: "Moonlight Sonata", artist: "Ludwig van Beethoven", duration: "6m 05s" },
+        { file: "Culture Beat - Mr. Vain.mp3", title: "Mr. Vain", artist: "Culture Beat", duration: "4m 17s" },
+        { file: "Twenty One Pilots - Navigating.mp3", title: "Navigating", artist: "twenty one pilots", duration: "3m 43s" },
+        { file: "Linkin Park - Numb.mp3", title: "Numb", artist: "Linkin Park", duration: "3m 07s" },
+        { file: "Xxxtentacion Numb.mp3", title: "Numb", artist: "XXXTENTACION", duration: "3m 06s" },
+        { file: "Peppers.mp3", title: "Peppers", artist: "Lana Del Rey", duration: "4m 08s", tag: "gold" },
+        { file: "PiedPiper.mp3", title: "Pied Piper", artist: "BTS", duration: "4m 05s", tag: "gold" },
+        { file: "DrinkUpMeHeartiesYoHo.mp3", title: "Pirates", artist: "Hans Zimmer", duration: "4m 31s", tag: "gold" },
+        { file: "Future Wrld On Drugs Ft Juice Wrld.mp3", title: "Plug (Love Is A Drug)", artist: "Future & Juice WRLD", duration: "3m 15s" },
+        { file: "Provider.mp3", title: "Provider", artist: "Frank Ocean", duration: "4m 03s", tag: "gold" },
+        { file: "Rain.mp3", title: "Rain", artist: "Sleep Token", duration: "4m 11s", tag: "gold" },
+        { file: "RedTerror.mp3", title: "Red Terror", artist: "Unknown", duration: "3m 30s", tag: "gold" },
+        { file: "Limp Bizkit - Rollin'.mp3", title: "Rollin'", artist: "Limp Bizkit", duration: "3m 33s" },
+        { file: "Ronald.mp3", title: "Ronald", artist: "Falling in Reverse", duration: "3m 17s" },
+        { file: "SafeandSound.mp3", title: "Safe and Sound", artist: "Capital Cities", duration: "3m 13s" },
+        { file: "SantanaMedley.mp3", title: "Santana Medley", artist: "Santana", duration: "5m 20s", tag: "gold" },
+        { file: "Softcore.mp3", title: "Softcore", artist: "The Neighbourhood", duration: "3m 26s", tag: "gold" },
+        { file: "TakeMeBackToEden.mp3", title: "Take Me Back", artist: "Sleep Token", duration: "8m 20s", tag: "gold" },
+        { file: "Sabrina Carpenter Tears.mp3", title: "Tears", artist: "Sabrina Carpenter", duration: "3m 05s" },
+        { file: "TheAbyss.mp3", title: "The Abyss", artist: "Unknown", duration: "4m 10s", tag: "gold" },
+        { file: "TheApparition.mp3", title: "The Apparition", artist: "Sleep Token", duration: "4m 28s", tag: "gold" },
+        { file: "Linkin Park - The Emptiness Machine.mp3", title: "The Emptiness Machine", artist: "Linkin Park", duration: "3m 20s" },
+        { file: "TheWorldWeKnow.mp3", title: "The World We Knew", artist: "Frank Sinatra", duration: "2m 47s" },
+        { file: "Pandora Trust Me.mp3", title: "Trust Me", artist: "Pandora", duration: "3m 25s" },
+        { file: "MaksKorgWake Up.mp3", title: "Wake Up", artist: "Макс Корж", duration: "5m 15s" },
+        { file: "Tatsuya Kitani Where Our Blue Is.mp3", title: "Where Our Blue Is", artist: "Tatsuya Kitani", duration: "3m 20s" },
+        { file: "Juice Wrld Won't Let Go.mp3", title: "Won't Let Go", artist: "Juice WRLD", duration: "3m 20s" },
+        { file: "Millennium Parade Work.mp3", title: "WORK", artist: "millennium parade x Sheena Ringo", duration: "3m 48s" },
+        { file: "Kanalia Writing On The Wall.mp3", title: "Writing on the Wall", artist: "Will Stetson", duration: "3m 40s" },
+        { file: "Saraunh0ly Wutiwant.mp3", title: "wutiwant", artist: "saraunh0ly", duration: "2m 10s" },
+        { file: "ValentinStrikalo.mp3", title: "Кайен", artist: "Валентин Стрыкало", duration: "3m 10s" },
+        { file: "Konfuz - Кайф Ты Поймала.mp3", title: "Кайф ты поймала", artist: "Konfuz", duration: "2m 50s" },
+        { file: "Zhanulka Лазить По Стенам.mp3", title: "лазить по стенам", artist: "Zhanulka", duration: "2m 30s" },
+        { file: "mzlf, STED D - однополярности.mp3", title: "однополярности", artist: "mzlff, STED.D", duration: "3m 05s" },
+        { file: "Skriptonit_-_Tancuj_so_mnoj_v_temnote.mp3", title: "Танцуй со мной в темноте", artist: "Скриптонит", duration: "3m 55s" },
+        { file: "Pyrokinesis Трупный Синод.mp3", title: "Трупный Синод", artist: "Pyrokinesis", duration: "3m 40s" }
     ];
     // --- PLAYER IDENTITY SYSTEM ---
     async function initPlayerIdentity() {
@@ -633,11 +668,10 @@ document.addEventListener('DOMContentLoaded', () => {
         });
         const isSecretUnlocked = total3StarSongs >= 5;
 
-        // КНОПКА ЗМІНИ ІМЕНІ (НОВЕ)
-        // Показуємо тільки якщо ім'я вже є
+        // КНОПКА ЗМІНИ ІМЕНІ
         if (localStorage.getItem('playerName')) {
             const nameBtn = document.createElement('button');
-            nameBtn.className = 'btn-change-name'; // Новий клас CSS
+            nameBtn.className = 'btn-change-name'; 
             nameBtn.innerHTML = `✏️ ${localStorage.getItem('playerName')}`;
             nameBtn.onclick = changePlayerName;
             list.appendChild(nameBtn);
@@ -660,31 +694,35 @@ document.addEventListener('DOMContentLoaded', () => {
             const el = document.createElement('div');
             el.className = 'song-card';
 
-            // Стилізація для секретної пісні
+            // --- ДОДАВАННЯ СПЕЦІАЛЬНИХ КЛАСІВ ---
             if (s.isSecret) {
                 if (!isSecretUnlocked) {
                     el.classList.add('song-locked');
                 } else {
                     el.classList.add('secret-song-card');
                 }
+            } else if (s.tag === 'xmas') {
+                el.classList.add('song-xmas'); // Новорічний стиль
+            } else if (s.tag === 'gold') {
+                el.classList.add('song-gold'); // Золотий стиль
             }
+            // -------------------------------------
 
-            // --- КРИТИЧНЕ ВИПРАВЛЕННЯ ТУТ ---
             el.onclick = () => {
                 playClick();
-                // Якщо пісня секретна і не розблокована - показуємо модалку
                 if (s.isSecret && !isSecretUnlocked) {
                     showSecretLockModal();
                     return;
                 }
                 startGame(i);
             };
-            // -------------------------------
 
             el.onmouseenter = playHover;
+            
+            // --- ДОДАНО ВІДОБРАЖЕННЯ ЧАСУ ---
             el.innerHTML = `
                 <div class="song-info">
-                    <h3>${s.title}</h3>
+                    <h3>${s.title} <span class="song-duration">${s.duration}</span></h3>
                     <div class="song-meta-row">
                         <span class="artist-name">${s.artist}</span>
                         ${hasScore ? `<div class="score-badge"><span>🏆 ${saved.score}</span><span class="stars-display">${starsStr}</span></div>` : ''}
