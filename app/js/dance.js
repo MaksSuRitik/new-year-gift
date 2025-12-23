@@ -142,7 +142,7 @@ document.addEventListener('DOMContentLoaded', () => {
         { file: "ValentinStrikalo.mp3", title: "Кайен", artist: "Валентин Стрыкало", duration: "3m 10s" },
         { file: "Konfuz - Кайф Ты Поймала.mp3", title: "Кайф ты поймала", artist: "Konfuz", duration: "2m 50s" },
         { file: "Zhanulka Лазить По Стенам.mp3", title: "лазить по стенам", artist: "Zhanulka", duration: "2m 30s" },
-        { file: "mzlf, STED D - однополярности.mp3", title: "однополярности", artist: "mzlff, STED.D", duration: "3m 05s" },
+        { file: "mzlff,STEDD.mp3", title: "однополярности", artist: "mzlff, STED.D", duration: "3m 05s" },
         { file: "Skriptonit_-_Tancuj_so_mnoj_v_temnote.mp3", title: "Танцуй со мной в темноте", artist: "Скриптонит", duration: "3m 55s" },
         { file: "Pyrokinesis Трупный Синод.mp3", title: "Трупный Синод", artist: "Pyrokinesis", duration: "3m 40s" }
     ];
