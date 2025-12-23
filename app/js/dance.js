@@ -1118,7 +1118,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             p.tapColor = ['#ffffffff', '#08191dff'];
 
             // Long: Білий -> Прозорий (Як лазерний промінь)
-            p.longColor = ['#FFFFFF', 'rgba(1, 13, 18, 0.99)'];
+            p.longColor = ['#FFFFFF', 'rgba(7, 80, 76, 0.99)'];
 
             // Світіння дуже сильне біле
             p.glow = PALETTE_LEGENDARY.glow;
