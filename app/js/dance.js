@@ -99,9 +99,9 @@ document.addEventListener('DOMContentLoaded', () => {
     ];
 
     const CONFIG = {
-        speedStart: 1400,//1400
-        speedEnd: 700,
-        speedStartSecret: 1000, // 2x (Починаємо вже швидко)
+        speedStart: 1000,//1400
+        speedEnd: 500,
+        speedStartSecret: 800, // 2x (Починаємо вже швидко)
         speedEndSecret: 500,
         hitPosition: 0.85,
         colorsDark: {
@@ -774,13 +774,13 @@ async function analyzeAudio(url, sessionId) {
     }
 }
 // ==========================================
-// 👇 HELPER FUNCTIONS (Вставте в кінець файлу)
+// 👇 HELPER FUNCTIONS (Вставьте в самый конец dance.js)
 // ==========================================
 
 function normalizeBufferAggressive(buffer) {
     const newData = new Float32Array(buffer.length);
     let maxAmp = 0;
-    // Знаходимо пік
+    // Находим пик
     for (let i = 0; i < buffer.length; i += 500) {
         const val = Math.abs(buffer[i]);
         if (val > maxAmp) maxAmp = val;
@@ -788,9 +788,7 @@ function normalizeBufferAggressive(buffer) {
     const mult = 1.0 / (maxAmp || 0.01);
     
     for (let i = 0; i < buffer.length; i++) {
-        // Linear normalize + slight gamma to boost mids
         let val = Math.abs(buffer[i] * mult);
-        // Менш агресивна степінь (0.95), щоб не вбивати динаміку приспіву
         newData[i] = Math.pow(val, 0.95); 
     }
     return newData;
@@ -801,12 +799,65 @@ function getLocalAverage(data, index, sampleRate, windowSec) {
     const start = Math.max(0, index - windowSamples / 2);
     const end = Math.min(data.length, index + windowSamples / 2);
     let sum = 0, count = 0;
-    // Оптимізація: стрибаємо через 2000 семплів
     for (let k = start; k < end; k += 2000) {
         sum += Math.abs(data[k]);
         count++;
     }
     return count > 0 ? sum / count : 0.001;
+}
+
+function checkSustain(data, index, sampleRate, attackEnergy, localAvg) {
+    const lookAheadSamples = Math.floor(sampleRate * 0.5); 
+    const startScan = index + Math.floor(sampleRate * 0.05);
+    const endScan = Math.min(data.length, index + lookAheadSamples);
+    
+    let sum = 0, count = 0;
+    for(let k = startScan; k < endScan; k += 100) {
+        sum += Math.abs(data[k]);
+        count++;
+    }
+    const sustainLevel = count > 0 ? sum / count : 0;
+    
+    const isLong = (sustainLevel > attackEnergy * 0.65) || (sustainLevel > localAvg * 1.2);
+    
+    if (!isLong) return { isLong: false, duration: 0 };
+
+    let endIndex = index;
+    const maxDurSamples = sampleRate * 3.0; 
+    
+    for(let k = startScan; k < index + maxDurSamples; k += Math.floor(sampleRate * 0.1)) {
+        if (k >= data.length) break;
+        const val = Math.abs(data[k]);
+        
+        if (val < attackEnergy * 0.3 && val < localAvg) {
+            endIndex = k;
+            break;
+        }
+        endIndex = k;
+    }
+    return { isLong: true, duration: (endIndex - index) / sampleRate };
+}
+
+function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
+    let available = [];
+    for (let l = 0; l < 4; l++) {
+        if (currentTime > laneFreeTimes[l]) available.push(l);
+    }
+    
+    if (available.length < count) count = available.length;
+    if (count === 0) return [];
+
+    for (let i = available.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [available[i], available[j]] = [available[j], available[i]];
+    }
+    
+    if (count === 2 && available.length >= 2) {
+        available.sort((a,b) => a - b);
+        return [available[0], available[available.length - 1]]; 
+    }
+
+    return available.slice(0, count);
 }
 
 function checkSustain(data, index, sampleRate, attackEnergy, localAvg) {
@@ -1247,6 +1298,8 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = canvas.width / 4;
         const x = lane * laneW + laneW / 2;
+        const limit = isMobile ? 40 : 150; 
+        if (particles.length > limit) return;
 
         let finalColor = '#cfd8dc';
 
@@ -1309,7 +1362,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
-            if (diff > 230 || diff < -240) return false;
+            if (diff > 210 || diff < -240) return false;
             return true;
         });
 
@@ -1395,6 +1448,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     function updateScoreUI(isHit = false) {
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
+        const isMobile = window.innerWidth < 768;
 
         const gameContainer = document.getElementById('game-container');
         // Отримуємо наш новий шар для рамки
@@ -1405,6 +1459,13 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             const textStr = `${getText('combo')} ${combo} (x${mult})`;
             comboDisplay.innerText = textStr;
             comboDisplay.setAttribute('data-text', textStr);
+            
+            if (isMobile && combo > 50) {
+                 // Просто оновлюємо текст, не чіпаючи класи анімацій
+                 comboDisplay.innerText = textStr;
+                 comboDisplay.style.opacity = 1;
+                 return; // <--- ВИХОДИМО, щоб не навантажувати CSS
+            }
 
             // 1. Очищення старих класів
             comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
