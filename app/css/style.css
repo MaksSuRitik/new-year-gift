@@ -2722,16 +2722,6 @@ body[data-theme=light] .pause-overlay h2 {
             box-shadow: none !important;
   }
   /* 5. Вимикаємо скло (Backdrop Filter) */
-  .mega-button, .glass-panel, .center-console, .song-card,
-  .secret-lock-content, .leaderboard-content, .pause-overlay,
-  .video-overlay, .name-input-content {
-    backdrop-filter: none !important;
-    -webkit-backdrop-filter: none !important;
-    background: rgba(10, 15, 20, 0.95) !important;
-    -webkit-box-shadow: none !important;
-            box-shadow: none !important; /* Тіні блоків теж прибираємо */
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  }
   /* 6. Адаптація інтерфейсу (щоб пальцям було зручно) */
   #game-container .game-header {
     top: 50px !important;

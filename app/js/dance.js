@@ -478,7 +478,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div id="name-error" class="input-error-msg"></div>
                 </div>
             `;
-            
+
             document.body.appendChild(modal);
 
             const input = modal.querySelector('#player-name-input');
@@ -1164,79 +1164,48 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
         }
     }
 
-    /* --- ОНОВЛЕНЕ МАЛЮВАННЯ (DRAW) --- */
+   /* --- ОНОВЛЕНЕ МАЛЮВАННЯ (DRAW FIX: NO SINKING) --- */
     function draw(songTime) {
         if (!ctx) return;
 
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
-        // --- ПАЛІТРИ ---
+        // --- ПАЛІТРИ (Ті самі, що були) ---
         const PALETTE_STEEL = { light: '#cfd8dc', main: '#90a4ae', dark: '#263238' };
         const PALETTE_GOLD = { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f' };
         const PALETTE_COSMIC = { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff' };
-
-        // 🔥 ОНОВЛЕНА ПАЛІТРА LEGENDARY (Схожа на структуру Cosmic)
         const PALETTE_LEGENDARY = {
-            body: '#f4f4f4ff',       // Сліпуче білий
-            accent: '#ffffffff',     // Глибокий фіолетовий контур
-            glow: '#ffffffff',
-            aura: 'rgba(153, 147, 102, 1)' // Фіолетова аура навколо ноти
+            body: '#f4f4f4ff', accent: '#ffffffff', glow: '#ffffffff', aura: 'rgba(153, 147, 102, 1)'
         };
 
         let p = { tapColor: [], longColor: [], glow: '', border: '' };
 
-        // === ЛОГІКА ПРОГРЕСУ ===
+        // === ЛОГІКА КОЛЬОРІВ (COMBO) ===
         if (combo < 100) {
-            // STEEL (0-99) ... (без змін)
             p.tapColor = [PALETTE_STEEL.light, PALETTE_STEEL.main];
             p.longColor = [PALETTE_STEEL.main, PALETTE_STEEL.dark];
-            p.glow = PALETTE_STEEL.main;
-            p.border = '#eceff1';
-        }
-        else if (combo >= 100 && combo < 200) {
-            // ELECTRIC (100-199) ... (без змін)
+            p.glow = PALETTE_STEEL.main; p.border = '#eceff1';
+        } else if (combo >= 100 && combo < 200) {
             p.tapColor = ['#eceff1', '#607d8b'];
             p.longColor = ['#607d8b', '#37474f'];
-            p.glow = '#00bcd4';
-            p.border = '#80deea';
-        }
-        else if (combo >= 200 && combo < 400) {
-            // GOLD (200-399) ... (без змін)
+            p.glow = '#00bcd4'; p.border = '#80deea';
+        } else if (combo >= 200 && combo < 400) {
             p.tapColor = [PALETTE_GOLD.black, PALETTE_GOLD.choco];
             p.longColor = [PALETTE_GOLD.amber, '#bcaaa4'];
-            p.glow = PALETTE_GOLD.amber;
-            p.border = PALETTE_GOLD.amber;
-        }
-        else if (combo >= 400 && combo < 800) {
-            // COSMIC (400-799) ... (без змін)
+            p.glow = PALETTE_GOLD.amber; p.border = PALETTE_GOLD.amber;
+        } else if (combo >= 400 && combo < 800) {
             p.tapColor = ['#000000', PALETTE_COSMIC.core];
             p.longColor = [PALETTE_COSMIC.accent, PALETTE_COSMIC.glitch];
-            p.glow = PALETTE_COSMIC.accent;
-            p.border = PALETTE_COSMIC.glitch;
-        }
-        else {
-            // 🔥 GOD MODE (800+)
-            // Tap: Білий центр, блакитний градієнт знизу
+            p.glow = PALETTE_COSMIC.accent; p.border = PALETTE_COSMIC.glitch;
+        } else {
             p.tapColor = ['#ffffffff', '#08191dff'];
-
-            // Long: Білий -> Прозорий (Як лазерний промінь)
             p.longColor = ['#FFFFFF', 'rgba(7, 80, 76, 0.99)'];
-
-            // Світіння дуже сильне біле
-            p.glow = PALETTE_LEGENDARY.glow;
-
-            // Рамка ноти - Електрик
-            p.border = PALETTE_LEGENDARY.accent;
+            p.glow = PALETTE_LEGENDARY.glow; p.border = PALETTE_LEGENDARY.accent;
         }
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Фон (якщо світла тема)
-        if (isLight) {
-            ctx.fillStyle = "rgba(255,255,255,0.95)";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-        }
+        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
         const laneW = canvas.width / 4;
         const hitY = canvas.height * CONFIG.hitPosition;
@@ -1247,22 +1216,16 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
         ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
         ctx.lineWidth = 2;
         ctx.beginPath();
-
         for (let i = 0; i < 4; i++) {
             let shakeX = 0;
             if (holdingTiles[i]) shakeX = (Math.random() - 0.5) * 4;
-
             if (laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
-                beamGrad.addColorStop(0, p.glow);
-                beamGrad.addColorStop(1, "rgba(0,0,0,0)");
-
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.5;
-                ctx.fillStyle = beamGrad;
+                beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
-                ctx.globalAlpha = 1.0;
-                laneBeamAlpha[i] -= 0.08;
+                ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
             }
             if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, canvas.height); }
         }
@@ -1275,14 +1238,23 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
 
         // --- МАЛЮЄМО НОТИ ---
         activeTiles.forEach(tile => {
+            // Якщо нота завершена - не малюємо її взагалі
             if (tile.type === 'long' && tile.completed) return;
+
             let tileShake = (tile.type === 'long' && tile.holding) ? (Math.random() - 0.5) * 3 : 0;
             const x = tile.lane * laneW + padding + tileShake;
             const w = laneW - (padding * 2);
 
+            // Розрахунок позиції
             const progressStart = 1 - (tile.time - songTime) / currentSpeed;
-            let yBottom = progressStart * hitY;
-            let yTop = yBottom - CONFIG.noteHeight;
+            let yBottomRaw = progressStart * hitY;
+
+            // 🔥 FIX 1: ЗАМОРОЗКА ПОЗИЦІЇ (Anti-Sinking)
+            // Якщо нота натиснута, ми примусово ставимо її на hitY.
+            // Вона не піде нижче, поки існує.
+            const visualY = tile.hit ? hitY : yBottomRaw;
+            
+            let yTop = visualY - CONFIG.noteHeight;
 
             // === TAP NOTE ===
             if (tile.type === 'tap') {
@@ -1291,78 +1263,79 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
                 ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
 
-                let grad = ctx.createLinearGradient(x, yTop, x, yBottom);
+                let grad = ctx.createLinearGradient(x, yTop, x, visualY);
                 grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
 
-                ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
-                ctx.shadowColor = p.glow;
+                const isMobile = window.innerWidth < 768;
+                if (!isMobile) {
+                    ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
+                    ctx.shadowColor = p.glow;
+                }
+                
                 ctx.fillStyle = grad;
-
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, yTop, w, CONFIG.noteHeight, noteRadius);
                 else ctx.fillRect(x, yTop, w, CONFIG.noteHeight);
                 ctx.fill();
 
-                // Рамка (Важливо для стилю!)
-                ctx.strokeStyle = p.border;
-                ctx.lineWidth = (combo >= 200) ? 3 : 2;
-                ctx.stroke();
-
+                ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
+                
                 // Блік
-                ctx.shadowBlur = 0;
-                ctx.fillStyle = "rgba(255,255,255,0.2)";
-                ctx.beginPath();
-                ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2);
-                ctx.fill();
+                ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
+                ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
             }
             // === LONG NOTE ===
             else if (tile.type === 'long') {
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
+                
+                // Хвіст закінчується там, де каже прогрес, АЛЕ не нижче лінії удару
                 let yTail = Math.min(progressEnd * hitY, hitY);
-                let yHead = tile.hit && tile.holding ? hitY : yBottom;
+                
+                // Голова ноти: якщо тримаємо - вона на лінії. Якщо ні - падає (visualY).
+                let yHead = (tile.hit && tile.holding) ? hitY : visualY;
+                
+                // Страховка: хвіст не може бути нижче голови
                 if (yTail > yHead) yTail = yHead;
 
                 const headH = CONFIG.noteHeight;
                 const actualYHeadTop = yHead - headH;
                 const tailH = actualYHeadTop - yTail;
+                
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
-               if (tailH > 0) {
-                // 🔥 ОПТИМІЗАЦІЯ ДЛЯ REDMI NOTE:
-                // Перевіряємо ширину екрану. Якщо це телефон (< 768px) - вимикаємо градієнти.
-                const isMobile = window.innerWidth < 768;
+                // 🔥 FIX 2: ПРИБИРАННЯ СМІТТЯ (Ghost Tail)
+                // Якщо хвіст менше 1 пікселя або нота вже "мертва" і пролетіла - не малюємо хвіст
+                if (tailH > 1) {
+                    const isMobile = window.innerWidth < 768;
+                    if (isMobile) {
+                        ctx.fillStyle = colorSet[1]; 
+                    } else {
+                        let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
+                        grad.addColorStop(0, "rgba(0,0,0,0)");
+                        grad.addColorStop(0.2, colorSet[1]);
+                        grad.addColorStop(1, colorSet[0]);
+                        ctx.fillStyle = grad;
+                    }
 
-                if (isMobile) {
-                    // 🚀 ШВИДКИЙ РЕЖИМ: Просто суцільний колір
-                    // Це працює в 10 разів швидше за градієнт
-                    ctx.fillStyle = colorSet[1]; 
-                } else {
-                    // 🎨 РЕЖИМ ПК: Красивий градієнт
-                    // Цей код виконується тільки на комп'ютерах
-                    let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
-                    grad.addColorStop(0, "rgba(0,0,0,0)");
-                    grad.addColorStop(0.2, colorSet[1]);
-                    grad.addColorStop(1, colorSet[0]);
-                    ctx.fillStyle = grad;
+                    const tPad = 10;
+                    ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10); // +10 перекриття
+                    
+                    // Струна
+                    ctx.fillStyle = (combo >= 200) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
+                    ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
-
-                const tPad = 10;
-                // Малюємо хвіст
-                ctx.fillRect(x + tPad, yTail, w - tPad * 2, tailH + 10);
-
-                // Струна посередині (тоненька лінія)
-                ctx.fillStyle = (combo >= 200) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
-                ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
-            }
 
                 // Голова
                 let headColors = (combo >= 200) ? p.tapColor : colorSet;
                 let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
-                ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
-                ctx.shadowColor = p.glow;
+                
+                if (window.innerWidth >= 768) {
+                    ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
+                    ctx.shadowColor = p.glow;
+                }
 
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
@@ -1374,38 +1347,40 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
         });
 
         // --- ЧАСТИНКИ (ІСКРИ) ---
+        const isMobileParticles = window.innerWidth < 768;
         for (let i = particles.length - 1; i >= 0; i--) {
             let pt = particles[i];
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
+            if (pt.life <= 0.05) { particles.splice(i, 1); continue; }
+
             ctx.globalAlpha = Math.max(0, pt.life);
             ctx.fillStyle = pt.color;
-
             ctx.beginPath();
+
             if (combo >= 800) {
-                // ⚡ GOD MODE: Електричні іскри (маленькі лінії або ромби)
-                // Малюємо хрестики (+) або просто яскраві точки
-                ctx.save();
-                ctx.translate(pt.x, pt.y);
-                ctx.rotate(Math.random() * Math.PI); // Хаотичний кут
-                ctx.fillRect(-3, -1, 6, 2); // Горизонтальна риска
-                ctx.fillRect(-1, -3, 2, 6); // Вертикальна риска (вийде плюсик)
-                ctx.restore();
+                if (isMobileParticles) {
+                    ctx.fillRect(pt.x, pt.y, 4, 4);
+                } else {
+                    ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(Math.random() * Math.PI);
+                    ctx.fillRect(-3, -1, 6, 2); ctx.fillRect(-1, -3, 2, 6);
+                    ctx.restore();
+                }
             } else if (combo >= 400) {
-                // ⭐️ ЗІРОЧКИ ДЛЯ КОСМОСУ
-                ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5);
-                ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8);
-                ctx.restore();
+                 if (isMobileParticles) {
+                    ctx.fillRect(pt.x, pt.y, 3, 3);
+                } else {
+                    ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5);
+                    ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8);
+                    ctx.restore();
+                }
             } else if (combo >= 200) {
-                // 🔶 РОМБИ ДЛЯ ЗОЛОТА
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y);
                 ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
             } else {
-                // ⚫ КРУЖЕЧКИ
                 ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
             }
             ctx.fill();
             ctx.globalAlpha = 1;
-            if (pt.life <= 0) particles.splice(i, 1);
         }
     }
 
