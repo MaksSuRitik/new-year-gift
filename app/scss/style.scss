@@ -1738,30 +1738,54 @@ body[data-theme="light"] .pause-overlay h2 {
 }
 
 // ==========================================
-// 🔥 FINAL MOBILE FIXES (OVERRIDE)
+// 🔥 FINAL MOBILE OPTIMIZATION (LAYOUT + PERFORMANCE)
 // ==========================================
 
 @media (max-width: 768px) {
-  /* 1. Блокуємо скрол та зум (критично для гри) */
-  html, body {
+  
+  /* --- 1. ОПТИМІЗАЦІЯ ПРОДУКТИВНОСТІ (Щоб не лагало) --- */
+  
+  /* Блокуємо скрол та зум */
+  html, body, #game-container, canvas#rhythmCanvas {
     overflow: hidden !important;
     touch-action: none !important;
   }
 
-  #game-container, canvas#rhythmCanvas {
-    touch-action: none !important;
+
+  /* Вимикаємо ВСІ важкі анімації контейнера (включаючи Legendary!) */
+  #game-container.container-ripple-gold,
+  #game-container.container-ripple-cosmic,
+  #game-container.container-legendary { /* <--- ДОДАВ ЦЕ */
+      animation: none !important;
+      border: none !important;
+      box-shadow: none !important;
+  }
+  
+  /* Спрощуємо тіні кнопок */
+  .song-card, .btn, .action-btn {
+    box-shadow: 0 0 5px rgba(0,0,0,0.5) !important; 
   }
 
-  /* 2. Опускаємо шкалу РАДИКАЛЬНО нижче (щоб точно не налізла на кнопки) */
-  /* Використовуємо каскадність ID для пріоритету */
+  /* Спрощуємо текст 800+ (градієнтна анімація важка для тексту) */
+  #combo-display.combo-legendary {
+      animation: none !important;
+      background: none !important;
+      -webkit-text-fill-color: #FFD700 !important; /* Просто золотий текст */
+      color: #FFD700 !important;
+      text-shadow: 0 0 10px #FFD700 !important;
+  }
+
+  /* --- 2. ВИПРАВЛЕННЯ ВЕРСТКИ (Щоб було зручно) --- */
+
+  /* Опускаємо шкалу РАДИКАЛЬНО нижче */
   #game-container .game-header {
-      top: 50px !important; /* Було 85, тепер 120 - гарантовано нижче кнопок */
+      top: 50px !important;
       width: 90% !important;
       left: 50% !important;
       transform: translateX(-50%) scale(0.9) !important;
   }
 
-  /* 3. Кнопка паузи теж нижче */
+  /* Кнопка паузи */
   .pause-btn {
       top: 120px !important;
       left: 10px !important;
@@ -1769,16 +1793,16 @@ body[data-theme="light"] .pause-overlay h2 {
       height: 45px !important;
   }
 
-  /* 4. Глобальна кнопка "Назад" - фіксуємо зліва зверху */
+  /* Кнопка "Назад" */
   #global-back-btn {
       top: 15px !important;
       left: 15px !important;
       padding: 8px 15px !important;
       font-size: 0.9rem !important;
-      z-index: 9999 !important; /* Поверх усього */
+      z-index: 9999 !important;
   }
 
-  /* 5. Кнопки налаштувань (Тема, Звук, Мова) - фіксуємо справа зверху */
+  /* Кнопки налаштувань */
   .controls-layer {
       top: 15px !important;
       right: 15px !important;
@@ -1791,19 +1815,13 @@ body[data-theme="light"] .pause-overlay h2 {
       font-size: 1rem !important;
   }
 
-  /* 6. Гарантуємо, що оверлеї не перекривають кліки */
+  /* Пропускаємо кліки крізь декор */
   #hold-effects-container,
   .hit-line,
   .lane-hints,
-  .click-effect {
+  .click-effect,
+  #legendary-border-overlay { /* <--- Додав і цей оверлей */
       pointer-events: none !important;
-  }
-  /* ВИМИКАЄМО ЕФЕКТИ КРАЇВ ГРИ ДЛЯ МОБІЛОК */
-  #game-container.container-ripple-gold,
-  #game-container.container-ripple-cosmic {
-      animation: none !important;      // Повністю зупиняємо анімацію
-      border: none !important;         // Прибираємо кольорову рамку
-      box-shadow: none !important;     // Прибираємо неонові хвилі
   }
 }
 
