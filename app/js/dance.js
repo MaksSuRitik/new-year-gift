@@ -97,6 +97,44 @@ document.addEventListener('DOMContentLoaded', () => {
         { file: "TheAbyss.mp3", title: "The Abyss", artist: "Unknown" },
         { file: "TheApparition.mp3", title: "The Apparition", artist: "Sleep Token" }
     ];
+    // --- PLAYER IDENTITY SYSTEM ---
+    async function initPlayerIdentity() {
+        let userId = localStorage.getItem('playerId');
+        const currentName = localStorage.getItem('playerName');
+
+        // Якщо це новий користувач або старий без ID
+        if (!userId) {
+            // Генеруємо унікальний ID
+            userId = crypto.randomUUID();
+            localStorage.setItem('playerId', userId);
+            
+            // --- МІГРАЦІЯ СТАРИХ ДАНИХ ---
+            // Якщо у гравця вже було ім'я, спробуємо знайти його в базі і додати ID
+            if (currentName) {
+                console.log("Migrating old user:", currentName);
+                try {
+                    const dbRef = collection(db, "secret_leaderboard");
+                    // Шукаємо по імені
+                    const q = query(dbRef, where("name", "==", currentName));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        // Знайшли старий запис! Оновлюємо його, додаючи userId
+                        const oldDoc = querySnapshot.docs[0];
+                        const docRef = doc(db, "secret_leaderboard", oldDoc.id);
+                        await updateDoc(docRef, { userId: userId });
+                        console.log("Migration successful!");
+                    }
+                } catch (e) {
+                    console.error("Migration failed:", e);
+                }
+            }
+        }
+        return userId;
+    }
+    
+    // Викликаємо це одразу при завантаженні
+    initPlayerIdentity();
 
     const CONFIG = {
         speedStart: 1000,//1400
@@ -160,9 +198,14 @@ document.addEventListener('DOMContentLoaded', () => {
             nameTaken: "Це ім'я вже зайнято! Оберіть інше.",
             checking: "Перевірка...",
             secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень",
-            close: "Закрити"
+            close: "Закрити",
+            changeName: "Змінити Ім'я",
+            nameUpdated: "Ім'я оновлено!",
+            enterNewName: "Введіть нове ім'я:",
+            migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!"
 
         },
+
         RU: {
             icon: "RU",
             instructions: "Игра осуществляется с помощью клавиш S D J K",
@@ -194,8 +237,13 @@ document.addEventListener('DOMContentLoaded', () => {
             nameTaken: "Это имя уже занято! Выберите другое.",
             checking: "Проверка...",
             secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень",
-            close: "Закрыть"
+            close: "Закрыть",
+            changeName: "Сменить Имя",
+            nameUpdated: "Имя обновлено!",
+            enterNewName: "Введите новое имя:",
+            migrationSuccess: "Ваш старый рекорд найден и привязан!"
         },
+
         MEOW: {
             icon: "🐱",
             instructions: "Meow meow meow S D J K meow",
@@ -227,8 +275,13 @@ document.addEventListener('DOMContentLoaded', () => {
             nameTaken: "MEOW! Meow! Meow weow!",
             checking: "Weow...",
             secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow",
-            close: "Meow"
+            close: "Meow",
+            changeName: "Meow Name",
+            nameUpdated: "Meow meow!",
+            enterNewName: "Meow new meow:",
+            migrationSuccess: "Meow weow meow!"
         }
+
     };
 
     // Elements
@@ -361,67 +414,100 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`neon_rhythm_${songTitle}`, JSON.stringify(data));
     }
 
-    /* --- CUSTOM NAME INPUT MODAL --- */
-    function getNameFromUser() {
+    async function changePlayerName() {
+        const userId = localStorage.getItem('playerId');
+        if (!userId) return; // Технічна помилка
+
+        const newName = await getNameFromUser(true); // true означає "режим зміни"
+        if (!newName) return;
+
+        // Показуємо лоадер або блокуємо екран (спрощено - просто алерт)
+        // Краще реалізувати це всередині getNameFromUser, але тут логіка оновлення:
+        
+        try {
+            // 1. Знаходимо наш документ по userId
+            const dbRef = collection(db, "secret_leaderboard");
+            const q = query(dbRef, where("userId", "==", userId));
+            const querySnapshot = await getDocs(q);
+
+            if (!querySnapshot.empty) {
+                // Оновлюємо ім'я в базі
+                const docRef = doc(db, "secret_leaderboard", querySnapshot.docs[0].id);
+                await updateDoc(docRef, { name: newName });
+            } 
+            // Якщо запису в базі ще немає (гравець не грав секретний рівень), 
+            // ми просто оновили localStorage, і це ОК.
+
+            localStorage.setItem('playerName', newName);
+           showNotification(getText('nameUpdated'));
+            
+            // Оновлюємо меню, щоб відобразити зміни (якщо там десь є ім'я)
+            renderMenu(); 
+
+        } catch (e) {
+            console.error("Error changing name:", e);
+            alert("Error updating database.");
+        }
+    }
+
+   /* --- CUSTOM NAME INPUT MODAL (UPDATED) --- */
+    function getNameFromUser(isChangeMode = false) { // <--- Додав аргумент
         return new Promise((resolve) => {
-            // Створюємо HTML елементи
             const modal = document.createElement('div');
-            modal.className = 'name-input-modal'; // Класи вже є в SCSS
+            modal.className = 'name-input-modal';
+            // Змінюємо заголовок залежно від режиму
+            const title = isChangeMode ? getText('enterNewName') : getText('enterName');
+            
             modal.innerHTML = `
                 <div class="name-input-content">
-                    <h2 style="margin-bottom: 10px;">${getText('enterName')}</h2>
+                    <h2 style="margin-bottom: 10px;">${title}</h2>
                     <input type="text" id="player-name-input" class="name-input-field" placeholder="${getText('namePls')}" maxlength="15" autocomplete="off">
                     <button id="save-name-btn" class="name-submit-btn">OK</button>
                     <div id="name-error" class="input-error-msg"></div>
+                    ${isChangeMode ? '<button id="cancel-name-btn" class="name-submit-btn" style="margin-top:10px; background:#555;">Cancel</button>' : ''}
                 </div>
             `;
             document.body.appendChild(modal);
 
             const input = modal.querySelector('#player-name-input');
             const btn = modal.querySelector('#save-name-btn');
+            const cancelBtn = modal.querySelector('#cancel-name-btn');
             const errorMsg = modal.querySelector('#name-error');
 
-            // Функція відправки з перевіркою
+            if (cancelBtn) {
+                cancelBtn.onclick = () => { modal.remove(); resolve(null); };
+            }
+
             async function submit() {
                 const name = input.value.trim();
-
-                // 1. Валідація: Пусте ім'я
                 if (!name) return;
+                
+                // Якщо ім'я таке саме, як було - нічого не робимо
+                if (isChangeMode && name === localStorage.getItem('playerName')) {
+                    modal.remove(); 
+                    resolve(null);
+                    return;
+                }
 
-                // 2. Блокуємо кнопку та показуємо статус
-                const originalBtnText = btn.innerText;
-                btn.innerText = getText('checking'); // "Перевірка..."
+                btn.innerText = getText('checking');
                 btn.disabled = true;
                 errorMsg.style.display = 'none';
 
                 try {
-                    // 3. Запит до Firebase: Чи є таке ім'я?
+                    // Перевірка на унікальність
                     const dbRef = collection(db, "secret_leaderboard");
                     const q = query(dbRef, where("name", "==", name));
                     const querySnapshot = await getDocs(q);
 
                     if (!querySnapshot.empty) {
-                        // ❌ ІМ'Я ЗАЙНЯТО
                         errorMsg.innerText = getText('nameTaken');
                         errorMsg.style.display = 'block';
-
-                        // Анімація тряски через Web Animations API
-                        const content = modal.querySelector('.name-input-content');
-                        content.animate([
-                            { transform: 'translateX(0)' },
-                            { transform: 'translateX(-10px)' },
-                            { transform: 'translateX(10px)' },
-                            { transform: 'translateX(0)' }
-                        ], { duration: 300 });
-
-                        btn.innerText = originalBtnText;
+                        btn.innerText = "OK";
                         btn.disabled = false;
-                        input.focus();
                     } else {
-                        // ✅ ІМ'Я ВІЛЬНЕ
-                        localStorage.setItem('playerName', name);
-
-                        // Анімація зникнення (опціонально)
+                        // Якщо це не режим зміни (перший вхід), зберігаємо тут
+                        if (!isChangeMode) localStorage.setItem('playerName', name);
+                        
                         modal.style.opacity = '0';
                         setTimeout(() => {
                             modal.remove();
@@ -429,23 +515,18 @@ document.addEventListener('DOMContentLoaded', () => {
                         }, 300);
                     }
                 } catch (error) {
-                    console.error("Error checking name:", error);
-                    // У разі помилки мережі - пускаємо (або можна показати алерт)
-                    errorMsg.innerText = "Network Error. Try again.";
+                    console.error(error);
+                    errorMsg.innerText = "Network Error";
                     errorMsg.style.display = 'block';
-                    btn.innerText = originalBtnText;
                     btn.disabled = false;
                 }
             }
-
-            btn.onclick = submit;
+            // ... (решта коду input.focus, onkeypress без змін) ...
+             btn.onclick = submit;
             input.onkeypress = (e) => {
                 if (e.key === 'Enter') submit();
-                // Скидаємо помилку, коли користувач починає писати
                 errorMsg.style.display = 'none';
             };
-
-            // Фокус на поле вводу
             setTimeout(() => input.focus(), 100);
         });
     }
@@ -526,6 +607,16 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!s.isSecret && getSavedData(s.title).stars >= 3) total3StarSongs++;
         });
         const isSecretUnlocked = total3StarSongs >= 5;
+
+        // КНОПКА ЗМІНИ ІМЕНІ (НОВЕ)
+        // Показуємо тільки якщо ім'я вже є
+        if (localStorage.getItem('playerName')) {
+            const nameBtn = document.createElement('button');
+            nameBtn.className = 'btn-change-name'; // Новий клас CSS
+            nameBtn.innerHTML = `✏️ ${localStorage.getItem('playerName')}`;
+            nameBtn.onclick = changePlayerName;
+            list.appendChild(nameBtn);
+        }
 
         // Кнопка таблиці лідерів
         const lbBtn = document.createElement('button');
@@ -1584,6 +1675,7 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
         const scoreEl = document.getElementById('final-score');
         if (scoreEl) scoreEl.innerText = score;
 
+
         // --- 🌟 НОВИЙ РОЗРАХУНОК ЗІРОК (ЗА ПРОГРЕСОМ) ---
         let starsCount = 0;
         const isSecret = songsDB[currentSongIndex].isSecret;
@@ -1610,30 +1702,47 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 else if (progress > 0.33) starsCount = 1;
             }
         }
-
+    
         // 2. ЛОГІКА ЗБЕРЕЖЕННЯ (High Score Logic)
         if (isSecret && starsCount >= 1) {
-            const playerName = localStorage.getItem('playerName') || 'Anonymous';
-            console.log(`Checking database for player: ${playerName}...`);
+            // Отримуємо ID, який ми згенерували при старті
+            const userId = localStorage.getItem('playerId');
+            const playerName = localStorage.getItem('playerName'); 
 
-            try {
-                const dbRef = collection(db, "secret_leaderboard");
-                const q = query(dbRef, where("name", "==", playerName));
-                const querySnapshot = await getDocs(q);
+            if (userId && playerName) {
+                try {
+                    const dbRef = collection(db, "secret_leaderboard");
+                    
+                    // 🔥 ГОЛОВНА ЗМІНА: Шукаємо по userId, а не по імені!
+                    const q = query(dbRef, where("userId", "==", userId));
+                    const querySnapshot = await getDocs(q);
 
-                if (!querySnapshot.empty) {
-                    const userDoc = querySnapshot.docs[0];
-                    const oldScore = userDoc.data().score;
-                    const docId = userDoc.id;
+                    if (!querySnapshot.empty) {
+                        // Оновлюємо існуючий запис
+                        const userDoc = querySnapshot.docs[0];
+                        const oldScore = userDoc.data().score;
+                        const docId = userDoc.id;
 
-                    if (score > oldScore) {
-                        const userDocRef = doc(db, "secret_leaderboard", docId);
-                        await updateDoc(userDocRef, { score: score, date: new Date() });
+                        // Оновлюємо ім'я теж (на випадок розсинхрону), рахунок і дату
+                        if (score > oldScore) {
+                            const userDocRef = doc(db, "secret_leaderboard", docId);
+                            await updateDoc(userDocRef, { 
+                                score: score, 
+                                date: new Date(),
+                                name: playerName // Актуалізуємо ім'я
+                            });
+                        }
+                    } else {
+                        // Створюємо новий запис з userId
+                        await addDoc(dbRef, { 
+                            userId: userId, // 🔥 Зберігаємо ID
+                            name: playerName, 
+                            score: score, 
+                            date: new Date() 
+                        });
                     }
-                } else {
-                    await addDoc(dbRef, { name: playerName, score: score, date: new Date() });
-                }
-            } catch (e) { console.error("Error updating leaderboard: ", e); }
+                } catch (e) { console.error("Error updating leaderboard: ", e); }
+            }
         }
 
         // Зберігаємо локально (Оновлюємо зірки та очки)
@@ -1876,6 +1985,27 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
             if (mySession !== currentSessionId) return;
             if (generatedTiles) { mapTiles = generatedTiles; if (loader) loader.classList.add('hidden'); playMusic(); }
         });
+    }
+    /* --- CUSTOM NOTIFICATION SYSTEM --- */
+    function showNotification(text, type = 'success') {
+        const el = document.createElement('div');
+        el.className = 'game-notification';
+        
+        // Додаємо іконку залежно від типу (опціонально)
+        const icon = type === 'error' ? '❌' : '✨';
+        el.innerHTML = `${icon} ${text}`;
+        
+        document.body.appendChild(el);
+
+        // Звук успіху (тихий "дзинь")
+        // Якщо хочеш, можна розкоментувати і додати звук
+        // const audio = new Audio('audio/success.mp3'); audio.volume = 0.3; audio.play().catch(()=>{});
+
+        // Видаляємо через 3 секунди
+        setTimeout(() => {
+            el.style.animation = 'toastFadeOut 0.5s forwards';
+            setTimeout(() => el.remove(), 500); // Чекаємо завершення анімації
+        }, 2500);
     }
 
     function playMusic() {

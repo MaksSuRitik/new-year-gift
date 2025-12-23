@@ -1738,46 +1738,71 @@ body[data-theme="light"] .pause-overlay h2 {
 }
 
 // ==========================================
-// 🔥 FINAL MOBILE OPTIMIZATION (LAYOUT + PERFORMANCE)
+// 🔥 FINAL MOBILE PERFORMANCE FIX (NO LAGS)
 // ==========================================
 
 @media (max-width: 768px) {
   
-  /* --- 1. ОПТИМІЗАЦІЯ ПРОДУКТИВНОСТІ (Щоб не лагало) --- */
-  
-  /* Блокуємо скрол та зум */
+  /* 1. Блокуємо системні дії */
   html, body, #game-container, canvas#rhythmCanvas {
     overflow: hidden !important;
     touch-action: none !important;
   }
 
+  /* 2. ВБИВЦЯ ЛАГІВ №1: Оверлей на весь екран */
+  /* Анімація box-shadow на весь екран кладе процесор. Вимикаємо її. */
+  #legendary-border-overlay {
+      display: none !important; /* Просто ховаємо його на телефоні */
+      animation: none !important;
+  }
 
-  /* Вимикаємо ВСІ важкі анімації контейнера (включаючи Legendary!) */
+  /* 3. ВБИВЦЯ ЛАГІВ №2: Складний текст комбо */
+  /* filter: drop-shadow та background-clip змушують перемальовувати текст щокадру */
+  #combo-display.combo-legendary {
+      /* Вимикаємо складний фон-градієнт */
+      background: none !important;
+      -webkit-background-clip: border-box !important;
+      background-clip: border-box !important;
+      
+      /* Робимо простий суцільний колір */
+      color: #FFD700 !important;
+      -webkit-text-fill-color: #FFD700 !important;
+      
+      /* Вимикаємо важкі фільтри тіней */
+      filter: none !important;
+      
+      /* Заміняємо на дешеву тінь */
+      text-shadow: 0 0 10px #FFD700 !important;
+      
+      /* Зупиняємо анімацію руху фону */
+      animation: none !important;
+      
+      /* Трохи зменшуємо розмір */
+      font-size: 2.5rem !important;
+      transform: translateX(-50%) !important;
+  }
+
+  /* 4. Інші контейнери та ефекти */
   #game-container.container-ripple-gold,
   #game-container.container-ripple-cosmic,
-  #game-container.container-legendary { /* <--- ДОДАВ ЦЕ */
+  #game-container.container-legendary {
       animation: none !important;
-      border: none !important;
+      border: none !important; /* Прибираємо рамки взагалі */
       box-shadow: none !important;
   }
   
-  /* Спрощуємо тіні кнопок */
-  .song-card, .btn, .action-btn {
-    box-shadow: 0 0 5px rgba(0,0,0,0.5) !important; 
+  /* 5. Вимикаємо скло (Backdrop Filter) */
+  .mega-button, .glass-panel, .center-console, .song-card, 
+  .secret-lock-content, .leaderboard-content, .pause-overlay, 
+  .video-overlay, .name-input-content {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    background: rgba(10, 15, 20, 0.95) !important;
+    box-shadow: none !important; /* Тіні блоків теж прибираємо */
+    border: 1px solid rgba(255,255,255,0.1) !important;
   }
 
-  /* Спрощуємо текст 800+ (градієнтна анімація важка для тексту) */
-  #combo-display.combo-legendary {
-      animation: none !important;
-      background: none !important;
-      -webkit-text-fill-color: #FFD700 !important; /* Просто золотий текст */
-      color: #FFD700 !important;
-      text-shadow: 0 0 10px #FFD700 !important;
-  }
-
-  /* --- 2. ВИПРАВЛЕННЯ ВЕРСТКИ (Щоб було зручно) --- */
-
-  /* Опускаємо шкалу РАДИКАЛЬНО нижче */
+  /* 6. Адаптація інтерфейсу (щоб пальцям було зручно) */
   #game-container .game-header {
       top: 50px !important;
       width: 90% !important;
@@ -1785,34 +1810,19 @@ body[data-theme="light"] .pause-overlay h2 {
       transform: translateX(-50%) scale(0.9) !important;
   }
 
-  /* Кнопка паузи */
   .pause-btn {
       top: 120px !important;
       left: 10px !important;
-      width: 45px !important;
-      height: 45px !important;
   }
 
-  /* Кнопка "Назад" */
   #global-back-btn {
       top: 15px !important;
       left: 15px !important;
-      padding: 8px 15px !important;
-      font-size: 0.9rem !important;
-      z-index: 9999 !important;
   }
 
-  /* Кнопки налаштувань */
   .controls-layer {
       top: 15px !important;
       right: 15px !important;
-      gap: 5px !important;
-  }
-
-  .controls-layer .btn {
-      width: 40px !important;
-      height: 40px !important;
-      font-size: 1rem !important;
   }
 
   /* Пропускаємо кліки крізь декор */
@@ -1820,7 +1830,7 @@ body[data-theme="light"] .pause-overlay h2 {
   .hit-line,
   .lane-hints,
   .click-effect,
-  #legendary-border-overlay { /* <--- Додав і цей оверлей */
+  #legendary-border-overlay {
       pointer-events: none !important;
   }
 }
@@ -2417,4 +2427,76 @@ body[data-theme="light"] {
     border: none !important;
     box-shadow: none !important;
   }
+}
+/* Кнопка зміни імені в меню */
+.btn-change-name {
+  display: block;
+  margin: 0 auto 10px auto; /* Центруємо і відступ знизу */
+  padding: 8px 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(5px);
+
+  &:hover {
+    background: var(--highlight);
+    color: var(--bg-color);
+    border-color: var(--highlight);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+}
+/* ==========================================
+   🔔 SYSTEM NOTIFICATIONS (TOASTS)
+   ========================================== */
+
+.game-notification {
+  position: fixed;
+  top: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000; /* Поверх усього */
+  
+  background: rgba(15, 23, 42, 0.9); /* Темна основа */
+  backdrop-filter: blur(10px);       /* Ефект скла */
+  -webkit-backdrop-filter: blur(10px);
+
+  padding: 15px 30px;
+  border-radius: 50px;
+  border: 1px solid var(--highlight); /* Неонова рамка кольору теми */
+  
+  color: #fff;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  text-align: center;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5), 0 0 20px var(--accent-glow);
+  
+  /* Анімація появи */
+  animation: toastSlideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  pointer-events: none; /* Щоб не заважало клікати, якщо висить */
+}
+
+/* Анімація появи (зверху вниз пружинкою) */
+@keyframes toastSlideDown {
+  from { top: -100px; opacity: 0; transform: translateX(-50%) scale(0.8); }
+  to { top: 30px; opacity: 1; transform: translateX(-50%) scale(1); }
+}
+
+/* Анімація зникнення (вгору) */
+@keyframes toastFadeOut {
+  to { top: -100px; opacity: 0; }
+}
+
+/* Адаптація під світлу тему */
+body[data-theme="light"] .game-notification {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-color);
+  box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
 }
