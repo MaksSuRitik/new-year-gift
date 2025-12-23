@@ -202,7 +202,9 @@ document.addEventListener('DOMContentLoaded', () => {
             changeName: "Змінити Ім'я",
             nameUpdated: "Ім'я оновлено!",
             enterNewName: "Введіть нове ім'я:",
-            migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!"
+            migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!",
+            btnOk: "ОК",
+            btnCancel: "Скасувати"
 
         },
 
@@ -241,7 +243,9 @@ document.addEventListener('DOMContentLoaded', () => {
             changeName: "Сменить Имя",
             nameUpdated: "Имя обновлено!",
             enterNewName: "Введите новое имя:",
-            migrationSuccess: "Ваш старый рекорд найден и привязан!"
+            migrationSuccess: "Ваш старый рекорд найден и привязан!",
+            btnOk: "ОК",
+            btnCancel: "Отмена"
         },
 
         MEOW: {
@@ -279,7 +283,9 @@ document.addEventListener('DOMContentLoaded', () => {
             changeName: "Meow Name",
             nameUpdated: "Meow meow!",
             enterNewName: "Meow new meow:",
-            migrationSuccess: "Meow weow meow!"
+            migrationSuccess: "Meow weow meow!",
+            btnOk: "Meow!",
+            btnCancel: "Grrr..."
         }
 
     };
@@ -458,15 +464,21 @@ document.addEventListener('DOMContentLoaded', () => {
             // Змінюємо заголовок залежно від режиму
             const title = isChangeMode ? getText('enterNewName') : getText('enterName');
             
-            modal.innerHTML = `
+           modal.innerHTML = `
                 <div class="name-input-content">
                     <h2 style="margin-bottom: 10px;">${title}</h2>
                     <input type="text" id="player-name-input" class="name-input-field" placeholder="${getText('namePls')}" maxlength="15" autocomplete="off">
-                    <button id="save-name-btn" class="name-submit-btn">OK</button>
+                    
+                    <div style="display: flex; gap: 10px; justify-content: center; margin-top: 15px;">
+                        <button id="save-name-btn" class="name-submit-btn">${getText('btnOk')}</button>
+                        
+                        ${isChangeMode ? `<button id="cancel-name-btn" class="name-submit-btn cancel-btn">${getText('btnCancel')}</button>` : ''}
+                    </div>
+
                     <div id="name-error" class="input-error-msg"></div>
-                    ${isChangeMode ? '<button id="cancel-name-btn" class="name-submit-btn" style="margin-top:10px; background:#555;">Cancel</button>' : ''}
                 </div>
             `;
+            
             document.body.appendChild(modal);
 
             const input = modal.querySelector('#player-name-input');

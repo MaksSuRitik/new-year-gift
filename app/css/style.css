@@ -3636,3 +3636,87 @@ body[data-theme=light] .game-notification {
   -webkit-box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
           box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
 }
+
+body[data-theme=light] {
+  /* 1. ПОВІДОМЛЕННЯ (TOAST) */
+}
+body[data-theme=light] .game-notification {
+  background: rgba(255, 255, 255, 0.95); /* Білий фон */
+  color: var(--text-color); /* Темно-синій текст */
+  border-color: var(--highlight); /* Фіолетова рамка */
+  -webkit-box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
+          box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4); /* Фіолетова тінь */
+}
+body[data-theme=light] {
+  /* 2. КНОПКА "ЗМІНИТИ ІМ'Я" В МЕНЮ */
+}
+body[data-theme=light] .btn-change-name {
+  background: rgba(255, 255, 255, 0.6);
+  color: var(--text-color);
+  border-color: var(--glass-border);
+}
+body[data-theme=light] .btn-change-name:hover {
+  background: var(--highlight); /* Фіолетовий при наведенні */
+  color: #fff;
+}
+body[data-theme=light] {
+  /* 3. МОДАЛЬНЕ ВІКНО ВВОДУ ІМЕНІ */
+}
+body[data-theme=light] .name-input-content {
+  background: rgba(255, 255, 255, 0.95); /* Світлий фон */
+  border-color: var(--highlight); /* Фіолетова рамка */
+  color: var(--text-color); /* Темний текст заголовка */
+  -webkit-box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
+          box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
+}
+body[data-theme=light] {
+  /* Поле вводу */
+}
+body[data-theme=light] .name-input-field {
+  background: rgba(0, 0, 0, 0.05); /* Сірий фон поля */
+  color: #000; /* Чорний текст вводу */
+  border-color: rgba(0, 0, 0, 0.2);
+}
+body[data-theme=light] .name-input-field::-webkit-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] .name-input-field::-moz-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] .name-input-field:-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] .name-input-field::-ms-input-placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] .name-input-field::placeholder {
+  color: rgba(0, 0, 0, 0.4);
+}
+body[data-theme=light] .name-input-field:focus {
+  border-color: var(--highlight);
+  background: #fff;
+  -webkit-box-shadow: 0 0 10px var(--accent-glow);
+          box-shadow: 0 0 10px var(--accent-glow);
+}
+body[data-theme=light] {
+  /* Кнопки ОК / Cancel */
+}
+body[data-theme=light] .name-submit-btn {
+  background: var(--highlight); /* Фіолетовий */
+  color: #fff;
+}
+body[data-theme=light] .name-submit-btn:hover {
+  background: var(--text-color); /* Темно-синій */
+  -webkit-box-shadow: 0 0 15px var(--highlight);
+          box-shadow: 0 0 15px var(--highlight);
+}
+body[data-theme=light] {
+  /* Кнопка Cancel (сіра) */
+}
+body[data-theme=light] #cancel-name-btn {
+  background: #ccc !important;
+  color: #333 !important;
+}
+body[data-theme=light] #cancel-name-btn:hover {
+  background: #aaa !important;
+}

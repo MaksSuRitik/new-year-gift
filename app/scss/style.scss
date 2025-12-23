@@ -2500,3 +2500,74 @@ body[data-theme="light"] .game-notification {
   color: var(--text-color);
   box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
 }
+// ==========================================
+// ☀️ LIGHT THEME ADAPTATION (NEW ELEMENTS)
+// ==========================================
+
+body[data-theme="light"] {
+
+  /* 1. ПОВІДОМЛЕННЯ (TOAST) */
+  .game-notification {
+    background: rgba(255, 255, 255, 0.95); /* Білий фон */
+    color: var(--text-color);              /* Темно-синій текст */
+    border-color: var(--highlight);        /* Фіолетова рамка */
+    box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4); /* Фіолетова тінь */
+  }
+
+  /* 2. КНОПКА "ЗМІНИТИ ІМ'Я" В МЕНЮ */
+  .btn-change-name {
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--text-color);
+    border-color: var(--glass-border);
+
+    &:hover {
+      background: var(--highlight); /* Фіолетовий при наведенні */
+      color: #fff;
+    }
+  }
+
+  /* 3. МОДАЛЬНЕ ВІКНО ВВОДУ ІМЕНІ */
+  .name-input-content {
+    background: rgba(255, 255, 255, 0.95); /* Світлий фон */
+    border-color: var(--highlight);        /* Фіолетова рамка */
+    color: var(--text-color);              /* Темний текст заголовка */
+    box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
+  }
+
+  /* Поле вводу */
+  .name-input-field {
+    background: rgba(0, 0, 0, 0.05);       /* Сірий фон поля */
+    color: #000;                           /* Чорний текст вводу */
+    border-color: rgba(0,0,0,0.2);
+
+    &::placeholder {
+      color: rgba(0,0,0,0.4);
+    }
+
+    &:focus {
+      border-color: var(--highlight);
+      background: #fff;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  }
+
+  /* Кнопки ОК / Cancel */
+  .name-submit-btn {
+    background: var(--highlight); /* Фіолетовий */
+    color: #fff;
+    
+    &:hover {
+      background: var(--text-color); /* Темно-синій */
+      box-shadow: 0 0 15px var(--highlight);
+    }
+  }
+  
+  /* Кнопка Cancel (сіра) */
+  #cancel-name-btn {
+      background: #ccc !important;
+      color: #333 !important;
+      &:hover {
+          background: #aaa !important;
+      }
+  }
+}
