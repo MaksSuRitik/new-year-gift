@@ -2506,6 +2506,51 @@ body[data-theme=light] .pause-overlay h2 {
   text-shadow: none;
 }
 
+/* ==========================================
+   🔙 GLOBAL BACK BUTTON (THEME FIX)
+   ========================================== */
+#global-back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 200;
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  -webkit-transition: all 0.3s ease;
+  transition: all 0.3s ease;
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--highlight);
+  -webkit-box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+#global-back-btn:hover {
+  background: var(--highlight);
+  color: var(--bg-color);
+  -webkit-box-shadow: 0 0 20px var(--accent-glow);
+          box-shadow: 0 0 20px var(--accent-glow);
+  -webkit-transform: scale(1.05);
+      -ms-transform: scale(1.05);
+          transform: scale(1.05);
+}
+
+body[data-theme=light] #global-back-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--highlight);
+  color: var(--text-color);
+  -webkit-box-shadow: 0 4px 15px rgba(179, 136, 235, 0.2);
+          box-shadow: 0 4px 15px rgba(179, 136, 235, 0.2);
+}
+body[data-theme=light] #global-back-btn:hover {
+  background: var(--highlight);
+  color: #fff;
+}
+
 /* --- 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES) --- */
 /* Підказки S D J K (щоб вони були рівно) */
 .lane-hints {
@@ -3830,17 +3875,19 @@ body[data-theme=light] #cancel-name-btn:hover {
 }
 
 /* ==========================================
-   🔍 SEARCH BAR STYLES
+   🔍 SEARCH BAR STYLES (FIXED CLICKS)
    ========================================== */
 .search-container {
   width: 90%;
   max-width: 500px;
-  margin-bottom: 15px;
+  margin: 0 auto 15px auto;
   position: relative;
-  z-index: 20;
+  z-index: 5;
+  pointer-events: none;
 }
 
 #song-search-input {
+  pointer-events: auto;
   width: 100%;
   padding: 12px 20px;
   font-size: 1.1rem;
@@ -3848,7 +3895,7 @@ body[data-theme=light] #cancel-name-btn:hover {
   color: #fff;
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--glass-border);
-  border-radius: 50px; /* Круглі краї */
+  border-radius: 50px;
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
   outline: none;
@@ -3888,6 +3935,18 @@ body[data-theme=light] #cancel-name-btn:hover {
           transform: scale(1.02);
 }
 
+.song-list-container {
+  position: relative;
+  z-index: 10;
+  pointer-events: auto !important;
+}
+
+.song-card {
+  position: relative;
+  z-index: 11;
+  pointer-events: auto !important;
+}
+
 /* Адаптація під Світлу Тему */
 body[data-theme=light] #song-search-input {
   background: rgba(255, 255, 255, 0.5);
@@ -3915,4 +3974,11 @@ body[data-theme=light] #song-search-input:focus {
 }
 body[data-theme=light] #no-songs-msg {
   color: var(--text-color) !important;
+}
+
+/* Фікс для iOS (запобігає зуму) */
+@media (max-width: 768px) {
+  #song-search-input {
+    font-size: 16px !important;
+  }
 }

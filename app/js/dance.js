@@ -1829,126 +1829,123 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     /* --- INIT --- */
   function initControls() {
         const lanesContainer = document.getElementById('lanes-bg');
-        if (lanesContainer) for (let i = 0; i < 4; i++) laneElements[i] = lanesContainer.children[i];
+        if (lanesContainer) {
+            for (let i = 0; i < 4; i++) laneElements[i] = lanesContainer.children[i];
+        }
 
-        if (holdEffectsContainer) holdEffectsContainer.style.pointerEvents = 'none';
-        const hitLine = document.querySelector('.hit-line');
-        if (hitLine) hitLine.style.pointerEvents = 'none';
-        const hints = document.querySelector('.lane-hints');
-        if (hints) hints.style.pointerEvents = 'none';
+        // Блокуємо перехоплення кліків декором
+        const ignoreElements = ['.hit-line', '.lane-hints', '#hold-effects-container', '#legendary-border-overlay'];
+        ignoreElements.forEach(selector => {
+            const el = document.querySelector(selector);
+            if (el) el.style.pointerEvents = 'none';
+        });
 
-        // --- ЛОГІКА ПОШУКУ ---
+        // --- ПОШУК ---
         const searchInput = document.getElementById('song-search-input');
         const noSongsMsg = document.getElementById('no-songs-msg');
 
         if (searchInput) {
+            // Зупиняємо "спливання" кліку, щоб не натиснути на пісню під пошуком
+            searchInput.onclick = (e) => e.stopPropagation();
+            
             searchInput.addEventListener('input', (e) => {
                 const query = e.target.value.trim();
-                const songList = document.getElementById('song-list');
-                if (!songList) return;
-                
-                const cards = songList.querySelectorAll('.song-card');
+                const cards = document.querySelectorAll('.song-card');
                 let visibleCount = 0;
 
                 cards.forEach(card => {
-                    const songText = card.innerText; 
-                    if (isFuzzyMatch(query, songText)) {
-                        card.style.display = 'flex';
-                        if (card.classList.contains('song-xmas') || card.classList.contains('song-gold')) {
-                             card.style.animationPlayState = 'running';
-                        }
-                        visibleCount++;
-                    } else {
-                        card.style.display = 'none';
-                    }
+                    const match = isFuzzyMatch(query, card.innerText);
+                    card.style.display = match ? 'flex' : 'none';
+                    if (match) visibleCount++;
                 });
 
                 if (noSongsMsg) {
-                    if (visibleCount === 0 && query !== '') {
-                        noSongsMsg.classList.remove('hidden');
-                    } else {
-                        noSongsMsg.classList.add('hidden');
-                    }
+                    if (visibleCount === 0 && query !== '') noSongsMsg.classList.remove('hidden');
+                    else noSongsMsg.classList.add('hidden');
                 }
             });
         }
 
-        // --- КЕРУВАННЯ ТА ПАУЗА ---
-        function togglePauseGame() {
-            if (!isPlaying) return;
-            isPaused = !isPaused;
-            const m = document.getElementById('pause-modal');
-            if (isPaused) {
-                audioCtx.suspend();
-                if (m) m.classList.remove('hidden');
-            } else {
-                audioCtx.resume();
-                if (m) m.classList.add('hidden');
-                gameLoop();
-            }
-            playClick();
+        // --- ГРА: КЛІКИ (КАНВАС) ---
+        if (canvas) {
+            // Очищуємо старі події (якщо були) через клонування або просто додаємо нові
+            const handleTouch = (e, isDown) => {
+                e.preventDefault();
+                const rect = canvas.getBoundingClientRect();
+                const touches = e.changedTouches;
+                for (let i = 0; i < touches.length; i++) {
+                    const lane = Math.floor((touches[i].clientX - rect.left) / (rect.width / 4));
+                    if (lane >= 0 && lane < 4) isDown ? handleInputDown(lane) : handleInputUp(lane);
+                }
+            };
+
+            canvas.addEventListener('touchstart', (e) => handleTouch(e, true), { passive: false });
+            canvas.addEventListener('touchend', (e) => handleTouch(e, false), { passive: false });
+
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
+                if (lane >= 0 && lane < 4) {
+                    handleInputDown(lane);
+                    const mouseUpHandler = () => {
+                        handleInputUp(lane);
+                        window.removeEventListener('mouseup', mouseUpHandler);
+                    };
+                    window.addEventListener('mouseup', mouseUpHandler);
+                }
+            });
         }
 
-        // Обробка клавіш
+        // --- КЛАВІАТУРА ---
         window.addEventListener('keydown', e => {
-            // Не ставимо на паузу, якщо гравець пише в пошуку
-            if (e.code === 'Space' && document.activeElement.id === 'song-search-input') return;
-
-            if (e.code === 'Space') { e.preventDefault(); togglePauseGame(); return; }
-            
+            if (e.code === 'Space') {
+                if (document.activeElement.id === 'song-search-input') return;
+                e.preventDefault();
+                togglePauseGame();
+                return;
+            }
             if (!e.repeat) {
                 const lane = KEYS.indexOf(e.code);
                 if (lane !== -1) handleInputDown(lane);
             }
         });
 
-        window.addEventListener('keyup', e => { 
-            const lane = KEYS.indexOf(e.code); 
-            if (lane !== -1) handleInputUp(lane); 
+        window.addEventListener('keyup', e => {
+            const lane = KEYS.indexOf(e.code);
+            if (lane !== -1) handleInputUp(lane);
         });
 
-// --- КНОПКА ТЕМИ (ВИПРАВЛЕНО) ---
-        const tBtn = document.getElementById('themeToggle');
-        if (tBtn) {
-            tBtn.onclick = () => {
-                playClick();
-                const body = document.body;
-                const currentTheme = body.getAttribute('data-theme') || 'dark';
-                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-                
-                body.setAttribute('data-theme', newTheme);
-                localStorage.setItem('siteTheme', newTheme);
-                tBtn.innerText = newTheme === 'dark' ? '🌙' : '☀️';
-            };
-            tBtn.onmouseenter = playHover;
-        }
+        // --- КНОПКИ ІНТЕРФЕЙСУ (ТЕМА / ЗВУК / МОВА) ---
+        const setupBtn = (id, fn) => {
+            const btn = document.getElementById(id);
+            if (btn) {
+                btn.onclick = (e) => { e.stopPropagation(); playClick(); fn(btn); };
+                btn.onmouseenter = playHover;
+            }
+        };
 
-        // --- КНОПКА ЗВУКУ (ВИПРАВЛЕНО) ---
-        const sBtn = document.getElementById('soundToggle');
-        if (sBtn) {
-            sBtn.onclick = () => {
-                playClick();
-                isMuted = !isMuted;
-                localStorage.setItem('isMuted', isMuted);
-                
-                if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
-                sBtn.innerText = isMuted ? '🔇' : '🔊';
-                
-                if (bgMusicEl) {
-                    if (isMuted) bgMusicEl.pause();
-                    else if (!isPlaying) bgMusicEl.play().catch(() => {});
-                }
-            };
-            sBtn.onmouseenter = playHover;
-        }
+        setupBtn('themeToggle', (btn) => {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            const next = isDark ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('siteTheme', next);
+            btn.innerText = next === 'dark' ? '🌙' : '☀️';
+        });
 
-        // --- МОВА ---
-        const lBtn = document.getElementById('langToggle');
-        if (lBtn) {
-            lBtn.onclick = (e) => { 
-                playClick(); 
-                e.stopPropagation(); 
-                document.querySelector('.lang-wrapper').classList.toggle('open'); 
+        setupBtn('soundToggle', (btn) => {
+            isMuted = !isMuted;
+            localStorage.setItem('isMuted', isMuted);
+            if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
+            btn.innerText = isMuted ? '🔇' : '🔊';
+            if (bgMusicEl) isMuted ? bgMusicEl.pause() : (!isPlaying && bgMusicEl.play().catch(() => {}));
+        });
+
+        const langToggle = document.getElementById('langToggle');
+        if (langToggle) {
+            langToggle.onclick = (e) => {
+                e.stopPropagation();
+                playClick();
+                document.querySelector('.lang-wrapper').classList.toggle('open');
             };
         }
 
@@ -1958,51 +1955,47 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
                 currentLang = b.dataset.lang;
                 localStorage.setItem('siteLang', currentLang);
                 document.body.setAttribute('data-lang', currentLang);
-                
-                // Оновлюємо текст інтерфейсу та пошуку
                 updateGameText();
                 updateLangDisplay();
             };
         });
 
-        const backBtn = document.getElementById('global-back-btn');
-        if (backBtn) {
-            backBtn.style.position = 'fixed'; backBtn.style.top = '20px'; backBtn.style.left = '20px'; backBtn.style.zIndex = '1000';
-            backBtn.style.background = 'rgba(0,0,0,0.6)'; backBtn.style.color = '#fff'; backBtn.style.border = '1px solid rgba(255,255,255,0.2)';
-            backBtn.style.borderRadius = '30px'; backBtn.style.padding = '8px 20px'; backBtn.style.cursor = 'pointer';
-            backBtn.style.backdropFilter = 'blur(5px)'; backBtn.style.fontFamily = 'Montserrat, sans-serif';
+        document.addEventListener('click', () => {
+            const lw = document.querySelector('.lang-wrapper');
+            if (lw) lw.classList.remove('open');
+        });
 
-            backBtn.onclick = () => {
-                playClick();
-                if (isPlaying) quitGame(); else window.location.href = 'index.html';
-            };
-            backBtn.onmouseenter = playHover;
+       // НАВІГАЦІЯ (dance.js)
+        const setupNav = (id, fn) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.onclick = () => { playClick(); fn(); };
+        };
+
+        // ТУТ МАЄ БУТИ ТІЛЬКИ ЦЕ:
+        setupNav('global-back-btn', () => isPlaying ? quitGame() : window.location.href = 'index.html');
+        setupNav('btn-quit', quitGame);
+        setupNav('btn-menu-end', quitGame);
+        setupNav('btn-pause', togglePauseGame);
+        setupNav('btn-resume', togglePauseGame);
+        setupNav('btn-restart', () => {
+            document.getElementById('result-screen').classList.add('hidden');
+            resetGameState();
+            setTimeout(() => startGame(currentSongIndex), 50);
+        });
+
+        function togglePauseGame() {
+            if (!isPlaying) return;
+            isPaused = !isPaused;
+            const m = document.getElementById('pause-modal');
+            if (isPaused) {
+                audioCtx.suspend();
+                m?.classList.remove('hidden');
+            } else {
+                audioCtx.resume();
+                m?.classList.add('hidden');
+                gameLoop();
+            }
         }
-
-        const qBtn = document.getElementById('btn-quit');
-        if (qBtn) { qBtn.onclick = () => { playClick(); quitGame(); }; qBtn.onmouseenter = playHover; }
-
-        const meBtn = document.getElementById('btn-menu-end');
-        if (meBtn) { meBtn.onclick = () => { playClick(); quitGame(); }; meBtn.onmouseenter = playHover; }
-
-        const pBtn = document.getElementById('btn-pause');
-        if (pBtn) { pBtn.onclick = togglePauseGame; pBtn.onmouseenter = playHover; }
-
-        const rBtn = document.getElementById('btn-resume');
-        if (rBtn) { rBtn.onclick = togglePauseGame; rBtn.onmouseenter = playHover; }
-
-        const resBtn = document.getElementById('btn-restart');
-        if (resBtn) {
-            resBtn.onclick = () => {
-                playClick();
-                document.getElementById('result-screen').classList.add('hidden');
-                resetGameState();
-                setTimeout(() => startGame(currentSongIndex), 50);
-            };
-            resBtn.onmouseenter = playHover;
-        }
-
-        updateLangDisplay();
     }
 
     function resizeCanvas() { if (gameContainer && gameContainer.clientWidth && canvas) { canvas.width = gameContainer.clientWidth; canvas.height = gameContainer.clientHeight; } }
