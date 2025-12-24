@@ -158,7 +158,7 @@ const songsDB = [
     { file: "Juice Wrld Won't Let Go.mp3", title: "Won't Let Go", artist: "Juice WRLD", duration: "3m 20s" },
     { file: "Millennium Parade Work.mp3", title: "WORK", artist: "millennium parade x Sheena Ringo", duration: "3m 48s" },
     { file: "Kanalia Writing On The Wall.mp3", title: "Writing on the Wall", artist: "Will Stetson", duration: "3m 40s" },
-    { file: "Saraunh0ly Wutiwant.mp3", title: "wutiwant", artist: "saraunh0ly", duration: "2m 10s" },
+    { file: "SaraunhLyWutiwant.mp3", title: "wutiwant", artist: "saraunh0ly", duration: "2m 10s" },
     { file: "ValentinStrikalo.mp3", title: "Кайен", artist: "Валентин Стрыкало", duration: "3m 10s" },
     { file: "Konfuz - Кайф Ты Поймала.mp3", title: "Кайф ты поймала", artist: "Konfuz", duration: "2m 50s" },
     { file: "Zhanulka Лазить По Стенам.mp3", title: "лазить по стенам", artist: "Zhanulka", duration: "2m 30s" },
