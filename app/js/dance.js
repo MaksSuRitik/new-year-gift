@@ -125,7 +125,7 @@ const songsDB = [
     { file: "IWillSurvive.mp3", title: "I Will Survive", artist: "Demi Lovato", duration: "4m 07s" },
     { file: "Mili In Hell We Live, Lament.mp3", title: "In Hell We Live, Lament", artist: "Mili", duration: "3m 45s" },
     { file: "Bad_Computer_-_Just_Dance_Monstercat_Release.mp3", title: "Just Dance", artist: "Bad Computer", duration: "3m 33s" },
-    { file: "Odetari Keep Following.mp3", title: "KEEP FOLLOWING", artist: "Odetari", duration: "2m 15s" },
+    { file: "OdetariKeep.mp3", title: "KEEP FOLLOWING", artist: "Odetari", duration: "2m 15s" },
     { file: "LetDown.mp3", title: "Let Down", artist: "Radiohead", duration: "4m 59s" },
     { file: "LatInHappen.mp3", title: "Let It Happen", artist: "Tame Impala", duration: "7m 46s" },
     { file: "LivingLegend.mp3", title: "Living Legend", artist: "Lana Del Rey", duration: "4m 00s", tag: "gold" },
