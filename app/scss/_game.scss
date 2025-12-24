@@ -1,0 +1,1691 @@
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden;
+}
+
+body {
+  font-family: 'Comic Sans MS', sans-serif;
+  color: var(--text-color);
+  background: var(--bg-color);
+  transition: background 0.6s;
+  /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
+  touch-action: none;
+}
+
+// ==========================================
+// 2. ФОНОВІ ЕФЕКТИ (СНІГ ТА БЛОБИ)
+// ==========================================
+
+// Сніг (Шар 1 - поверх блобів, під контентом)
+#snow-container {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.snowflake {
+  position: absolute;
+  top: -20px;
+  background: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation-name: fall;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+@keyframes fall {
+  to { transform: translateY(110vh); }
+}
+
+// Кольорові плями (Шар 0 - найнижчий)
+.bg-blobs {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0;
+  overflow: hidden;
+
+  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+  .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--blob-1); animation: drift 20s infinite alternate; }
+  .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: var(--blob-2); animation: drift 25s infinite alternate-reverse; }
+}
+
+@keyframes drift { from { transform: translate(0,0); } to { transform: translate(30px, 50px); } }
+
+// ==========================================
+// 3. ГЛОБАЛЬНІ КОНТРОЛЕРИ (КНОПКИ)
+// ==========================================
+.controls {
+  position: fixed; top: 25px; right: 25px; display: flex; gap: 12px; z-index: 100;
+}
+
+.sound-btn {
+  font-size: 1.2rem;
+  &.playing {
+    border-color: var(--highlight);
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+}
+.lang-wrapper { position: relative; }
+.lang-dropdown {
+  position: absolute; top: 60px; right: 0;
+  display: none; flex-direction: column;
+  background: rgba(15, 12, 41, 0.9);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px; backdrop-filter: blur(10px);
+
+  button {
+    background: transparent; border: none; color: white; padding: 10px; cursor: pointer;
+    &:hover { background: rgba(255,255,255,0.1); }
+  }
+}
+.lang-wrapper.open .lang-dropdown { display: flex; }
+
+// ==========================================
+// 4. ГОЛОВНА СТОРІНКА (INDEX.HTML)
+// ==========================================
+
+.main-container {
+  position: relative;
+  z-index: 10;
+  width: 100%; height: 100vh;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.view {
+  position: absolute; width: 100%; height: 100%;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.6s ease, transform 0.6s ease;
+
+  &.active { opacity: 1; pointer-events: all; transform: scale(1); z-index: 10; }
+  &.hidden { opacity: 0; pointer-events: none; transform: scale(1.2); z-index: 0; }
+}
+
+// Текст, що переливається
+.shimmer-text {
+  font-size: 1.8rem; font-weight: bold; color: var(--text-color);
+  background: linear-gradient(120deg, rgba(255,255,255, 0.2) 40%, rgba(255,255,255, 1) 50%, rgba(255,255,255, 0.2) 60%);
+  background-size: 200% auto;
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  animation: shimmer 3s linear infinite;
+}
+
+// Анімації
+@keyframes shimmer { to { background-position: 200% center; } }
+@keyframes pulse-block { 0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.2); } 70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); } 100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); } }
+
+// Карусель (Хаб)
+.carousel {
+  position: relative; width: 100%; max-width: 1200px; height: 600px;
+  display: flex; align-items: center; justify-content: center; perspective: 1000px;
+}
+
+.glass-panel {
+  background: var(--glass-bg); backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border); box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  border-radius: 24px; text-align: center;
+}
+
+.panel {
+  position: absolute; width: 300px; height: 500px; transition: all 0.6s var(--ease-smooth);
+
+  .panel-content {
+    width: 100%; height: 100%; display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    background-size: cover; background-position: center; background-repeat: no-repeat;
+    overflow: hidden;
+  }
+
+  // Фонові гіфки
+  &#panel-memes .panel-content { background-image: linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(15, 12, 41, 0.8)), url('../img/meme.gif'); }
+  &#panel-dance .panel-content { background-image: linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(15, 12, 41, 0.8)), url('../img/dance.gif'); }
+  &#panel-surprise .panel-content { background-image: linear-gradient(to bottom, rgba(15, 12, 41, 0.4), rgba(15, 12, 41, 0.8)), url('../img/secret.gif'); }
+
+  &.center {
+    z-index: 10;
+    transform: translateX(0) scale(1);
+    opacity: 1;
+
+    .panel-content {
+      // НЕОНОВА ОБВОДКА ГІФКИ
+      border: 3px solid var(--highlight); // Кольорова рамка (Ціан або Бордо)
+      box-shadow: 0 0 35px var(--accent-glow), inset 0 0 10px var(--accent-glow); // Світіння назовні і всередину
+    }
+  }
+  &.left { z-index: 5; transform: translateX(-340px) scale(0.85) rotateY(15deg); opacity: 0.5; cursor: pointer; &:hover { opacity: 0.8; transform: translateX(-340px) scale(0.9) rotateY(10deg); } }
+  &.right { z-index: 5; transform: translateX(340px) scale(0.85) rotateY(-15deg); opacity: 0.5; cursor: pointer; &:hover { opacity: 0.8; transform: translateX(340px) scale(0.9) rotateY(-10deg); } }
+}
+
+.panel.left .action-btn,
+.panel.right .action-btn {
+  pointer-events: none; // Клік проходить крізь кнопку (спрацює поворот панелі)
+  opacity: 0.5;         // Візуально показуємо, що вона поки не активна
+  cursor: default;
+}
+
+// Активна тільки центральна
+.panel.center .action-btn {
+  pointer-events: auto;
+  opacity: 1;
+  cursor: pointer;
+}
+
+// ==========================================
+// 5. СТОРІНКА КАЗИНО (MEMES.HTML)
+// ==========================================
+
+// Контейнер скетчу
+.sketch-layout {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 20px; position: relative;
+}
+
+// Верхня панель (HUD)
+.top-hud {
+  width: 90%; max-width: 800px; height: 100px;
+  border: 2px solid rgba(255,255,255,0.8); border-radius: 20px;
+  display: flex; justify-content: space-between; align-items: flex-start;
+  padding: 0; position: relative; background: transparent;
+
+  .hud-line { width: 2px; height: 100%; background: rgba(255,255,255,0.5); margin: 0 15%; }
+  .hud-arrow {
+    position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+    font-size: 2rem; color: #fff; text-shadow: 0 0 10px #fff;
+  }
+}
+
+// Центральна консоль (Чорна пляма)
+.center-console {
+  background: #000; border: 2px solid rgba(255,255,255,0.1); border-radius: 40px;
+  padding: 40px 60px; width: 400px;
+  display: flex; flex-direction: column; align-items: center; gap: 30px;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+
+  // --- СКЛЯНИЙ ЕФЕКТ ---
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  // ---------------------
+
+  // Видаляємо дублювання позиціонування, якщо воно є нижче,
+  // але тут важливо залишити ці властивості:
+  position: relative;
+  z-index: 50;
+
+  .console-text {
+    text-align: center; color: white;
+    h2 {
+      font-size: 1.2rem; margin: 0; text-transform: uppercase; letter-spacing: 1px;
+      // НОВЕ: Заголовок кольоровий (Ціан або Бордо)
+      color: var(--highlight);
+      text-shadow: 0 0 10px var(--accent-glow);
+    }
+    p { font-size: 0.9rem; opacity: 0.6; margin: 5px 0 0 0; }
+  }
+}
+
+// ==========================================
+// 6. ОВЕРЛЕЇ: РУЛЕТКА ТА ПЛЕЄР
+// ==========================================
+
+// --- РУЛЕТКА ---
+.sketch-layout {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 40px; // Відступ між рулеткою і кнопкою
+  position: relative;
+}
+
+// Контейнер рулетки
+.horizontal-slot {
+  width: 90%; max-width: 800px;
+  height: 120px;
+  position: relative;
+  display: flex; justify-content: center;
+
+  // Анімація появі
+  animation: slideDown 0.5s ease-out;
+
+  &.hidden { display: none; }
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+// Стрілочка вказівник
+.pointer-arrow {
+  position: absolute;
+  top: -10px; // Зверху по центру
+  left: 50%; transform: translateX(-50%);
+  font-size: 2rem; color: #fff; z-index: 20;
+  text-shadow: 0 0 10px #fff;
+}
+
+// Вікно перегляду
+.slot-window-horizontal {
+  width: 100%; height: 100%;
+  border: 2px solid rgba(255,255,255,0.8);
+  border-radius: 20px;
+  background: rgba(0,0,0,0.5); // Напівпрозорий фон
+  overflow: hidden; // Ховаємо все, що збоку
+  position: relative;
+  display: flex; align-items: center; // Центруємо текст по вертикалі
+}
+
+// Довга стрічка з текстом
+.strip-horizontal {
+  display: flex;
+  flex-direction: row; // ГОРИЗОНТАЛЬНО
+  align-items: center;
+  height: 100%;
+  will-change: transform; // Оптимізація для анімації
+}
+
+// Елемент рулетки (Текст)
+.slot-item-text {
+  min-width: 320px; // РОБИМО ШИРШЕ (було 250)
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  // Базові налаштування
+  font-family: 'Comic Sans MS', sans-serif;
+  font-weight: 900; // Жирний текст для кращого світіння
+  font-size: 1rem; // ЗМЕНШИЛИ ШРИФТ (було 1.5rem)
+  line-height: 1.2; // Щоб довгі фрази гарно переносилися
+
+  text-transform: uppercase;
+  text-align: center;
+  padding: 0 15px; // Більше відступів збоку
+  border-right: 1px solid rgba(255,255,255,0.1);
+
+  text-shadow: 0 2px 5px rgba(0,0,0,0.8);
+  white-space: normal; // Дозволяємо перенос тексту
+  letter-spacing: 1px;
+  animation: neonPulse 2s infinite alternate; // Вмикаємо пульсацію
+}
+
+// --- КОЛЬОРИ РІДКОСТІ (Трохи підправив розміри) ---
+@keyframes neonPulse {
+  0%, 100% { opacity: 1; filter: brightness(100%); }
+  50% { opacity: 0.8; filter: brightness(130%); }
+}
+
+// 🟩 COMMON (Зелений неон)
+.common {
+  color: #fff; // Білий центр
+  text-shadow:
+    0 0 5px #0f0,
+    0 0 10px #0f0,
+    0 0 20px #0f0,
+    0 0 40px #00ff00;
+}
+
+// 🟦 RARE (Голубий неон)
+.rare {
+  color: #fff;
+  text-shadow:
+    0 0 5px #00e6e6,
+    0 0 10px #00e6e6,
+    0 0 20px #00e6e6,
+    0 0 40px #00ffff;
+}
+
+// 🟪 EPIC (Фіолетовий/Рожевий неон)
+.epic {
+  color: #fff;
+  text-shadow:
+    0 0 5px #d400ff,
+    0 0 10px #d400ff,
+    0 0 20px #d400ff,
+    0 0 40px #ff00ff;
+}
+
+// 🟧 LEGENDARY (Золотий/Вогняний неон)
+.legendary {
+  color: #fff;
+  text-shadow:
+    0 0 5px #ff8800,
+    0 0 10px #ff8800,
+    0 0 20px #ff8800,
+    0 0 40px #ff0000;
+  animation: neonPulse 0.5s infinite alternate; // Легендарний миготить швидше!
+}
+
+// Тіні по боках (щоб крайні елементи зникали в темряві)
+.shadow-left, .shadow-right {
+  position: absolute; top: 0; bottom: 0; width: 100px; z-index: 10; pointer-events: none;
+}
+.shadow-left { left: 0; background: linear-gradient(to right, #0f0c29 0%, transparent 100%); }
+.shadow-right { right: 0; background: linear-gradient(to left, #0f0c29 0%, transparent 100%); }
+
+// ==========================================
+// 🔄 PULL TO REFRESH (ОНОВЛЕННЯ СТОРІНКИ)
+// ==========================================
+
+.ptr-container {
+  position: fixed;
+  top: -80px; // Сховано зверху
+  left: 0;
+  width: 100%;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999; // Поверх усього
+  pointer-events: none; // Щоб не заважав клікати
+  transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); // Пружинистий ефект
+
+  &.loading {
+    transform: translateY(80px) !important; // Фіксуємо, коли вантажить
+  }
+}
+
+.ptr-spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid rgba(255, 255, 255, 0.1); // Тьмяна частина
+  border-top-color: var(--highlight); // 🔥 НЕОНОВИЙ КОЛІР (Ціан або Фіолетовий)
+  box-shadow: 0 0 15px var(--accent-glow); // 🔥 СВІТІННЯ
+
+  // Початковий стан (стрілочка вниз, якщо хочеш, або просто кружок)
+  transition: transform 0.3s;
+}
+
+// Анімація обертання (вмикається класом)
+.ptr-container.loading .ptr-spinner {
+  animation: ptr-spin 0.6s linear infinite;
+}
+
+@keyframes ptr-spin {
+  to { transform: rotate(360deg); }
+}
+
+// ==========================================
+// ⚔️ БИТВА МЕМІВ (ARENA)
+// ==========================================
+
+.battle-container {
+  width: 100%; height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  position: relative; z-index: 10;
+  padding: 20px;
+}
+
+.battle-header {
+  text-align: center; margin-bottom: 30px;
+  h1 { font-size: 2.5rem; margin: 0; }
+  p { color: var(--text-color); opacity: 0.7; }
+}
+
+.arena {
+  display: flex; align-items: center; justify-content: center;
+  gap: 40px; width: 100%; max-width: 1000px;
+  position: relative;
+}
+
+.fighter-card {
+  width: 45%;
+  max-width: 350px; // Зробили вужчими
+  height: 60vh;     // Фіксована висота (60% від екрану), щоб не були гігантськими
+
+  background: #000; // Чорний фон для скрінів
+  border: 2px solid var(--glass-border);
+  border-radius: 20px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  position: relative;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+
+  // Прибираємо aspect-ratio, бо скріни різні
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    transform: scale(1.03);
+    border-color: var(--highlight);
+    box-shadow: 0 0 25px var(--accent-glow);
+  }
+
+  &:active { transform: scale(0.95); }
+
+  .img-wrapper {
+    width: 100%;
+    height: 100%;
+    position: relative;
+
+    img {
+      width: 100%;
+      height: 100%;
+      // 🔥 ГОЛОВНА ЗМІНА: contain покаже весь скріншот без обрізки
+      object-fit: contain;
+    }
+  }
+}
+
+.vote-overlay {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 255, 128, 0.3); // Зелене підсвічування перемоги
+  display: flex; align-items: center; justify-content: center;
+  font-size: 3rem; color: #fff; font-weight: bold; text-shadow: 0 2px 10px rgba(0,0,0,0.5);
+  opacity: 0; transition: 0.2s;
+  backdrop-filter: blur(2px);
+}
+
+// Клас переможця (додається через JS)
+.fighter-card.winner .vote-overlay { opacity: 1; }
+
+// Клас лузера (зникає)
+.fighter-card.loser {
+  opacity: 0; transform: scale(0.8) translateY(50px); pointer-events: none;
+}
+
+.vs-badge {
+  font-size: 2.5rem; font-weight: 900; color: #fff;
+  background: linear-gradient(135deg, #ff416c, #ff4b2b);
+  width: 70px; height: 70px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  position: absolute; z-index: 20;
+  box-shadow: 0 0 20px rgba(255, 75, 43, 0.6);
+  border: 3px solid #fff;
+}
+
+.stats-panel {
+  margin-top: 30px; padding: 10px 30px;
+  color: var(--text-color); font-weight: bold;
+}
+
+// Стиль для кнопки "Архів" під спіном
+.archive-link {
+  margin-top: -10px; // Трохи підтягуємо до кнопки Спін
+  font-size: 1rem;
+  font-weight: bold;
+  text-decoration: none;
+  color: var(--text-color);
+  padding: 10px 25px;
+  border: 1px solid var(--highlight); // Тонка неонова рамка
+  border-radius: 20px;
+  background: rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--highlight);
+    color: var(--bg-color); // Текст стає темним
+    box-shadow: 0 0 15px var(--accent-glow);
+    transform: scale(1.05);
+  }
+}
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes scaleIn { from { transform: scale(0.5); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+// ==========================================
+// 📊 ТАБЛИЦЯ ЛІДЕРІВ
+// ==========================================
+
+.leaderboard-list {
+  width: 100%;
+  min-width: 300px;
+  overflow-y: auto; // Прокрутка, якщо багато
+  max-height: 60vh;
+  margin: 15px 0;
+  border-radius: 15px;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 10px;
+  border: 1px solid var(--glass-border);
+}
+
+.leader-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  margin-bottom: 8px;
+  background: var(--glass-bg);
+  border-radius: 10px;
+  border: 1px solid transparent;
+  transition: 0.2s;
+
+  &:hover {
+    border-color: var(--highlight);
+    background: rgba(255, 255, 255, 0.1);
+  }
+}
+
+.rank-num {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--highlight);
+  width: 30px;
+}
+
+// Міні-іконка
+.mini-thumb {
+  width: 50px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+  cursor: zoom-in;
+  border: 1px solid rgba(255,255,255,0.2);
+  transition: transform 0.2s;
+
+  &:hover { transform: scale(1.1); border-color: #fff; }
+}
+
+.vote-count {
+  font-weight: bold;
+  color: #fff;
+  font-size: 0.9rem;
+  margin-left: auto; // Притиснути вправо
+  padding-left: 10px;
+}
+
+/* ==========================================
+   💃 СТИЛІ DANCE GAME
+   ========================================== */
+
+/* Клас для приховування екранів */
+.hidden {
+   display: none !important;
+}
+
+/* Екран вибору пісні */
+.song-selection {
+   width: 100%;
+   height: 100vh;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   justify-content: center;
+   padding-top: 50px;
+   z-index: 10;
+   position: relative;
+}
+
+.song-list-container {
+   width: 90%;
+   max-width: 500px;
+   height: 60vh;
+   overflow-y: auto;
+   background: rgba(0, 0, 0, 0.3);
+   border: 1px solid var(--glass-border);
+   border-radius: 20px;
+   padding: 10px;
+   /* Гарний скролбар */
+   scrollbar-width: thin;
+   scrollbar-color: var(--highlight) transparent;
+}
+
+.song-card {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   background: var(--glass-bg);
+   margin-bottom: 10px;
+   padding: 15px 20px;
+   border-radius: 12px;
+   cursor: pointer;
+   border: 1px solid transparent;
+   transition: 0.2s;
+}
+
+.song-card:hover {
+   border-color: var(--highlight);
+   background: rgba(255, 255, 255, 0.1);
+   transform: scale(1.02);
+}
+
+.song-info h3 {
+   margin: 0;
+   font-size: 1rem;
+   color: #fff;
+}
+.song-info p {
+   margin: 0;
+   font-size: 0.8rem;
+   color: var(--highlight);
+}
+
+/* Канвас гри */
+#game-view {
+   position: fixed;
+   top: 0; left: 0; width: 100%; height: 100%;
+   background: #000;
+   z-index: 50;
+   display: flex;
+   justify-content: center;
+}
+
+/* ==========================================
+   🎹 PIANO TILES STYLE UPDATE
+   ========================================== */
+
+/* Глобальні кнопки поверх усього */
+.controls-layer {
+   position: fixed;
+   top: 20px;
+   right: 20px;
+   z-index: 200;
+   display: flex;
+   gap: 10px;
+}
+
+/* Контейнер гри: На ПК вузький, на мобільному - 100% */
+#game-container {
+   width: 100%;
+   max-width: 500px; /* Ширина як у планшета/телефона */
+   height: 100vh;
+   margin: 0 auto; /* Центрування */
+   position: relative;
+   background: #000;
+   overflow: hidden;
+   box-shadow: 0 0 100px rgba(0,0,0,0.5);
+   border-left: 1px solid #333;
+   border-right: 1px solid #333;
+
+   // ВАЖЛИВО: Забороняємо браузерні дії (зум/скрол) всередині гри
+   touch-action: none;
+}
+
+/* Канвас на весь контейнер */
+canvas#rhythmCanvas {
+   width: 100%;
+   height: 100%;
+   display: block;
+   // Канвас має бути клікабельним
+   position: relative;
+   z-index: 10;
+}
+
+/* Меню вибору пісень - центруємо по екрану, а не по контейнеру */
+.song-selection {
+   position: fixed;
+   top: 0; left: 0; width: 100%; height: 100vh;
+   background: var(--bg-color); /* Колір теми */
+   z-index: 50;
+   display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+.song-list-container {
+   max-height: 70vh;
+   overflow-y: auto;
+   width: 90%; max-width: 500px;
+}
+
+/* Лінія старту (hit line) - для орієнтиру */
+.hit-line {
+   position: absolute;
+   bottom: 15%; /* 85% висоти */
+   width: 100%;
+   height: 1px;
+   background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+
+   // 🔥 ВАЖЛИВО: Пропускаємо кліки крізь лінію
+   pointer-events: none;
+   z-index: 20;
+}
+
+/* Контейнер ефектів довгих нот - ВАЖЛИВО, він перекривав кліки */
+#hold-effects-container {
+   position: absolute;
+   top:0; left:0; width:100%; height:100%;
+   // 🔥 ВАЖЛИВО: Пропускаємо кліки крізь цей контейнер
+   pointer-events: none;
+   z-index: 25;
+}
+
+/* Ефекти натискання (Спаркли) */
+.click-effect {
+   position: absolute;
+   width: 100%; /* Ширина доріжки */
+   height: 100px;
+   background: linear-gradient(to top, rgba(255,255,255,0.8), transparent);
+   pointer-events: none;
+   animation: fadeOut 0.3s forwards;
+   z-index: 10;
+}
+
+@keyframes fadeOut {
+   to { opacity: 0; transform: scaleY(1.5); }
+}
+
+/* ==========================================
+   ✨ PRO VISUALS (DANCE GAME)
+   ========================================== */
+
+/* Ефект світіння доріжки при натисканні (S D J K) */
+.lane-active {
+   background: linear-gradient(to top, rgba(102, 252, 241, 0.4) 0%, transparent 100%);
+   transition: background 0.1s;
+}
+
+/* Оцінка удару (Perfect / Good / Miss) */
+.hit-rating {
+   position: absolute;
+   left: 50%;
+   top: 40%;
+   transform: translate(-50%, -50%);
+   font-size: 3rem;
+   font-weight: 900;
+   font-family: 'Comic Sans MS', sans-serif; /* Або твій шрифт */
+   pointer-events: none;
+   animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+   z-index: 100;
+   text-shadow: 0 0 20px rgba(255,255,255,0.8);
+}
+
+.rating-perfect { color: #ff00ff; text-shadow: 0 0 20px #ff00ff; }
+.rating-good { color: #66FCF1; text-shadow: 0 0 20px #66FCF1; }
+.rating-miss { color: #ff3333; text-shadow: 0 0 20px #ff3333; }
+
+@keyframes popUp {
+   0% { opacity: 0; transform: translate(-50%, -30%) scale(0.5); }
+   50% { opacity: 1; transform: translate(-50%, -60%) scale(1.2); }
+   100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+}
+
+/* Екран завантаження аналізу пісні */
+.loading-overlay {
+   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+   background: rgba(0,0,0,0.8);
+   display: flex; flex-direction: column; align-items: center; justify-content: center;
+   z-index: 200;
+   color: var(--highlight);
+}
+.spinner {
+   width: 50px; height: 50px;
+   border: 5px solid rgba(255,255,255,0.1);
+   border-top: 5px solid var(--highlight);
+   border-radius: 50%;
+   animation: spin 1s linear infinite;
+   margin-bottom: 20px;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- ШКАЛА ПРОГРЕСУ ТА ЗІРКИ --- */
+.game-header {
+   position: absolute;
+   top: 20px; /* За замовчуванням (ПК) */
+   left: 50%;
+   transform: translateX(-50%);
+   width: 80%;
+   max-width: 400px;
+   z-index: 50;
+   display: flex;
+   flex-direction: column;
+   align-items: center;
+   transition: top 0.3s;
+}
+
+.progress-container {
+   width: 100%;
+   height: 10px;
+   background: rgba(255, 255, 255, 0.2);
+   border-radius: 10px;
+   position: relative;
+   margin-top: 10px;
+   overflow: visible; /* Щоб зірки виступали */
+}
+
+.progress-fill {
+   height: 100%;
+   background: linear-gradient(90deg, var(--highlight), #fff);
+   width: 0%;
+   border-radius: 10px;
+   transition: width 0.1s linear;
+   box-shadow: 0 0 10px var(--highlight);
+}
+
+.star-marker {
+   position: absolute;
+   top: -12px; /* Підняти над смужкою */
+   font-size: 1.5rem;
+   color: #555; /* Неактивна зірка */
+   text-shadow: 0 0 2px #000;
+   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.star-marker.active {
+   color: #FFD700; /* Золото */
+   text-shadow: 0 0 15px #FFD700;
+   transform: scale(1.5);
+}
+
+/* --- АНІМАЦІЇ --- */
+@keyframes shake {
+   0% { transform: translate(1px, 1px) rotate(0deg); }
+   10% { transform: translate(-1px, -2px) rotate(-1deg); }
+   20% { transform: translate(-3px, 0px) rotate(1deg); }
+   30% { transform: translate(3px, 2px) rotate(0deg); }
+   40% { transform: translate(1px, -1px) rotate(1deg); }
+   50% { transform: translate(-1px, 2px) rotate(-1deg); }
+   60% { transform: translate(-3px, 1px) rotate(0deg); }
+   70% { transform: translate(3px, 1px) rotate(-1deg); }
+   80% { transform: translate(-1px, -1px) rotate(1deg); }
+   90% { transform: translate(1px, 2px) rotate(0deg); }
+   100% { transform: translate(1px, -2px) rotate(-1deg); }
+}
+
+.shake-screen {
+   animation: shake 0.5s;
+   border: 2px solid red !important; /* Червона рамка при помилці */
+}
+
+/* Підказка знизу меню */
+.instruction-text {
+   margin-top: 15px;
+   font-size: 0.9rem;
+   color: var(--text-color);
+   opacity: 0.7;
+   text-align: center;
+   font-family: monospace;
+   z-index: 10;
+}
+
+/* Оцінка (Good / Perfect) */
+.hit-rating {
+   position: absolute;
+   left: 50%; top: 40%;
+   transform: translate(-50%, -50%);
+   font-size: 4rem;
+   font-weight: 900;
+   pointer-events: none;
+   z-index: 100;
+   animation: popUp 0.5s forwards;
+}
+
+@keyframes popUp {
+   0% { opacity: 0; transform: translate(-50%, -20%) scale(0.5); }
+   50% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+   100% { opacity: 0; transform: translate(-50%, -80%) scale(1); }
+}
+
+/* --- ОНОВЛЕНИЙ СПИСОК ПІСЕНЬ --- */
+.song-card {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   background: var(--glass-bg);
+   margin-bottom: 12px;
+   padding: 15px 20px;
+   border-radius: 12px;
+   cursor: pointer;
+   border: 1px solid transparent;
+   transition: all 0.2s;
+   position: relative;
+   overflow: hidden;
+}
+
+.song-info {
+   flex: 1;
+   display: flex;
+   flex-direction: column;
+   gap: 5px;
+}
+
+.song-meta-row {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   width: 100%;
+   margin-top: 5px;
+}
+
+.artist-name {
+   font-size: 0.8rem;
+   opacity: 0.7;
+}
+
+/* Стиль для рекорду в меню */
+.score-badge {
+   background: rgba(0, 0, 0, 0.5);
+   padding: 4px 10px;
+   border-radius: 20px;
+   font-size: 0.85rem;
+   color: #FFD700; /* Золотий */
+   display: flex;
+   align-items: center;
+   gap: 5px;
+   border: 1px solid rgba(255, 215, 0, 0.3);
+   box-shadow: 0 0 10px rgba(255, 215, 0, 0.1);
+}
+
+.stars-display {
+   color: #FFD700;
+   letter-spacing: 1px;
+   font-size: 1rem;
+}
+
+/* --- ТЕМА ДЛЯ ГРИ --- */
+#game-container {
+   /* Фон тепер залежить від теми (темний або світлий) */
+   background: var(--bg-color);
+   /* Додаємо легкий радіальний градієнт для глибини */
+   background-image: radial-gradient(circle at 50% 50%, rgba(102, 252, 241, 0.05), transparent 70%);
+   transition: background 0.5s;
+}
+
+/* Текст в грі */
+.game-header h2,
+#combo-display,
+.lane-key {
+   /* Текст завжди світлий в грі для контрасту, або адаптивний */
+   color: white !important;
+   text-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+/* --- ОЦІНКИ (ЛОКАЛІЗОВАНІ СТИЛІ) --- */
+.hit-rating {
+   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+   font-weight: 900;
+   font-style: italic;
+   text-transform: uppercase;
+   -webkit-text-stroke: 1px rgba(0,0,0,0.5);
+}
+
+.rating-perfect { color: #ff00ff; text-shadow: 0 0 20px #ff00ff; font-size: 3.5rem; }
+.rating-good { color: #66FCF1; text-shadow: 0 0 20px #66FCF1; font-size: 2.5rem; }
+.rating-miss { color: #ff3333; text-shadow: 0 0 20px #ff3333; font-size: 2.5rem; }
+
+/* Інші елементи інтерфейсу */
+#game-progress-bar { box-shadow: 0 0 15px var(--highlight); }
+.star-marker.active { color: #FFD700; transform: scale(1.3); }
+
+/* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
+
+/* Фон контейнера гри */
+#game-container {
+   background: #0B0C10;
+   background-image: radial-gradient(circle at 50% 50%, rgba(102, 252, 241, 0.05), transparent 70%);
+   transition: background 0.5s;
+   position: relative;
+   overflow: hidden;
+}
+
+/* --- 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES) --- */
+
+/* Підказки S D J K (щоб вони були рівно) */
+.lane-hints {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  pointer-events: none; /* Щоб кліки проходили крізь текст */
+  z-index: 20;
+}
+
+.lane-key {
+  flex: 1; /* Рівномірний розподіл */
+  text-align: center;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgba(255,255,255,0.5);
+  text-shadow: 0 0 5px #000;
+}
+
+@media (max-width: 768px) {
+  .arena { flex-direction: row; gap: 10px; } // Тримаємо поруч
+  .fighter-card { 
+    height: 50vh; // Високі картки
+    width: 48%; // Дві в ряд
+    aspect-ratio: auto; 
+  }
+  .vs-badge { width: 40px; height: 40px; font-size: 1rem; border-width: 2px; }
+  .battle-header h1 { font-size: 1.5rem; }
+
+  html, body {
+    overflow: hidden !important;
+    height: 100% !important;
+  }
+
+  .main-container {
+    height: 100vh !important;
+    padding: 0 !important;
+    justify-content: center !important;
+    overflow: hidden;
+  }
+
+  .carousel {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 100% !important;
+    height: 100% !important;
+    perspective: 600px !important;
+    position: relative !important;
+    margin-top: -50px;
+  }
+
+  .panel {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    width: 65vw !important;
+    height: 55vh !important;
+    max-height: 400px !important;
+    margin-left: -32.5vw !important;
+    margin-top: -27.5vh !important;
+    transition: all 0.5s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.5) !important;
+    border-radius: 24px;
+    overflow: hidden;
+    -webkit-mask-image: -webkit-radial-gradient(white, black);
+  }
+
+  .panel.center {
+    transform: translateZ(0) scale(1) !important;
+    z-index: 10 !important;
+    opacity: 1 !important;
+  }
+
+  .panel.left {
+    transform: translateX(-55%) scale(0.8) rotateY(10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+
+  .panel.right {
+    transform: translateX(55%) scale(0.8) rotateY(-10deg) !important;
+    z-index: 5 !important;
+    opacity: 0.6 !important;
+  }
+
+  .action-btn {
+    padding: 12px 30px !important;
+    font-size: 1.1rem !important;
+  }
+
+  .sketch-layout {
+    justify-content: center !important;
+    padding-top: 0 !important;
+  }
+
+  .horizontal-slot {
+    width: 95% !important;
+  }
+
+  .center-console {
+    width: 90% !important;
+    padding: 20px !important;
+  }
+
+  /* --- 🔥 ВИПРАВЛЕННЯ ДЛЯ ГРИ --- */
+
+  /* 1. Опускаємо шкалу прогресу нижче кнопок меню */
+  .game-header {
+      top: 85px !important;
+      width: 90% !important;
+      transform: translateX(-50%) scale(0.85) !important;
+  }
+
+  /* 2. Зручніша кнопка "Назад" */
+  #global-back-btn {
+    top: 15px !important;
+    left: 15px !important;
+    padding: 10px 20px !important;
+    font-size: 1rem !important;
+  }
+
+  /* 3. Кнопка паузи */
+  .pause-btn {
+    width: 50px; height: 50px;
+    font-size: 1.5rem;
+    top: 85px !important; /* На рівні з прогресом */
+    left: 10px !important;
+  }
+
+  /* 4. Приховуємо зайві підказки на телефоні */
+  .lane-key {
+    font-size: 1rem;
+    opacity: 0.3;
+  }
+
+  /* 5. ФІКС КЛІКІВ: Заборона скролу і зуму */
+  #game-container, canvas#rhythmCanvas {
+      touch-action: none !important;
+  }
+
+  /* Гарантуємо, що кліки проходять крізь оверлеї */
+  #hold-effects-container, .hit-line, .lane-hints {
+      pointer-events: none !important;
+  }
+  #song-search-input {
+    font-size: 16px !important; /* Запобігає авто-зуму в iOS при натисканні */
+}
+}
+
+// ==========================================
+// 🔥 FINAL MOBILE PERFORMANCE FIX (NO LAGS)
+// ==========================================
+
+@media (max-width: 768px) {
+  
+  /* 1. Блокуємо системні дії */
+  html, body, #game-container, canvas#rhythmCanvas {
+    overflow: hidden !important;
+    touch-action: none !important;
+  }
+
+  /* 2. ВБИВЦЯ ЛАГІВ №1: Оверлей на весь екран */
+  /* Анімація box-shadow на весь екран кладе процесор. Вимикаємо її. */
+  #legendary-border-overlay {
+      display: none !important; /* Просто ховаємо його на телефоні */
+      animation: none !important;
+  }
+
+  /* 3. ВБИВЦЯ ЛАГІВ №2: Складний текст комбо */
+  /* filter: drop-shadow та background-clip змушують перемальовувати текст щокадру */
+  #combo-display.combo-legendary {
+      /* Вимикаємо складний фон-градієнт */
+      background: none !important;
+      -webkit-background-clip: border-box !important;
+      background-clip: border-box !important;
+      
+      /* Робимо простий суцільний колір */
+      color: #FFD700 !important;
+      -webkit-text-fill-color: #FFD700 !important;
+      
+      /* Вимикаємо важкі фільтри тіней */
+      filter: none !important;
+      
+      /* Заміняємо на дешеву тінь */
+      text-shadow: 0 0 10px #FFD700 !important;
+      
+      /* Зупиняємо анімацію руху фону */
+      animation: none !important;
+      
+      /* Трохи зменшуємо розмір */
+      font-size: 2.5rem !important;
+      transform: translateX(-50%) !important;
+  }
+
+  /* 4. Інші контейнери та ефекти */
+  #game-container.container-ripple-gold,
+  #game-container.container-ripple-cosmic,
+  #game-container.container-legendary {
+      animation: none !important;
+      border: none !important; /* Прибираємо рамки взагалі */
+      box-shadow: none !important;
+  }
+  
+  /* 5. Вимикаємо скло (Backdrop Filter) */
+  //.mega-button, .glass-panel, .center-console, .song-card, 
+  //.secret-lock-content, .leaderboard-content, .pause-overlay, 
+  //.video-overlay, .name-input-content {
+  //  backdrop-filter: none !important;
+  //  -webkit-backdrop-filter: none !important;
+   // background: rgba(10, 15, 20, 0.95) !important;
+  //  box-shadow: none !important; /* Тіні блоків теж прибираємо */
+  //  border: 1px solid rgba(255,255,255,0.1) !important;
+ // }
+
+  /* 6. Адаптація інтерфейсу (щоб пальцям було зручно) */
+  #game-container .game-header {
+      top: 50px !important;
+      width: 90% !important;
+      left: 50% !important;
+      transform: translateX(-50%) scale(0.9) !important;
+  }
+
+  .pause-btn {
+      top: 120px !important;
+      left: 10px !important;
+  }
+
+  #global-back-btn {
+      top: 15px !important;
+      left: 15px !important;
+  }
+
+  .controls-layer {
+      top: 15px !important;
+      right: 15px !important;
+  }
+
+  /* Пропускаємо кліки крізь декор */
+  #hold-effects-container,
+  .hit-line,
+  .lane-hints,
+  .click-effect,
+  #legendary-border-overlay {
+      pointer-events: none !important;
+  }
+}
+
+// ==========================================
+// 🔒 СЕКРЕТНИЙ РІВЕНЬ ТА ЛІДЕРИ (НОВЕ)
+// ==========================================
+
+/* --- Анімація веселкової рамки для секретної пісні --- */
+@keyframes rainbow-border {
+  0% {
+    border-color: #ff0000;
+    box-shadow: 0 0 10px #ff0000;
+  }
+  20% {
+    border-color: #ffff00;
+    box-shadow: 0 0 10px #ffff00;
+  }
+  40% {
+    border-color: #00ff00;
+    box-shadow: 0 0 10px #00ff00;
+  }
+  60% {
+    border-color: #00ffff;
+    box-shadow: 0 0 10px #00ffff;
+  }
+  80% {
+    border-color: #ff00ff;
+    box-shadow: 0 0 10px #ff00ff;
+  }
+  100% {
+    border-color: #ff0000;
+    box-shadow: 0 0 10px #ff0000;
+  }
+}
+
+.secret-song-card {
+  border: 3px solid transparent;
+  background: rgba(0, 0, 0, 0.6) !important;
+  animation: rainbow-border 2s linear infinite;
+}
+
+/* Заблокована пісня */
+.song-locked {
+  position: relative;
+  opacity: 0.5;
+  filter: grayscale(100%);
+  
+  pointer-events: auto !important; 
+  cursor: not-allowed; /* Візуально показуємо, що дія заборонена, але клік проходить */
+
+  &::after {
+    content: "🔒";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--text-color);
+    font-size: 2rem;
+  }
+}
+
+// ==========================================
+// 🌊 GAME CONTAINER & COMBO EFFECTS (FINAL)
+// ==========================================
+
+/* --- 1. АНІМАЦІЇ --- */
+
+// ЗОЛОТО (200+) - М'які хвилі
+@keyframes ripple-gold {
+  0% {
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), 0 0 20px rgba(255, 215, 0, 0.5);
+  }
+  70% {
+    border-color: rgba(255, 215, 0, 1);
+    box-shadow: 0 0 0 20px rgba(255, 215, 0, 0), 0 0 40px rgba(255, 215, 0, 0);
+  }
+  100% {
+    border-color: rgba(255, 215, 0, 0.8);
+    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), 0 0 0 rgba(255, 215, 0, 0);
+  }
+}
+
+// КОСМОС (400+) - Жирні неонові хвилі (УПОВІЛЬНЕНІ)
+@keyframes ripple-cosmic {
+  0% {
+    border-color: #00e5ff;
+    box-shadow: 0 0 10px 2px #d500f9, 0 0 20px 5px #00e5ff, inset 0 0 20px #d500f9;
+  }
+  50% {
+    border-color: #d500f9;
+    box-shadow: 0 0 20px 10px rgba(213, 0, 249, 0.6), 0 0 40px 20px rgba(0, 229, 255, 0.4), inset 0 0 40px #d500f9;
+  }
+  100% {
+    border-color: #00e5ff;
+    box-shadow: 0 0 30px 20px rgba(213, 0, 249, 0), 0 0 60px 40px rgba(0, 229, 255, 0), inset 0 0 10px rgba(213, 0, 249, 0);
+  }
+}
+
+// ЛЕГЕНДА (800+) - Чорне Золото RGB Flow
+@keyframes flow-legendary {
+  0% {
+    border-color: #FFD700; // Яскраве золото
+    box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700; // Світіння всередину
+  }
+  25% {
+    border-color: #B8860B; // Темне золото
+    box-shadow: 0 0 10px #B8860B, inset 0 0 5px #000; // Починає темніти
+  }
+  50% {
+    border-color: #222; // Майже чорний (контур)
+    box-shadow: 0 0 5px #000, inset 0 0 30px #FFD700; // Але всередині ще жевріє золото
+  }
+  75% {
+    border-color: #f6e200; // Спалах білого (як відблиск на металі)
+    box-shadow: 0 0 30px #FFD700, 0 0 50px #d7bf06;
+  }
+  100% {
+    border-color: #FFD700;
+    box-shadow: 0 0 20px #FFD700, inset 0 0 15px #FFD700;
+  }
+}
+
+/* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА (РАМКА) --- */
+
+.container-ripple-gold {
+  border: 2px solid #FFD700 !important;
+  z-index: 15;
+  animation: ripple-gold 1.5s infinite cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.container-ripple-cosmic {
+  border: 3px solid #00e5ff !important;
+  z-index: 15;
+  animation: ripple-cosmic 1.2s infinite linear; /* Повільніше */
+}
+
+.container-legendary {
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+  animation: flow-legendary 2s infinite linear; // Швидке, плавне переливання
+}
+
+/* --- 3. СТИЛІ ДЛЯ ТЕКСТУ КОМБО --- */
+
+/* (Базові стилі для #combo-display вже є вище в твоєму файлі, тут тільки модифікатори) */
+
+/* --- ВИПРАВЛЕНА АНІМАЦІЯ ТЕКСТУ (FLOW) --- */
+@keyframes text-flow-legendary {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* --- ОНОВЛЕНИЙ СТИЛЬ ТЕКСТУ 800+ --- */
+#combo-display.combo-legendary {
+  // 1. Градієнт: Золото -> Чорний (широкий) -> Білий спалах -> Золото
+  // Кут 120deg робить смуги по діагоналі, так краще видно рух
+  background: linear-gradient(
+    120deg,
+    #FFD700 10%,
+    #000000 30%,
+    #000000 50%, // Чорного тепер БАГАТО (від 30% до 50%)
+    #FFFFFF 60%, // Тонкий білий блік для контрасту
+    #FFD700 80%
+  );
+
+  // 2. Розмір фону (300%), щоб було куди рухатися
+  background-size: 300% auto;
+
+  // 3. Анімація руху градієнта (щоб не було "мигання", а саме потік)
+  animation: text-flow-legendary 3s linear infinite;
+
+  // 4. Обрізка по тексту
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+
+  // 5. Тінь: Тільки зовнішнє світіння, щоб не "забруднити" чорний колір всередині
+  filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
+
+  // 6. 🔥 ЗМЕНШЕНИЙ РОЗМІР (Було 4.5rem + scale 1.2)
+  font-size: 3rem !important; // Оптимальний розмір
+  font-weight: 900; // Дуже жирний, щоб було видно чорну заливку
+  letter-spacing: 3px;
+
+  // Прибираємо scale, він робив текст розмитим і гігантським
+  transform: none;
+  // Або, якщо треба центрування:
+  // transform: translateX(-50%);
+
+  z-index: 50;
+}
+
+/* --- ПЛАВНІША АНІМАЦІЯ КОНТЕЙНЕРА (РАМКИ) --- */
+@keyframes flow-border-smooth {
+  0% {
+    border-color: #FFD700;
+    box-shadow: 0 0 15px #FFD700;
+  }
+  50% {
+    border-color: #000;
+    box-shadow: 0 0 10px #FFD700, inset 0 0 10px #FFD700;
+  }
+  100% {
+    border-color: #FFD700;
+    box-shadow: 0 0 15px #FFD700;
+  }
+}
+
+.container-legendary {
+  border: 4px solid #FFD700 !important;
+  z-index: 20;
+  animation: flow-border-smooth 2s infinite ease-in-out; // ease-in-out прибирає різке "мигання"
+}
+
+/* ==========================================
+   ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
+   ========================================== */
+
+/* --- 1. АНІМАЦІЯ ТЕКСТУ (Швидкий блік на металі) --- */
+@keyframes vignette-pulse {
+  0%, 100% {
+    box-shadow: inset 0 0 100px #2a003b;
+    opacity: 0.7;
+  }
+  50% {
+    box-shadow: inset 0 0 150px #4a0072;
+    opacity: 1;
+  }
+}
+
+#combo-display.combo-legendary {
+  /* Платиновий градієнт з фіолетовим відливом */
+  background: linear-gradient(
+    110deg,
+    #ffffff 10%,
+    #ffffff 45%,
+    #ffffff 50%, /* Ніжно-фіолетовий блиск */
+    #ffffff 55%,
+    #ffffff 90%
+  );
+  background-size: 200% auto;
+  animation: platinum-shimmer 2s linear infinite;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+  text-shadow: none !important;
+
+  /* Світіння: Біле + Фіолетове */
+  filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
+
+  font-size: 3.2rem !important; /* Зменшений розмір, як ти просив */
+  font-weight: 900;
+  transform: none;
+  z-index: 50;
+}
+
+/* Анімація удару для тексту (легке збільшення) */
+@keyframes pulse-size {
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
+/* Це для того HTML div, який ми створили минулого разу */
+
+#legendary-border-overlay.active {
+  display: block;
+  padding: 0; /* Прибираємо рамку, робимо віньєтку */
+  background: transparent;
+  -webkit-mask: none;
+  mask-composite: auto;
+  animation: vignette-pulse 3s infinite ease-in-out;
+
+  /* Створюємо ефект тунелю */
+  box-shadow: inset 0 0 120px #2a003b;
+
+  &::before {
+    display: none; /* Вимикаємо обертання */
+  }
+}
+
+/* Вимкнення ефектів для адаптації (як ви просили раніше) */
+@media (max-width: 768px) {
+  #game-container.container-ripple-gold,
+  #game-container.container-ripple-cosmic {
+    animation: none !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+}
+/* ==========================================
+   🎄 CHRISTMAS & GOLD SONGS STYLES
+   ========================================== */
+
+/* --- Анімація для НОВОРІЧНИХ пісень (Червоний-Зелений-Золотий) --- */
+@keyframes xmas-border {
+  0% {
+    border-color: #ff0000; /* Червоний */
+    box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+  33% {
+    border-color: #00ff00; /* Зелений */
+    box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+  }
+  66% {
+    border-color: #ffd700; /* Золотий */
+    box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+  }
+  100% {
+    border-color: #ff0000;
+    box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+}
+
+.song-card.song-xmas {
+  background: linear-gradient(to right, rgba(20, 0, 0, 0.8), rgba(0, 20, 0, 0.8));
+  border: 2px solid transparent;
+  animation: xmas-border 3s linear infinite;
+}
+
+/* Додаємо сніжинку біля назви новорічних пісень */
+.song-card.song-xmas h3::before {
+  content: "🎄 ";
+}
+
+/* --- Анімація для ЗОЛОТИХ (Перевірених) пісень --- */
+@keyframes gold-shimmer-border {
+  0% { border-color: #b8860b; box-shadow: 0 0 5px #b8860b; }
+  50% { border-color: #ffd700; box-shadow: 0 0 15px #ffd700; }
+  100% { border-color: #b8860b; box-shadow: 0 0 5px #b8860b; }
+}
+
+.song-card.song-gold {
+  border: 1px solid #ffd700;
+  background: rgba(40, 30, 10, 0.6); /* Легкий золотий відтінок фону */
+  animation: gold-shimmer-border 2s ease-in-out infinite;
+}
+
+/* --- Стиль для тривалості пісні (Час) --- */
+.song-duration {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: monospace;
+  background: rgba(0, 0, 0, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin-left: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+/* ==========================================
+   🔍 SEARCH BAR STYLES (FIXED CLICKS)
+   ========================================== */
+
+.search-container {
+  width: 90%;
+  max-width: 500px;
+  margin: 0 auto 15px auto; // Центрування
+  position: relative;
+  
+  // 🔥 ВАЖЛИВО: Контейнер пропускає кліки, щоб не блокувати список під ним
+  z-index: 5; 
+  pointer-events: none; 
+}
+
+#song-search-input {
+  // 🔥 ВАЖЛИВО: Поле вводу приймає кліки
+  pointer-events: auto;
+
+  width: 100%;
+  padding: 12px 20px;
+  font-size: 1.1rem;
+  font-family: inherit;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid var(--glass-border);
+  border-radius: 50px;
+  backdrop-filter: blur(10px);
+  outline: none;
+  transition: all 0.3s ease;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+  }
+
+  &:focus {
+    background: var(--glass-bg);
+    border-color: var(--highlight);
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: scale(1.02);
+  }
+}
+
+// 🔥 ГАРАНТІЯ КЛІКАБЕЛЬНОСТІ СПИСКУ
+.song-list-container {
+  position: relative;
+  z-index: 10; // Вище за контейнер пошуку
+  pointer-events: auto !important;
+}
+
+.song-card {
+  position: relative;
+  z-index: 11; // Вище за контейнер списку
+  pointer-events: auto !important;
+}
+
+/* Фікс для iOS (запобігає зуму) */
+@media (max-width: 768px) {
+  #song-search-input {
+    font-size: 16px !important;
+  }
+}

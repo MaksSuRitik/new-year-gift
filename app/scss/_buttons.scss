@@ -1,0 +1,241 @@
+.btn {
+  background: var(--glass-bg); backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  width: 48px; height: 48px; border-radius: 16px;
+  color: var(--text-color); cursor: pointer;
+  transition: 0.3s;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
+
+  &:hover { background: var(--accent-glow); transform: scale(1.1); }
+}
+
+// Велика кнопка старту
+.mega-button {
+  position: relative;
+  width: 300px; height: 200px;
+  background: var(--glass-bg);
+  backdrop-filter: blur(var(--glass-blur));
+  border: 1px solid var(--glass-border);
+  border-radius: 30px;
+  cursor: pointer;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  overflow: hidden;
+  transition: all 0.3s;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  animation: pulse-block 3s infinite;
+
+  .content-wrapper { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+  .emoji-icon { font-size: 3rem; margin-bottom: 5px; }
+  .small-text { font-size: 1rem; opacity: 0.7; color: var(--text-color); }
+
+  &:hover {
+    transform: scale(1.05);
+    animation: none;
+    // НОВЕ: Світіння акцентним кольором (Ціан або Бордо)
+    border-color: var(--highlight);
+    box-shadow: 0 0 50px var(--accent-glow);
+  }
+  &:active { transform: scale(0.95); }
+}
+
+.action-btn {
+  padding: 15px 40px;
+  font-size: 1.5rem;
+  font-weight: bold;
+  border-radius: 40px;
+
+  // Скло + Тонка кольорова рамка
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(15px);
+  border: 2px solid var(--highlight); // Рамка кольору теми (Ціан/Бордо)
+
+  // Легке світіння у спокійному стані
+  box-shadow: 0 0 10px var(--accent-glow);
+
+  color: var(--text-color);
+  cursor: pointer;
+  transition: 0.3s;
+  text-decoration: none;
+  display: inline-block;
+
+  // ПРИ НАВЕДЕННІ - ЯСКРАВИЙ СПАЛАХ
+  &:hover {
+    background: var(--highlight); // Заливаємо кольором
+    color: var(--bg-color);       // Текст стає кольором фону (контраст)
+    box-shadow: 0 0 30px var(--highlight); // Потужне світіння
+    transform: scale(1.05);
+    border-color: var(--highlight);
+  }
+}
+.action-btn.btn-danger {
+  border-color: #ff5555;
+  &:hover { background: #ff5555; }
+}
+
+// Кнопка Спін (Біла пігулка)
+.sketch-spin-btn {
+  // НОВЕ: Використовуємо змінні
+  background: var(--highlight);
+  color: var(--bg-color);
+
+  font-family: 'Comic Sans MS', sans-serif; font-weight: bold; font-size: 1.5rem;
+  padding: 15px 80px; border-radius: 50px; border: none; cursor: pointer;
+  transition: transform 0.1s; box-shadow: 0 0 15px var(--accent-glow);
+
+  &:hover { transform: scale(1.05); box-shadow: 0 0 25px var(--highlight); }
+  &:active { transform: scale(0.95); }
+}
+
+.simple-back {
+  position: absolute; top: 20px; left: 20px; color: #fff; text-decoration: none; opacity: 0.7;
+  &:hover { opacity: 1; }
+}
+
+.close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: var(--text-color);
+  font-size: 1.5rem;
+  cursor: pointer;
+  // Робимо кнопку круглою
+  width: 42px; height: 42px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: var(--highlight); // При наведенні заливається кольором
+    color: #000; // Іконка стає чорною для контрасту
+    border-color: var(--highlight);
+    box-shadow: 0 0 15px var(--highlight); // Світиться
+    transform: rotate(90deg); // Прикольний ефект повороту
+  }
+}
+
+/* Кнопка Паузи */
+.pause-btn {
+   position: absolute;
+   top: 20px;
+   left: 20px;
+   width: 40px; height: 40px;
+   background: rgba(255,255,255,0.1);
+   border: 1px solid rgba(255,255,255,0.3);
+   border-radius: 50%;
+   color: white;
+   font-size: 1.2rem;
+   cursor: pointer;
+   z-index: 150;
+   display: flex; align-items: center; justify-content: center;
+}
+
+// ==========================================
+// 🔙 GLOBAL BACK BUTTON (THEME FIX)
+// ==========================================
+
+#global-back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  z-index: 200; 
+  
+  padding: 10px 22px;
+  border-radius: 30px;
+  font-family: inherit;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  // Темна тема (Default)
+  background: var(--glass-bg);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid var(--glass-border);
+  color: var(--highlight);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+
+  &:hover {
+    background: var(--highlight);
+    color: var(--bg-color);
+    box-shadow: 0 0 20px var(--accent-glow);
+    transform: scale(1.05);
+  }
+}
+
+/* --- КНОПКА ТАБЛИЦІ ЛІДЕРІВ --- */
+.btn-leaderboard {
+  display: block;
+  margin: 15px auto;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(45deg, var(--highlight), var(--blob-1));
+  color: #fff;
+  font-family: inherit;
+  font-weight: bold;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: 0 0 15px var(--accent-glow);
+  transition: transform 0.2s;
+
+  &:hover {
+    box-shadow: 0 0 25px var(--highlight);
+    transform: scale(1.05);
+  }
+}
+
+.name-submit-btn {
+  padding: 12px 30px;
+  border: none;
+  border-radius: 50px;
+  background: #00d2ff;
+  color: #000;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: 0.3s;
+
+  &:hover {
+    background: #fff;
+    box-shadow: 0 0 15px #fff;
+    transform: scale(1.05);
+  }
+
+  &:disabled {
+    background: #555;
+    opacity: 0.6;
+    transform: none;
+    cursor: wait;
+  }
+}
+
+/* Кнопка зміни імені в меню */
+.btn-change-name {
+  display: block;
+  margin: 0 auto 10px auto; /* Центруємо і відступ знизу */
+  padding: 8px 20px;
+  border: 1px solid var(--glass-border);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-color);
+  font-family: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  backdrop-filter: blur(5px);
+
+  &:hover {
+    background: var(--highlight);
+    color: var(--bg-color);
+    border-color: var(--highlight);
+    box-shadow: 0 0 10px var(--accent-glow);
+  }
+}
+
+  .secret-lock-btn {
+    padding: 10px 30px; border: none; border-radius: 50px;
+    background: var(--highlight);
+    color: var(--bg-color); /* Адаптується під тему через змінні */
+    font-weight: bold; cursor: pointer; transition: 0.3s;
+    &:hover { box-shadow: 0 0 15px var(--highlight); transform: scale(1.05); }
+  }

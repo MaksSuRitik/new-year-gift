@@ -1,0 +1,467 @@
+// ==========================================
+// ☁️ СВІТЛА ТЕМА (DEEP SKY & BLOBS + NEON)
+// ==========================================
+body[data-theme="light"] {
+  // 1. ФОН (Твій "щільний" сіро-блакитний)
+  --bg-color: #DCE6F1;
+
+  // Додаємо ніжний патерн снігу (фіолетовий, щоб пасував до неону)
+  --bg-pattern: radial-gradient(rgba(179, 136, 235, 0.2) 2px, transparent 2px);
+  --bg-size: 25px 25px;
+
+  // 2. БЛОБИ (Залишив твої насичені кольори)
+  --blob-1: #89CFF0; // Яскраво-блакитний
+  --blob-2: #C3B1E1; // Ніжно-фіолетовий
+
+  // 3. ТЕКСТ (Залишив твій темно-синій)
+  --text-color: #243B55;
+
+  // 4. АКЦЕНТ (ЗМІНИВ НА КРЕМОВО-ФІОЛЕТОВИЙ НЕОН)
+  --highlight: #B388EB;
+
+  // 5. ЕФЕКТ СКЛА
+  --glass-bg: rgba(255, 255, 255, 0.55);
+  // Рамка тепер має колір хайлайту (фіолетова), а не просто біла
+  --glass-border: rgba(179, 136, 235, 0.6);
+
+  // Тіні з легким фіолетовим відтінком
+  --glass-shadow:
+    15px 15px 35px rgba(166, 185, 204, 0.5),
+    -15px -15px 35px rgba(255, 255, 255, 0.8);
+
+  // Світіння навколо (Glow)
+  --accent-glow: rgba(179, 136, 235, 0.4);
+
+  // --- НАЛАШТУВАННЯ ЕЛЕМЕНТІВ ---
+
+  // Гіфки та панелі
+  .glass-panel {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    // Додаємо неонову рамку
+    border: 2px solid var(--highlight) !important;
+    box-shadow: 0 0 15px var(--accent-glow) !important;
+  }
+
+  // КНОПКИ МЕНЮ
+  .action-btn {
+    background: rgba(255, 255, 255, 0.6) !important;
+    // Фіолетова обводка
+    border: 2px solid var(--highlight) !important;
+    color: var(--text-color) !important;
+    font-weight: 800;
+
+    &:hover {
+      background: var(--highlight) !important;
+      color: #fff !important;
+      // Яскраве світіння при наведенні
+      box-shadow: 0 0 30px var(--highlight) !important;
+    }
+  }
+
+  // Текст "З новим роком" (Градієнт підлаштував під новий неон)
+  .shimmer-text {
+    background: linear-gradient(120deg, #243B55 40%, #B388EB 50%, #243B55 60%);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  // Примусовий колір тексту
+  .center-console, .video-card, .mega-button .small-text {
+    color: var(--text-color) !important; text-shadow: none;
+  }
+  .center-console .console-text h2 {
+    color: #141E30 !important;
+  }
+  .center-console .console-text p {
+    color: var(--text-color) !important; opacity: 1 !important;
+  }
+
+  // Кнопка СПІН
+  .sketch-spin-btn {
+    background: var(--text-color);
+    color: #fff;
+    // Додаємо світіння кнопці
+    box-shadow: 0 0 20px var(--accent-glow);
+    border: 2px solid var(--highlight);
+
+    &:hover {
+      background: var(--highlight);
+      transform: scale(1.05);
+      box-shadow: 0 0 30px var(--highlight);
+    }
+  }
+
+  // Блокировка кнопки (чтобы было видно, что жать нельзя)
+  .sketch-spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+    pointer-events: none; // Полностью отключает клики
+  }
+
+  // Рулетка
+  .slot-window-horizontal {
+    background: #141E30 !important;
+    border: 2px solid var(--highlight) !important; // Неонова рамка
+    box-shadow: 0 0 15px var(--accent-glow);
+  }
+
+  // Градієнти тіней
+  .shadow-left { background: linear-gradient(to right, #DCE6F1 0%, transparent 100%); }
+  .shadow-right { background: linear-gradient(to left, #DCE6F1 0%, transparent 100%); }
+
+  .simple-back, .pointer-arrow { color: var(--text-color); }
+  
+  // Корекція модалок у світлій темі
+  .secret-lock-content, .name-input-content, .leaderboard-content {
+    background: rgba(255, 255, 255, 0.95);
+    color: #333;
+  }
+  .name-input-field {
+    background: rgba(0, 0, 0, 0.05);
+    border-color: var(--text-color);
+    color: var(--text-color);
+
+    &:focus {
+      border-color: var(--highlight);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  }
+  .name-submit-btn {
+    background: var(--highlight); // Фіолетовий
+    color: #fff;
+
+    &:hover {
+      background: var(--text-color); // Темно-синій
+      box-shadow: 0 0 15px var(--highlight);
+    }
+  }
+
+  // Змінюємо фон модалки на світлий напівпрозорий
+  .leaderboard-modal {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .leaderboard-content {
+    background: rgba(255, 255, 255, 0.9);
+    border-color: var(--highlight); /* Фіолетовий */
+  }
+
+  .lb-table th {
+    border-bottom-color: rgba(0,0,0,0.1);
+  }
+
+  .lb-table td {
+    border-bottom-color: rgba(0,0,0,0.05);
+    color: #2c3e50; /* Темний текст */
+  }
+
+  /* Секретна пісня у світлій темі */
+  .secret-song-card {
+    background: rgba(255,255,255,0.8) !important;
+  }
+
+  .song-locked::after {
+    color: #555; /* Темний замок */
+  }
+
+  /* Текст "Архів" під спіном */
+  .archive-link:hover {
+    color: #fff;
+  }
+  
+  /* Фон контейнера гри у світлій темі */
+  #game-container {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  }
+  
+  /* Сітка доріжок у світлій темі */
+  .lane-col {
+    border-right: 1px solid rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.3); /* Легке скло */
+  }
+  
+  /* Активна доріжка (світла) */
+  .lane-col.active {
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+  }
+  
+  /* Кнопка паузи (світла) */
+  .pause-btn {
+    background: #fff;
+    border: 1px solid #ccc;
+    color: #333;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  }
+  
+  /* Тексти в грі (світла) */
+  #score-display, #combo-display {
+    color: #2c3e50 !important;
+    text-shadow: none;
+    font-weight: 800;
+  }
+  
+  /* Підказки клавіш (світла) */
+  .lane-key {
+    color: rgba(0, 0, 0, 0.6) !important;
+    font-weight: bold;
+  }
+  
+  /* Прогрес бар (світла) */
+  .progress-container {
+    background: rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Вікно результатів/паузи у світлій темі */
+  .pause-overlay {
+    background: rgba(255, 255, 255, 0.85); /* Світле скло */
+    backdrop-filter: blur(10px);
+  }
+  .pause-overlay h1, .pause-overlay h2 {
+    color: #2c3e50;
+    text-shadow: none;
+  }
+}
+
+// Meow Mode
+body[data-lang="MEOW"] {
+  --blob-1: #4a2c2c;
+  .action-btn, .mega-button { border-color: #ff9999; }
+}
+
+/* ☀️ СВІТЛА ТЕМА (REMASTERED) */
+body[data-theme="light"] #game-container {
+   /* Приємний світлий градієнт замість білого */
+   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+}
+
+/* Сітка доріжок у світлій темі */
+body[data-theme="light"] .lane-col {
+   border-right: 1px solid rgba(0, 0, 0, 0.08);
+   background: rgba(255, 255, 255, 0.3); /* Легке скло */
+}
+
+/* Активна доріжка (світла) */
+body[data-theme="light"] .lane-col.active {
+   background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
+}
+
+/* Кнопка паузи (світла) */
+body[data-theme="light"] .pause-btn {
+   background: #fff;
+   border: 1px solid #ccc;
+   color: #333;
+   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Тексти в грі (світла) */
+body[data-theme="light"] #score-display,
+body[data-theme="light"] #combo-display {
+   color: #2c3e50 !important;
+   text-shadow: none;
+   font-weight: 800;
+}
+
+/* Підказки клавіш (світла) */
+body[data-theme="light"] .lane-key {
+   color: rgba(0, 0, 0, 0.6) !important;
+   font-weight: bold;
+}
+
+/* Прогрес бар (світла) */
+body[data-theme="light"] .progress-container {
+   background: rgba(0, 0, 0, 0.1);
+}
+
+/* Вікно результатів/паузи у світлій темі */
+body[data-theme="light"] .pause-overlay {
+   background: rgba(255, 255, 255, 0.85); /* Світле скло */
+   backdrop-filter: blur(10px);
+}
+body[data-theme="light"] .pause-overlay h1,
+body[data-theme="light"] .pause-overlay h2 {
+   color: #2c3e50;
+   text-shadow: none;
+}
+
+// Адаптація кнопки під СВІТЛУ ТЕМУ
+body[data-theme="light"] #global-back-btn {
+  background: rgba(255, 255, 255, 0.8);
+  border-color: var(--highlight);
+  color: var(--text-color);
+  box-shadow: 0 4px 15px rgba(179, 136, 235, 0.2);
+
+  &:hover {
+    background: var(--highlight);
+    color: #fff;
+  }
+}
+
+/* ==========================================
+   ☀️ АДАПТАЦІЯ ПІД СВІТЛУ ТЕМУ (Light Mode)
+   ========================================== */
+body[data-theme="light"] {
+
+  /* Змінюємо фон модалки на світлий напівпрозорий */
+  .leaderboard-modal {
+    background: rgba(255, 255, 255, 0.6);
+  }
+
+  .leaderboard-content {
+    border-color: var(--highlight); /* Фіолетовий */
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .lb-table th {
+    border-bottom-color: rgba(0, 0, 0, 0.1);
+  }
+
+  .lb-table td {
+    border-bottom-color: rgba(0, 0, 0, 0.05);
+    color: #2c3e50; /* Темний текст */
+  }
+
+  /* Секретна пісня у світлій темі */
+  .secret-song-card {
+    background: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .song-locked::after {
+    color: #555; /* Темний замок */
+  }
+}
+
+// ==========================================
+// ☀️ СВІТЛА ТЕМА (Light Mode Overrides)
+// ==========================================
+body[data-theme="light"] {
+  .name-input-content {
+    border-color: var(--highlight); // Фіолетовий (#B388EB)
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-color);
+    box-shadow: 0 0 30px rgba(179, 136, 235, 0.6);
+  }
+
+  .name-input-field {
+    border-color: var(--text-color);
+    background: rgba(0, 0, 0, 0.05);
+    color: var(--text-color);
+
+    &:focus {
+      border-color: var(--highlight);
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  }
+
+  .name-submit-btn {
+    background: var(--highlight); // Фіолетовий
+    color: #fff;
+
+    &:hover {
+      background: var(--text-color); // Темно-синій
+      box-shadow: 0 0 15px var(--highlight);
+    }
+  }
+}
+
+/* Адаптація під світлу тему */
+body[data-theme="light"] .game-notification {
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--text-color);
+  box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
+}
+// ==========================================
+// ☀️ LIGHT THEME ADAPTATION (NEW ELEMENTS)
+// ==========================================
+
+body[data-theme="light"] {
+
+  /* 1. ПОВІДОМЛЕННЯ (TOAST) */
+  .game-notification {
+    background: rgba(255, 255, 255, 0.95); /* Білий фон */
+    color: var(--text-color);              /* Темно-синій текст */
+    border-color: var(--highlight);        /* Фіолетова рамка */
+    box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4); /* Фіолетова тінь */
+  }
+
+  /* 2. КНОПКА "ЗМІНИТИ ІМ'Я" В МЕНЮ */
+  .btn-change-name {
+    background: rgba(255, 255, 255, 0.6);
+    color: var(--text-color);
+    border-color: var(--glass-border);
+
+    &:hover {
+      background: var(--highlight); /* Фіолетовий при наведенні */
+      color: #fff;
+    }
+  }
+
+  /* 3. МОДАЛЬНЕ ВІКНО ВВОДУ ІМЕНІ */
+  .name-input-content {
+    background: rgba(255, 255, 255, 0.95); /* Світлий фон */
+    border-color: var(--highlight);        /* Фіолетова рамка */
+    color: var(--text-color);              /* Темний текст заголовка */
+    box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
+  }
+
+  /* Поле вводу */
+  .name-input-field {
+    background: rgba(0, 0, 0, 0.05);       /* Сірий фон поля */
+    color: #000;                           /* Чорний текст вводу */
+    border-color: rgba(0,0,0,0.2);
+
+    &::placeholder {
+      color: rgba(0,0,0,0.4);
+    }
+
+    &:focus {
+      border-color: var(--highlight);
+      background: #fff;
+      box-shadow: 0 0 10px var(--accent-glow);
+    }
+  }
+
+  /* Кнопки ОК / Cancel */
+  .name-submit-btn {
+    background: var(--highlight); /* Фіолетовий */
+    color: #fff;
+    
+    &:hover {
+      background: var(--text-color); /* Темно-синій */
+      box-shadow: 0 0 15px var(--highlight);
+    }
+  }
+  
+  /* Кнопка Cancel (сіра) */
+  #cancel-name-btn {
+      background: #ccc !important;
+      color: #333 !important;
+      &:hover {
+          background: #aaa !important;
+      }
+  }
+}
+
+/* Адаптація під Світлу Тему */
+body[data-theme="light"] {
+  #song-search-input {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--text-color);
+    border-color: rgba(0,0,0,0.1);
+
+    &::placeholder {
+      color: rgba(0,0,0,0.4);
+    }
+
+    &:focus {
+      background: #fff;
+      border-color: var(--highlight);
+    }
+  }
+  
+  #no-songs-msg {
+      color: var(--text-color) !important;
+  }
+}
