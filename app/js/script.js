@@ -1,287 +1,344 @@
+/**
+ * ==========================================
+ * 🎁 NEW YEAR APP - MAIN SCRIPT
+ * ==========================================
+ * Structure:
+ * 1. Configuration & Translations
+ * 2. Utilities (Helpers)
+ * 3. Modules (Audio, Theme, Lang)
+ * 4. Page Logic (Landing, Casino, Battle)
+ * 5. Initialization
+ */
+
+'use strict';
+
 // ==========================================
-// --- ГЛОБАЛЬНА ЛОГІКА ---
+// 1. CONFIGURATION
 // ==========================================
-
-const themeBtn = document.getElementById('themeToggle');
-const langBtn = document.getElementById('langToggle');
-const soundBtn = document.getElementById('soundToggle'); 
-const langWrapper = document.querySelector('.lang-wrapper');
-const langItems = document.querySelectorAll('.lang-dropdown button');
-
-// 🎵 АУДІО ЕЛЕМЕНТИ
-const bgMusic = document.getElementById('bg-music');
-const sfxClick = document.getElementById('sfx-click');
-const sfxHover = document.getElementById('sfx-hover');
-const sfxSpin = document.getElementById('sfx-spin');
-const sfxWin = document.getElementById('sfx-win');
-
-const translations = {
-  UA: {
-    title: 'З новим роком 😎', text: 'Жмякайте',
-    btnMemes: 'Мемс', btnDance: 'Денс', btnSurprise: 'Сюрпрайз',
-    spinTitle: 'НУ давайте лудомани', spinSub: 'Крутіть меми',
-    btnSpin: 'Спін', btnBack: '⬅ Назад',
-    videoDefault: 'Відео', btnOpen: 'РОЗПАКУВАТИ',
-    btnBattle: '⚔️ АРХІВ МОМЕНТІВ',
-    battleTitle: 'БИТВА МОМЕНТІВ ⚔️',
-    battleSub: 'Обирай, що смішніше ',
-    battleStats: 'Переглянуто пар:',
-    winTitle: '🏆 ВАШ ФАВОРИТ 🏆',
-    btnRestart: 'Зіграти ще раз'
-  },
-  RU: {
-    title: 'С новым годом 😎', text: 'Жмякайте',
-    btnMemes: 'Мемс', btnDance: 'Дэнс', btnSurprise: 'Сюрпрайз',
-    spinTitle: 'НУ давайте лудоманы', spinSub: 'Крутите мемы',
-    btnSpin: 'Спин', btnBack: '⬅ Назад',
-    videoDefault: 'Видео', btnOpen: 'РАСПАКОВАТЬ',
-    btnBattle: '⚔️ АРХИВ МОМЕНТОВ ',
-    battleTitle: 'БИТВА МОМЕНТОВ⚔️',
-    battleSub: 'Выбирай, что смешнее ',
-    battleStats: 'Просмотрено пар:',
-    winTitle: '🏆 ВАШ ФАВОРИТ 🏆',
-    btnRestart: 'Сыграть еще раз'
-  },
-  MEOW: {
-    title: 'Meow Meow 😎', text: 'Meow',
-    btnMemes: 'Meow', btnDance: 'Meow', btnSurprise: 'Meow',
-    spinTitle: 'MEOW MEOW', spinSub: 'Meow meow',
-    btnSpin: 'Meow', btnBack: '⬅ Meow',
-    videoDefault: 'Meow', btnOpen: 'MEOW!',
-    btnBattle: '⚔️ MEOW MEOW',
-    battleTitle: 'MEOW MEOW ⚔️',
-    battleSub: 'Meow meow meow meow',
-    battleStats: 'Meow MEOW:',
-    winTitle: '🏆 MEOW KING 🏆',
-    btnRestart: 'Meow again'
-  }
+const CONFIG = {
+    sounds: {
+        bgMusic: 'bg-music',
+        click: 'sfx-click',
+        hover: 'sfx-hover',
+        spin: 'sfx-spin',
+        win: 'sfx-win'
+    },
+    firebase: {
+        // Конфіг залишається тут, але ініціалізація нижче
+        projectId: "memebattle-4cb27",
+        collection: "memes"
+    },
+    animation: {
+        snowInterval: 300,
+        spinDuration: 5500
+    }
 };
 
-// --- 1. ЗАВАНТАЖЕННЯ НАЛАШТУВАНЬ ---
-
-const savedTheme = localStorage.getItem('siteTheme') || 'dark';
-document.body.setAttribute('data-theme', savedTheme);
-if(themeBtn) themeBtn.textContent = savedTheme === 'dark' ? '🌙' : '☀️';
-
-const savedLang = localStorage.getItem('siteLang') || 'UA';
-document.body.setAttribute('data-lang', savedLang);
-if(langBtn) langBtn.textContent = savedLang === 'MEOW' ? '🐱' : savedLang;
-
-// --- 🔊 ЛОГІКА ЗВУКУ ---
-
-// Перевіряємо, чи користувач колись вимикав звук. Якщо ні - звук УВІМКНЕНО.
-let isMuted = localStorage.getItem('isMuted') === 'true'; 
-
-if(bgMusic) {
-    bgMusic.volume = 0.2; 
-    bgMusic.loop = true;  
-    
-    // Відновлюємо момент пісні
-    const savedTime = localStorage.getItem('bgMusicTime');
-    if(savedTime) bgMusic.currentTime = parseFloat(savedTime);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    applyLanguage(savedLang);
-    updateSoundIcon();
-    
-    // Запускаємо "мисливця за кліком/рухом" для музики
-    startMusicUnlocker();
-});
-
-window.addEventListener('beforeunload', () => {
-    if(bgMusic && !bgMusic.paused) {
-        localStorage.setItem('bgMusicTime', bgMusic.currentTime);
+const TRANSLATIONS = {
+    UA: {
+        title: 'З новим роком 😎', text: 'Жмякайте',
+        btnMemes: 'Мемс', btnDance: 'Денс', btnSurprise: 'Сюрпрайз',
+        spinTitle: 'НУ давайте лудомани', spinSub: 'Крутіть меми',
+        btnSpin: 'Спін', btnBack: '⬅ Назад',
+        videoDefault: 'Відео', btnOpen: 'РОЗПАКУВАТИ',
+        btnBattle: '⚔️ АРХІВ МОМЕНТІВ', battleTitle: 'БИТВА МОМЕНТІВ ⚔️',
+        battleSub: 'Обирай, що смішніше ', battleStats: 'Переглянуто пар:',
+        winTitle: '🏆 ВАШ ФАВОРИТ 🏆', btnRestart: 'Зіграти ще раз'
+    },
+    RU: {
+        title: 'С новым годом 😎', text: 'Жмякайте',
+        btnMemes: 'Мемс', btnDance: 'Дэнс', btnSurprise: 'Сюрпрайз',
+        spinTitle: 'НУ давайте лудоманы', spinSub: 'Крутите мемы',
+        btnSpin: 'Спин', btnBack: '⬅ Назад',
+        videoDefault: 'Видео', btnOpen: 'РАСПАКОВАТЬ',
+        btnBattle: '⚔️ АРХИВ МОМЕНТОВ ', battleTitle: 'БИТВА МОМЕНТОВ⚔️',
+        battleSub: 'Выбирай, что смешнее ', battleStats: 'Просмотрено пар:',
+        winTitle: '🏆 ВАШ ФАВОРИТ 🏆', btnRestart: 'Сыграть еще раз'
+    },
+    MEOW: {
+        title: 'Meow Meow 😎', text: 'Meow',
+        btnMemes: 'Meow', btnDance: 'Meow', btnSurprise: 'Meow',
+        spinTitle: 'MEOW MEOW', spinSub: 'Meow meow',
+        btnSpin: 'Meow', btnBack: '⬅ Meow',
+        videoDefault: 'Meow', btnOpen: 'MEOW!',
+        btnBattle: '⚔️ MEOW MEOW', battleTitle: 'MEOW MEOW ⚔️',
+        battleSub: 'Meow meow meow meow', battleStats: 'Meow MEOW:',
+        winTitle: '🏆 MEOW KING 🏆', btnRestart: 'Meow again'
     }
-});
+};
 
-function updateSoundIcon() {
-    if(!soundBtn) return;
-    if (isMuted) {
-        soundBtn.textContent = '🔇';
-        soundBtn.classList.remove('playing');
-        if(bgMusic) bgMusic.pause();
-    } else {
-        soundBtn.textContent = '🔊';
-        soundBtn.classList.add('playing');
-        // Якщо іконка "гучно", пробуємо грати
-        if(bgMusic && bgMusic.paused) startMusicUnlocker();
-    }
-}
+// ==========================================
+// 2. AUDIO CONTROLLER
+// ==========================================
+const AudioController = {
+    bgMusic: document.getElementById(CONFIG.sounds.bgMusic),
+    isMuted: localStorage.getItem('isMuted') === 'true',
+    soundBtn: document.getElementById('soundToggle'),
 
-// 🔥 ФУНКЦІЯ АГРЕСИВНОГО ЗАПУСКУ МУЗИКИ
-function startMusicUnlocker() {
-    if(isMuted || !bgMusic) return;
+    init() {
+        if (!this.bgMusic) return;
+        
+        this.bgMusic.volume = 0.2;
+        this.bgMusic.loop = true;
 
-    // Спроба 1: Чесний запуск (іноді працює, якщо сайт перезавантажили)
-    bgMusic.play().catch(() => {
-        console.log("Автоплей чекає на дію...");
-    });
+        // Restore time
+        const savedTime = localStorage.getItem('bgMusicTime');
+        if (savedTime) this.bgMusic.currentTime = parseFloat(savedTime);
 
-    // Спроба 2: Ловимо БУДЬ-ЯКУ дію користувача
-    // Музика запуститься не тільки від кліку, а й від руху миші чи скролу!
-    const events = ['click', 'touchstart', 'mousemove', 'scroll', 'keydown'];
-
-    function unlock() {
-        if(!isMuted && bgMusic) {
-            bgMusic.play().then(() => {
-                // Успіх! Прибираємо слухачі, щоб не вантажити систему
-                events.forEach(e => document.removeEventListener(e, unlock, { capture: true }));
-            }).catch(() => {}); 
-        }
-    }
-
-    events.forEach(e => document.addEventListener(e, unlock, { capture: true, once: true }));
-}
-
-function playSfx(audioEl) {
-    if (isMuted || !audioEl) return;
-    audioEl.currentTime = 0;
-    audioEl.volume = 0.4;
-    audioEl.play().catch(() => {});
-}
-
-if(soundBtn) {
-    soundBtn.addEventListener('click', () => {
-        isMuted = !isMuted;
-        localStorage.setItem('isMuted', isMuted);
-        updateSoundIcon();
-        if (!isMuted) playSfx(sfxClick);
-    });
-}
-
-document.querySelectorAll('button, .action-btn, .mega-button').forEach(btn => {
-    btn.addEventListener('mouseenter', () => playSfx(sfxHover));
-});
-
-// --- ІНШІ ОБРОБНИКИ ---
-
-if (themeBtn) {
-    themeBtn.addEventListener('click', () => {
-        const body = document.body;
-        const isDark = body.getAttribute('data-theme') === 'dark';
-        const newTheme = isDark ? 'light' : 'dark';
-        body.setAttribute('data-theme', newTheme);
-        themeBtn.textContent = isDark ? '☀️' : '🌙';
-        localStorage.setItem('siteTheme', newTheme);
-        playSfx(sfxClick);
-    });
-}
-
-if (langBtn) {
-    langBtn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        langWrapper.classList.toggle('open');
-        playSfx(sfxClick);
-    });
-    
-    document.addEventListener('click', (e) => {
-        if (!langWrapper.contains(e.target)) langWrapper.classList.remove('open');
-    });
-
-    langItems.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const lang = btn.dataset.lang;
-            document.body.setAttribute('data-lang', lang);
-            langBtn.textContent = lang === 'MEOW' ? '🐱' : lang;
-            applyLanguage(lang);
-            localStorage.setItem('siteLang', lang);
-            langWrapper.classList.remove('open');
-            playSfx(sfxClick);
+        // Save time on unload
+        window.addEventListener('beforeunload', () => {
+            if (!this.bgMusic.paused) localStorage.setItem('bgMusicTime', this.bgMusic.currentTime);
         });
-    });
-}
 
-function applyLanguage(lang) {
-    const allTexts = document.querySelectorAll('[data-i18n]');
-    allTexts.forEach(el => {
-        const key = el.dataset.i18n;
-        if (translations[lang] && translations[lang][key]) {
-            el.textContent = translations[lang][key];
+        this.updateIcon();
+        this.tryAutoPlay();
+        this.setupListeners();
+    },
+
+    playSFX(id, volume = 0.4) {
+        if (this.isMuted) return;
+        const audio = document.getElementById(id);
+        if (audio) {
+            audio.currentTime = 0;
+            audio.volume = volume;
+            audio.play().catch(() => {});
         }
-    });
-}
+    },
 
-// --- ФОНОВИЙ СНІГ (ОПТИМІЗОВАНИЙ) ---
-const snowContainer = document.getElementById('snow-container');
-if (snowContainer) {
-    function createSnowflake(isInstant = false) {
-        const snowflake = document.createElement('div');
-        snowflake.classList.add('snowflake');
+    toggleMute() {
+        this.isMuted = !this.isMuted;
+        localStorage.setItem('isMuted', this.isMuted);
+        this.updateIcon();
         
-        const size = (Math.random() * 4 + 2) + 'px'; 
-        snowflake.style.width = size;
-        snowflake.style.height = size;
-        snowflake.style.left = Math.random() * 100 + 'vw';
-        
-        const duration = (Math.random() * 5 + 5) + 's';
-        snowflake.style.animationDuration = duration;
-        snowflake.style.opacity = Math.random() * 0.5 + 0.3;
-
-        if (isInstant) {
-            snowflake.style.top = Math.random() * 100 + 'vh'; 
-            snowflake.style.animationDuration = (parseFloat(duration) / 2) + 's';
+        if (this.isMuted) {
+            this.bgMusic.pause();
         } else {
-            snowflake.style.top = '-10px'; 
+            this.playSFX(CONFIG.sounds.click);
+            this.tryAutoPlay();
         }
+    },
 
-        snowContainer.appendChild(snowflake);
+    updateIcon() {
+        if (!this.soundBtn) return;
+        this.soundBtn.textContent = this.isMuted ? '🔇' : '🔊';
+        this.soundBtn.classList.toggle('playing', !this.isMuted);
+    },
+
+    tryAutoPlay() {
+        if (this.isMuted || !this.bgMusic) return;
         
-        setTimeout(() => {
-            if(snowflake && snowflake.parentNode) snowflake.remove();
-        }, parseFloat(duration) * 1000);
-    }
+        const unlock = () => {
+            this.bgMusic.play().then(() => {
+                ['click', 'touchstart', 'scroll', 'keydown'].forEach(e => 
+                    document.removeEventListener(e, unlock, { capture: true })
+                );
+            }).catch(() => {});
+        };
 
-    // Інтервал 300мс - оптимально для телефону
-    setInterval(() => createSnowflake(false), 300);
-
-    document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") {
-            for(let i=0; i<20; i++) createSnowflake(true); 
-        }
-    });
-    
-    for(let i=0; i<20; i++) createSnowflake(true);
-}
-
-// ==========================================
-// --- ЛОГІКА INDEX.HTML ---
-// ==========================================
-const btnStart = document.getElementById('btnStart');
-if (btnStart) {
-    const viewStart = document.getElementById('view-start');
-    const viewHub = document.getElementById('view-hub');
-    const panels = document.querySelectorAll('.panel');
-
-    btnStart.addEventListener('click', () => {
-        playSfx(sfxClick);
-        if(!isMuted && bgMusic && bgMusic.paused) bgMusic.play(); 
-        
-        viewStart.classList.add('hidden');
-        viewStart.classList.remove('active');
-        setTimeout(() => {
-            viewHub.classList.remove('hidden');
-            viewHub.classList.add('active');
-        }, 400);
-    });
-
-    panels.forEach(panel => {
-        panel.addEventListener('click', function(e) {
-            if(e.target.tagName === 'A' || e.target.closest('a')) return;
-            if(e.target.classList.contains('action-btn')) return;
-
-            playSfx(sfxClick);
-            if (this.classList.contains('left')) rotateCarousel('right');
-            else if (this.classList.contains('right')) rotateCarousel('left');
+        this.bgMusic.play().catch(() => {
+            console.log("Audio waiting for interaction...");
+            ['click', 'touchstart', 'scroll', 'keydown'].forEach(e => 
+                document.addEventListener(e, unlock, { capture: true, once: true })
+            );
         });
-    });
+    },
 
-    function rotateCarousel(direction) {
+    setupListeners() {
+        if (this.soundBtn) {
+            this.soundBtn.addEventListener('click', () => this.toggleMute());
+        }
+        // Global hover SFX delegation
+        document.body.addEventListener('mouseenter', (e) => {
+            if (e.target.matches('button, .action-btn, .mega-button, .song-card')) {
+                this.playSFX(CONFIG.sounds.hover, 0.2);
+            }
+        }, true);
+    }
+};
+
+// ==========================================
+// 3. THEME & LANGUAGE MANAGERS
+// ==========================================
+const SettingsManager = {
+    themeBtn: document.getElementById('themeToggle'),
+    langBtn: document.getElementById('langToggle'),
+    langWrapper: document.querySelector('.lang-wrapper'),
+
+    init() {
+        // Theme
+        const savedTheme = localStorage.getItem('siteTheme') || 'dark';
+        this.setTheme(savedTheme);
+        if (this.themeBtn) {
+            this.themeBtn.addEventListener('click', () => {
+                const current = document.body.getAttribute('data-theme');
+                this.setTheme(current === 'dark' ? 'light' : 'dark');
+                AudioController.playSFX(CONFIG.sounds.click);
+            });
+        }
+
+        // Language
+        const savedLang = localStorage.getItem('siteLang') || 'UA';
+        this.setLanguage(savedLang);
+        this.setupLangListeners();
+    },
+
+    setTheme(theme) {
+        document.body.setAttribute('data-theme', theme);
+        localStorage.setItem('siteTheme', theme);
+        if (this.themeBtn) this.themeBtn.textContent = theme === 'dark' ? '🌙' : '☀️';
+    },
+
+    setLanguage(lang) {
+        document.body.setAttribute('data-lang', lang);
+        localStorage.setItem('siteLang', lang);
+        if (this.langBtn) this.langBtn.textContent = lang === 'MEOW' ? '🐱' : lang;
+        
+        // Update texts
+        document.querySelectorAll('[data-i18n]').forEach(el => {
+            const key = el.dataset.i18n;
+            if (TRANSLATIONS[lang] && TRANSLATIONS[lang][key]) {
+                el.textContent = TRANSLATIONS[lang][key];
+            }
+        });
+    },
+
+    setupLangListeners() {
+        if (!this.langBtn) return;
+
+        this.langBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.langWrapper.classList.toggle('open');
+            AudioController.playSFX(CONFIG.sounds.click);
+        });
+
+        document.addEventListener('click', (e) => {
+            if (this.langWrapper && !this.langWrapper.contains(e.target)) {
+                this.langWrapper.classList.remove('open');
+            }
+        });
+
+        document.querySelectorAll('.lang-dropdown button').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.setLanguage(btn.dataset.lang);
+                this.langWrapper.classList.remove('open');
+                AudioController.playSFX(CONFIG.sounds.click);
+            });
+        });
+    }
+};
+
+// ==========================================
+// 4. VISUAL EFFECTS (SNOW & PULL-TO-REFRESH)
+// ==========================================
+const Visuals = {
+    initSnow() {
+        const container = document.getElementById('snow-container');
+        if (!container) return;
+
+        const createFlake = (instant = false) => {
+            const flake = document.createElement('div');
+            flake.classList.add('snowflake');
+            const size = Math.random() * 4 + 2 + 'px';
+            const duration = Math.random() * 5 + 5 + 's';
+            
+            flake.style.width = size;
+            flake.style.height = size;
+            flake.style.left = Math.random() * 100 + 'vw';
+            flake.style.animationDuration = duration;
+            flake.style.opacity = Math.random() * 0.5 + 0.3;
+            flake.style.top = instant ? Math.random() * 100 + 'vh' : '-10px';
+
+            container.appendChild(flake);
+            setTimeout(() => flake.remove(), parseFloat(duration) * 1000);
+        };
+
+        setInterval(() => createFlake(false), CONFIG.animation.snowInterval);
+        for(let i=0; i<20; i++) createFlake(true);
+    },
+
+    initPullToRefresh() {
+        const container = document.getElementById('pull-to-refresh');
+        if (!container) return;
+        
+        let startY = 0, isPulling = false;
+        const spinner = container.querySelector('.ptr-spinner');
+
+        window.addEventListener('touchstart', e => {
+            if (window.scrollY === 0) { startY = e.touches[0].clientY; isPulling = true; }
+        }, { passive: true });
+
+        window.addEventListener('touchmove', e => {
+            if (!isPulling) return;
+            const diff = e.touches[0].clientY - startY;
+            if (diff > 0 && window.scrollY === 0) {
+                const move = Math.min(diff * 0.5, 150);
+                container.style.transform = `translateY(${move}px)`;
+                spinner.style.transform = `rotate(${move * 2}deg)`;
+                if (e.cancelable && diff > 10) e.preventDefault();
+            } else {
+                isPulling = false;
+            }
+        }, { passive: false });
+
+        window.addEventListener('touchend', e => {
+            if (!isPulling) return;
+            isPulling = false;
+            const diff = e.changedTouches[0].clientY - startY;
+            if (diff * 0.5 >= 80) {
+                container.classList.add('loading');
+                container.style.transform = '';
+                if (navigator.vibrate) navigator.vibrate(50);
+                setTimeout(() => location.reload(), 800);
+            } else {
+                container.style.transform = '';
+            }
+        });
+    }
+};
+
+// ==========================================
+// 5. PAGE LOGIC: INDEX
+// ==========================================
+const LandingPage = {
+    init() {
+        const btnStart = document.getElementById('btnStart');
+        if (!btnStart) return;
+
+        const viewStart = document.getElementById('view-start');
+        const viewHub = document.getElementById('view-hub');
+
+        btnStart.addEventListener('click', () => {
+            AudioController.playSFX(CONFIG.sounds.click);
+            AudioController.tryAutoPlay();
+            
+            viewStart.classList.add('hidden');
+            viewStart.classList.remove('active');
+            setTimeout(() => {
+                viewHub.classList.remove('hidden');
+                viewHub.classList.add('active');
+            }, 400);
+        });
+
+        // Carousel logic
+        document.querySelectorAll('.panel').forEach(panel => {
+            panel.addEventListener('click', function(e) {
+                if (e.target.closest('a') || e.target.closest('button')) return;
+                
+                AudioController.playSFX(CONFIG.sounds.click);
+                if (this.classList.contains('left')) LandingPage.rotate('right');
+                else if (this.classList.contains('right')) LandingPage.rotate('left');
+            });
+        });
+    },
+
+    rotate(direction) {
         const left = document.querySelector('.panel.left');
         const center = document.querySelector('.panel.center');
         const right = document.querySelector('.panel.right');
 
-        left.classList.remove('left'); center.classList.remove('center'); right.classList.remove('right');
+        if (!left || !center || !right) return;
+
+        [left, center, right].forEach(el => el.classList.remove('left', 'center', 'right'));
 
         if (direction === 'right') {
             left.classList.add('center'); center.classList.add('right'); right.classList.add('left');
@@ -289,367 +346,307 @@ if (btnStart) {
             right.classList.add('center'); center.classList.add('left'); left.classList.add('right');
         }
     }
-}
+};
 
 // ==========================================
-// --- ЛОГІКА MEMES.HTML ---
+// 6. PAGE LOGIC: MEMES (CASINO)
 // ==========================================
-const spinBtn = document.getElementById('spinBtn');
-
-if (spinBtn) {
-    const slotMachine = document.getElementById('slotMachine');
-    const slotStrip = document.getElementById('slotStrip');
-    const videoModal = document.getElementById('videoModal');
-    const closeModalBtn = document.getElementById('closeModal');
-    const modalTitle = document.getElementById('modalTitle');
-    const memeVideo = document.getElementById('memeVideo');
-
-    const memesDB = [
+const CasinoPage = {
+    memesDB: [
         { title: "ERROR 404", file: "error.mp4", rarity: "rare" },
         { title: "Save our cum rat", file: "rat.mp4", rarity: "common" },
-        { title: "АСМР,разслабляющий удар наковальней", file: "hammer.mp4", rarity: "common" },
-        { title: "Даже салаги знают кто главный петух в чате", file: "rooster.mp4", rarity: "common" },
-        { title: "ЕБАТЬ , ВОТ ЭТО НИХУЕ СЕБЕ", file: "magic.mp4", rarity: "legendary" }, 
-        { title: "Если гора не идёт к Магомеду, то Магомед спускается с горы", file: "magomed.mp4", rarity: "epic" },
-        { title: "Идеальная совместимость", file: "compat.mp4", rarity: "epic" },
-        { title: "Иногда для счастья надо нырнуть щучкой", file: "dive.mp4", rarity: "rare" },
-        { title: "Ротик шире (улыбка , а вы о чем?)", file: "all.mp4", rarity: "common" },
-        { title: "Только в момент тишины осознаёшь ценность звука", file: "sound.mp4", rarity: "common" }
-    ];
+        { title: "АСМР, наковальня", file: "hammer.mp4", rarity: "common" },
+        { title: "Главный петух", file: "rooster.mp4", rarity: "common" },
+        { title: "ВОТ ЭТО НИХУЕ СЕБЕ", file: "magic.mp4", rarity: "legendary" },
+        { title: "Магомед с горы", file: "magomed.mp4", rarity: "epic" },
+        { title: "Совместимость", file: "compat.mp4", rarity: "epic" },
+        { title: "Нырнуть щучкой", file: "dive.mp4", rarity: "rare" },
+        { title: "Ротик шире", file: "all.mp4", rarity: "common" },
+        { title: "Ценность звука", file: "sound.mp4", rarity: "common" }
+    ],
 
-    spinBtn.addEventListener('click', () => {
-        spinBtn.disabled = true;
-        slotMachine.classList.remove('hidden');
-        
-        if (!isMuted && sfxSpin) {
-            sfxSpin.currentTime = 0;
-            sfxSpin.volume = 0.3;
-            sfxSpin.play();
-        }
+    init() {
+        this.spinBtn = document.getElementById('spinBtn');
+        if (!this.spinBtn) return;
 
-        const winner = getWeightedWinner();
+        this.slotMachine = document.getElementById('slotMachine');
+        this.slotStrip = document.getElementById('slotStrip');
+        this.videoModal = document.getElementById('videoModal');
+        this.memeVideo = document.getElementById('memeVideo');
 
-        let htmlContent = '';
-        for(let i=0; i<30; i++) {
-            const randomMeme = memesDB[Math.floor(Math.random() * memesDB.length)];
-            htmlContent += createSlotItem(randomMeme);
-        }
-        htmlContent += createSlotItem(winner);
-        for(let i=0; i<3; i++) {
-             const randomMeme = memesDB[Math.floor(Math.random() * memesDB.length)];
-             htmlContent += createSlotItem(randomMeme);
-        }
+        this.spinBtn.addEventListener('click', () => this.spin());
+        document.getElementById('closeModal')?.addEventListener('click', () => this.closeVideo());
+    },
 
-        slotStrip.innerHTML = htmlContent;
-        slotStrip.style.transition = 'none';
-        slotStrip.style.transform = 'translateX(0)';
-        slotStrip.offsetHeight; 
+    spin() {
+        this.spinBtn.disabled = true;
+        this.slotMachine.classList.remove('hidden');
+        AudioController.playSFX(CONFIG.sounds.spin, 0.3);
 
-        const firstItem = slotStrip.querySelector('.slot-item-text');
-        const itemWidth = firstItem ? firstItem.offsetWidth : 320; 
-        const targetIndex = 30; 
-        const containerWidth = slotMachine.offsetWidth;
-        const centerOffset = (containerWidth / 2) - (itemWidth / 2);
-        const finalPosition = -(targetIndex * itemWidth) + centerOffset;
+        const winner = this.getWeightedWinner();
+        this.buildStrip(winner);
 
+        // Animation
         setTimeout(() => {
-            slotStrip.style.transition = 'transform 5s cubic-bezier(0.15, 0.9, 0.3, 1)';
-            slotStrip.style.transform = `translateX(${finalPosition}px)`;
+            const firstItem = this.slotStrip.querySelector('.slot-item-text');
+            const itemWidth = firstItem ? firstItem.offsetWidth : 320;
+            // 30 items padding + winner index
+            const targetPos = -((30 * itemWidth) - (this.slotMachine.offsetWidth / 2) + (itemWidth / 2));
+            
+            this.slotStrip.style.transition = 'transform 5s cubic-bezier(0.15, 0.9, 0.3, 1)';
+            this.slotStrip.style.transform = `translateX(${targetPos}px)`;
         }, 50);
-        
+
         setTimeout(() => {
-            if(sfxSpin) sfxSpin.pause();
-            if(!isMuted) {
-                sfxWin.volume = 1.0; 
-                playSfx(sfxWin);
-            }
-            openVideo(winner);
-        }, 5500);
-    });
+            const spinAudio = document.getElementById(CONFIG.sounds.spin);
+            if(spinAudio) spinAudio.pause();
+            AudioController.playSFX(CONFIG.sounds.win, 1.0);
+            this.openVideo(winner);
+        }, CONFIG.animation.spinDuration);
+    },
 
-    function getWeightedWinner() {
-        const rand = Math.random() * 100;
-        const legendary = memesDB.filter(m => m.rarity === 'legendary');
-        const epic = memesDB.filter(m => m.rarity === 'epic');
-        const rare = memesDB.filter(m => m.rarity === 'rare');
-        const common = memesDB.filter(m => m.rarity === 'common');
+    buildStrip(winner) {
+        let html = '';
+        // 30 random items before
+        for(let i=0; i<30; i++) html += this.createItem(this.memesDB[Math.floor(Math.random() * this.memesDB.length)]);
+        // The Winner
+        html += this.createItem(winner);
+        // 3 random items after
+        for(let i=0; i<3; i++) html += this.createItem(this.memesDB[Math.floor(Math.random() * this.memesDB.length)]);
 
-        if (rand < 5 && legendary.length) return legendary[Math.floor(Math.random() * legendary.length)];
-        if (rand < 20 && epic.length) return epic[Math.floor(Math.random() * epic.length)];
-        if (rand < 50 && rare.length) return rare[Math.floor(Math.random() * rare.length)];
-        return common[Math.floor(Math.random() * common.length)];
-    }
+        this.slotStrip.innerHTML = html;
+        this.slotStrip.style.transition = 'none';
+        this.slotStrip.style.transform = 'translateX(0)';
+    },
 
-    function createSlotItem(meme) {
+    createItem(meme) {
         return `<div class="slot-item-text ${meme.rarity}">${meme.title}</div>`;
+    },
+
+    getWeightedWinner() {
+        const r = Math.random() * 100;
+        const filter = (type) => this.memesDB.filter(m => m.rarity === type);
+        
+        if (r < 5) return this.randomFrom(filter('legendary'));
+        if (r < 20) return this.randomFrom(filter('epic'));
+        if (r < 50) return this.randomFrom(filter('rare'));
+        return this.randomFrom(filter('common'));
+    },
+
+    randomFrom(arr) {
+        return arr.length ? arr[Math.floor(Math.random() * arr.length)] : this.memesDB[0];
+    },
+
+    openVideo(meme) {
+        document.getElementById('modalTitle').textContent = meme.title;
+        this.memeVideo.src = `video/${meme.file}`;
+        this.videoModal.classList.remove('hidden');
+        this.memeVideo.play().catch(console.error);
+    },
+
+    closeVideo() {
+        AudioController.playSFX(CONFIG.sounds.click);
+        this.videoModal.classList.add('hidden');
+        this.memeVideo.pause();
+        this.memeVideo.src = "";
+        this.spinBtn.disabled = false;
     }
-
-    function openVideo(meme) {
-        modalTitle.textContent = meme.title;
-        memeVideo.src = `video/${meme.file}`;
-        videoModal.classList.remove('hidden');
-        memeVideo.play().catch(e => console.error("Video error:", e));
-    }
-
-    closeModalBtn.addEventListener('click', () => {
-        playSfx(sfxClick); 
-        videoModal.classList.add('hidden');
-        memeVideo.pause();
-        memeVideo.src = "";
-        spinBtn.disabled = false;
-    });
-}
+};
 
 // ==========================================
-// 📱 PULL TO REFRESH
+// 7. PAGE LOGIC: BATTLE (FIREBASE)
 // ==========================================
-document.addEventListener('DOMContentLoaded', () => {
-    const ptrContainer = document.getElementById('pull-to-refresh');
-    const ptrSpinner = document.querySelector('.ptr-spinner');
-    
-    if (!ptrContainer) return;
+const BattleArena = {
+    init() {
+        const cardLeft = document.getElementById('card-left');
+        if (!cardLeft) return;
 
-    let startY = 0;
-    let currentY = 0;
-    let isPulling = false;
-    const threshold = 150; 
+        this.db = this.initFirebase();
+        this.elements = {
+            left: cardLeft,
+            right: document.getElementById('card-right'),
+            imgLeft: document.getElementById('img-left'),
+            imgRight: document.getElementById('img-right'),
+            counter: document.getElementById('round-counter'),
+            leaderboardModal: document.getElementById('leaderboard-modal'),
+            leaderboardList: document.getElementById('leaderboard-list')
+        };
 
-    window.addEventListener('touchstart', (e) => {
-        if (window.scrollY === 0) {
-            startY = e.touches[0].clientY;
-            isPulling = true;
+        this.state = {
+            totalPhotos: 75,
+            roundsLimit: 15,
+            roundsPlayed: 0,
+            pathPrefix: 'img/screens/photo_',
+            currentLeftId: null,
+            currentRightId: null
+        };
+
+        this.setupListeners();
+        this.setBattle();
+    },
+
+    initFirebase() {
+        if (typeof firebase === 'undefined') {
+            console.error("Firebase libraries not loaded!");
+            return null;
         }
-    }, { passive: true });
-
-    window.addEventListener('touchmove', (e) => {
-        if (!isPulling) return;
-        currentY = e.touches[0].clientY;
-        const diff = currentY - startY;
-
-        if (diff > 0 && window.scrollY === 0) {
-            const move = Math.min(diff * 0.5, threshold); 
-            ptrContainer.style.transform = `translateY(${move}px)`;
-            ptrSpinner.style.transform = `rotate(${move * 2}deg)`;
-            if (e.cancelable && diff > 10) e.preventDefault(); 
-        } else {
-            ptrContainer.style.transform = '';
-            isPulling = false;
-        }
-    }, { passive: false });
-
-    window.addEventListener('touchend', () => {
-        if (!isPulling) return;
-        isPulling = false;
-        const diff = currentY - startY;
-        if (diff * 0.5 >= 80) {
-            ptrContainer.classList.add('loading');
-            ptrContainer.style.transform = ''; 
-            if (navigator.vibrate) navigator.vibrate(50);
-            setTimeout(() => { location.reload(); }, 800);
-        } else {
-            ptrContainer.style.transform = '';
-            ptrSpinner.style.transform = '';
-        }
-    });
-});
-
-// ==========================================
-// ⚔️ ЛОГІКА БИТВИ (BATTLE.HTML + FIREBASE)
-// ==========================================
-
-const cardLeft = document.getElementById('card-left');
-const cardRight = document.getElementById('card-right');
-
-if (cardLeft && cardRight) {
-    const firebaseConfig = {
-        apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
-        authDomain: "memebattle-4cb27.firebaseapp.com",
-        projectId: "memebattle-4cb27",
-        storageBucket: "memebattle-4cb27.firebasestorage.app",
-        messagingSenderId: "73285262990",
-        appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
-    };
-
-    let db;
-    if (typeof firebase !== 'undefined') {
         try {
+            const firebaseConfig = {
+                apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
+                authDomain: "memebattle-4cb27.firebaseapp.com",
+                projectId: "memebattle-4cb27",
+                storageBucket: "memebattle-4cb27.firebasestorage.app",
+                messagingSenderId: "73285262990",
+                appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
+            };
             firebase.initializeApp(firebaseConfig);
-            db = firebase.firestore();
-            console.log("Firebase успішно підключено! ✅");
+            return firebase.firestore();
         } catch (e) {
-            console.error("Помилка ініціалізації Firebase:", e);
+            console.error("Firebase init error:", e);
+            return null;
         }
-    } else {
-        console.error("Firebase бібліотека не знайдена! Перевір battle.html");
-    }
+    },
 
-    const imgLeft = document.getElementById('img-left');
-    const imgRight = document.getElementById('img-right');
-    const counterEl = document.getElementById('round-counter');
-    const leaderboardBtn = document.getElementById('leaderboardBtn');
-    const leaderboardModal = document.getElementById('leaderboard-modal');
-    const leaderboardList = document.getElementById('leaderboard-list');
-    const closeLeaderboard = document.getElementById('closeLeaderboard');
-    const fullscreenViewer = document.getElementById('fullscreen-viewer');
-    const fullscreenImg = document.getElementById('fullscreen-img');
+    setupListeners() {
+        this.elements.left.addEventListener('click', () => this.handleVote('left'));
+        this.elements.right.addEventListener('click', () => this.handleVote('right'));
+        
+        document.getElementById('leaderboardBtn')?.addEventListener('click', () => {
+            this.elements.leaderboardModal.classList.remove('hidden');
+            this.loadLeaderboard();
+            AudioController.playSFX(CONFIG.sounds.click);
+        });
 
-    const TOTAL_PHOTOS = 75; 
-    const ROUNDS_LIMIT = 15; 
-    const PATH_PREFIX = 'img/screens/photo_'; 
-    const FILE_EXT = '.jpg'; 
-    
-    let roundsPlayed = 0;
-    let allIds = Array.from({length: TOTAL_PHOTOS}, (_, i) => i + 1);
-    let currentLeftId, currentRightId;
+        document.getElementById('closeLeaderboard')?.addEventListener('click', () => {
+            this.elements.leaderboardModal.classList.add('hidden');
+        });
 
-    function getRandomId(exclude) {
-        let available = allIds.filter(id => id !== exclude);
-        return available[Math.floor(Math.random() * available.length)];
-    }
-
-    function setBattle() {
-        if (!currentLeftId) currentLeftId = getRandomId(null);
-        currentRightId = getRandomId(currentLeftId);
-        imgLeft.src = `${PATH_PREFIX}${currentLeftId}${FILE_EXT}`;
-        imgRight.src = `${PATH_PREFIX}${currentRightId}${FILE_EXT}`;
-        cardLeft.className = 'fighter-card';
-        cardRight.className = 'fighter-card';
-    }
-
-    function handleVote(winnerSide) {
-        roundsPlayed++;
-        counterEl.textContent = `${roundsPlayed} / ${ROUNDS_LIMIT}`; 
-
-        let winnerCard, loserCard;
-        let winnerId;
-        let winnerSrc = winnerSide === 'left' ? imgLeft.src : imgRight.src;
-
-        if (winnerSide === 'left') {
-            winnerCard = cardLeft; loserCard = cardRight;
-            winnerId = currentLeftId; 
-        } else {
-            winnerCard = cardRight; loserCard = cardLeft;
-            winnerId = currentRightId; 
+        document.getElementById('restartBtn')?.addEventListener('click', () => location.reload());
+        
+        // Fullscreen Logic
+        const viewer = document.getElementById('fullscreen-viewer');
+        if (viewer) {
+            viewer.addEventListener('click', () => viewer.classList.add('hidden'));
+            window.openFullImage = (src) => {
+                document.getElementById('fullscreen-img').src = src;
+                viewer.classList.remove('hidden');
+            };
         }
+    },
 
-        if (db) {
-            const docRef = db.collection("memes").doc("photo_" + winnerId);
+    getRandomId(exclude) {
+        let id;
+        do {
+            id = Math.floor(Math.random() * this.state.totalPhotos) + 1;
+        } while (id === exclude);
+        return id;
+    },
+
+    setBattle() {
+        if (!this.state.currentLeftId) this.state.currentLeftId = this.getRandomId(null);
+        this.state.currentRightId = this.getRandomId(this.state.currentLeftId);
+
+        this.elements.imgLeft.src = `${this.state.pathPrefix}${this.state.currentLeftId}.jpg`;
+        this.elements.imgRight.src = `${this.state.pathPrefix}${this.state.currentRightId}.jpg`;
+        
+        this.elements.left.className = 'fighter-card';
+        this.elements.right.className = 'fighter-card';
+    },
+
+    handleVote(side) {
+        this.state.roundsPlayed++;
+        this.elements.counter.textContent = `${this.state.roundsPlayed} / ${this.state.roundsLimit}`;
+
+        const winnerId = side === 'left' ? this.state.currentLeftId : this.state.currentRightId;
+        const winnerCard = side === 'left' ? this.elements.left : this.elements.right;
+        const loserCard = side === 'left' ? this.elements.right : this.elements.left;
+
+        // DB Update
+        if (this.db) {
+            const docRef = this.db.collection(CONFIG.firebase.collection).doc("photo_" + winnerId);
             docRef.set({
                 votes: firebase.firestore.FieldValue.increment(1),
-                path: `${PATH_PREFIX}${winnerId}${FILE_EXT}` 
-            }, { merge: true }).catch((error) => console.error("Помилка запису:", error));
+                path: `${this.state.pathPrefix}${winnerId}.jpg`
+            }, { merge: true }).catch(console.error);
         }
 
+        // Animation
         winnerCard.classList.add('winner');
         loserCard.classList.add('loser');
-        if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
+        AudioController.playSFX(CONFIG.sounds.click);
 
-        if (roundsPlayed >= ROUNDS_LIMIT) {
-            setTimeout(() => { showWinnerScreen(winnerSrc); }, 500);
-            return; 
+        // Check End Game
+        if (this.state.roundsPlayed >= this.state.roundsLimit) {
+            setTimeout(() => {
+                const winImg = side === 'left' ? this.elements.imgLeft.src : this.elements.imgRight.src;
+                document.getElementById('winner-img').src = winImg;
+                document.getElementById('winner-overlay').classList.remove('hidden');
+                AudioController.playSFX(CONFIG.sounds.win, 1.0);
+            }, 500);
+            return;
         }
 
+        // Next Round
         setTimeout(() => {
-            if (winnerSide === 'left') {
-                currentRightId = getRandomId(currentLeftId);
-                imgRight.src = `${PATH_PREFIX}${currentRightId}${FILE_EXT}`;
+            if (side === 'left') {
+                this.state.currentRightId = this.getRandomId(this.state.currentLeftId);
+                this.elements.imgRight.src = `${this.state.pathPrefix}${this.state.currentRightId}.jpg`;
             } else {
-                currentLeftId = getRandomId(currentRightId);
-                imgLeft.src = `${PATH_PREFIX}${currentLeftId}${FILE_EXT}`;
+                this.state.currentLeftId = this.getRandomId(this.state.currentRightId);
+                this.elements.imgLeft.src = `${this.state.pathPrefix}${this.state.currentLeftId}.jpg`;
             }
             winnerCard.classList.remove('winner');
             loserCard.classList.remove('loser');
         }, 500);
-    }
+    },
 
-    if (leaderboardBtn) {
-        leaderboardBtn.addEventListener('click', () => {
-            leaderboardModal.classList.remove('hidden');
-            loadLeaderboard();
-            if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
-        });
-    }
-
-    if (closeLeaderboard) {
-        closeLeaderboard.addEventListener('click', () => {
-            leaderboardModal.classList.add('hidden');
-        });
-    }
-
-    function loadLeaderboard() {
-        if (!db) {
-            leaderboardList.innerHTML = '<div style="color:white; text-align:center;">Помилка підключення до бази</div>';
+    loadLeaderboard() {
+        if (!this.db) {
+            this.elements.leaderboardList.innerHTML = '<div style="color:white;text-align:center">DB Error</div>';
             return;
         }
         
-        leaderboardList.innerHTML = '<div class="loading-spinner" style="color:white; text-align:center;">Завантаження...</div>';
+        this.elements.leaderboardList.innerHTML = '<div class="loading-spinner" style="color:white;text-align:center">Loading...</div>';
 
-        db.collection("memes").orderBy("votes", "desc").limit(15).get()
-        .then((querySnapshot) => {
-            leaderboardList.innerHTML = '';
-            let rank = 1;
-            
-            if (querySnapshot.empty) {
-                 leaderboardList.innerHTML = '<div style="color:white; text-align:center;">Поки що голосів немає. Будь першим!</div>';
-                 return;
-            }
-
-            querySnapshot.forEach((doc) => {
-                const data = doc.data();
-                const item = document.createElement('div');
-                item.className = 'leader-item';
-                item.innerHTML = `
-                    <span class="rank-num">#${rank++}</span>
-                    <img src="${data.path}" class="mini-thumb" onclick="openFullImage('${data.path}')">
-                    <span class="vote-count">❤️ ${data.votes}</span>
-                `;
-                leaderboardList.appendChild(item);
+        this.db.collection(CONFIG.firebase.collection).orderBy("votes", "desc").limit(15).get()
+            .then(snapshot => {
+                this.elements.leaderboardList.innerHTML = '';
+                if (snapshot.empty) {
+                    this.elements.leaderboardList.innerHTML = '<div style="color:white;text-align:center">No votes yet!</div>';
+                    return;
+                }
+                
+                let rank = 1;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    const el = document.createElement('div');
+                    el.className = 'leader-item';
+                    el.innerHTML = `
+                        <span class="rank-num">#${rank++}</span>
+                        <img src="${data.path}" class="mini-thumb" onclick="openFullImage('${data.path}')">
+                        <span class="vote-count">❤️ ${data.votes}</span>
+                    `;
+                    this.elements.leaderboardList.appendChild(el);
+                });
+            })
+            .catch(err => {
+                console.error(err);
+                this.elements.leaderboardList.innerHTML = '<div style="color:red;text-align:center">Error loading data</div>';
             });
-        })
-        .catch((error) => {
-            console.error("Error getting leaderboard:", error);
-            leaderboardList.innerHTML = '<div style="color:red; text-align:center;">Помилка завантаження :(</div>';
-        });
     }
+};
 
-    window.openFullImage = function(src) {
-        fullscreenImg.src = src;
-        fullscreenViewer.classList.remove('hidden');
-    }
-
-    if (fullscreenViewer) {
-        fullscreenViewer.addEventListener('click', () => {
-            fullscreenViewer.classList.add('hidden');
-        });
-    }
-
-    const winnerOverlay = document.getElementById('winner-overlay');
-    const winnerImg = document.getElementById('winner-img');
-    const restartBtn = document.getElementById('restartBtn');
-
-    function showWinnerScreen(imgSrc) {
-        if(typeof playSfx === 'function') {
-            const winSound = document.getElementById('sfx-win');
-            if(winSound) { winSound.volume = 1.0; playSfx(winSound); }
-        }
-        winnerImg.src = imgSrc;
-        winnerOverlay.classList.remove('hidden');
-    }
-
-    if(restartBtn) {
-        restartBtn.addEventListener('click', () => {
-            roundsPlayed = 0;
-            counterEl.textContent = 0;
-            winnerOverlay.classList.add('hidden');
-            currentLeftId = null; 
-            currentRightId = null;
-            setBattle();
-            if(typeof playSfx === 'function') playSfx(document.getElementById('sfx-click'));
-        });
-    }
-
-    cardLeft.addEventListener('click', () => handleVote('left'));
-    cardRight.addEventListener('click', () => handleVote('right'));
-
-    setBattle();
-}
+// ==========================================
+// 8. INITIALIZATION
+// ==========================================
+document.addEventListener('DOMContentLoaded', () => {
+    AudioController.init();
+    SettingsManager.init();
+    Visuals.initSnow();
+    Visuals.initPullToRefresh();
+    
+    // Initialize Page Logic based on DOM elements
+    LandingPage.init();
+    CasinoPage.init();
+    BattleArena.init();
+});
