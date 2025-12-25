@@ -1301,27 +1301,11 @@ canvas#rhythmCanvas {
   z-index: 50;
 }
 
-/* Ефект ELECTRIC (100+) - Блакитний струм */
-#combo-display.combo-electric {
-  color: #00bcd4; /* Ціан */
-  text-shadow: 
-    0 0 10px #00bcd4,
-    0 0 20px #00bcd4;
-  transform: scale(1.1); /* Трохи збільшуємо */
-  animation: electric-flicker 0.1s infinite alternate; /* Швидке мерехтіння */
-}
-
-/* Анімація мерехтіння для електрики */
-@keyframes electric-flicker {
-  0% { opacity: 1; text-shadow: 0 0 10px #00bcd4; }
-  100% { opacity: 0.8; text-shadow: 0 0 20px #00e5ff; }
-}
-
 /* ==========================================
    ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
    ========================================== */
 
-/* --- 1. АНІМАЦІЇ --- */
+/* --- 1. АНІМАЦІЯ ТЕКСТУ (Швидкий блік на металі) --- */
 @keyframes vignette-pulse {
   0%, 100% {
     box-shadow: inset 0 0 100px #2a003b;
@@ -1363,8 +1347,12 @@ canvas#rhythmCanvas {
 
 /* Анімація удару для тексту (легке збільшення) */
 @keyframes pulse-size {
-  0% { transform: scale(1.1); }
-  100% { transform: scale(1); }
+  0% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 
 /* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
@@ -1381,19 +1369,33 @@ canvas#rhythmCanvas {
   /* Створюємо ефект тунелю */
   box-shadow: inset 0 0 120px #2a003b;
 
-  &::before { display: none; }
+  &::before {
+    display: none; /* Вимикаємо обертання */
+  }
 }
 
 /* ==========================================
    🎄 CHRISTMAS & GOLD SONGS STYLES
    ========================================== */
 
-/* --- Анімація для НОВОРІЧНИХ пісень --- */
+/* --- Анімація для НОВОРІЧНИХ пісень (Червоний-Зелений-Золотий) --- */
 @keyframes xmas-border {
-  0% { border-color: #ff0000; box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000; }
-  33% { border-color: #00ff00; box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00; }
-  66% { border-color: #ffd700; box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700; }
-  100% { border-color: #ff0000; box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000; }
+  0% {
+    border-color: #ff0000; /* Червоний */
+    box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
+  33% {
+    border-color: #00ff00; /* Зелений */
+    box-shadow: 0 0 10px #00ff00, inset 0 0 10px #00ff00;
+  }
+  66% {
+    border-color: #ffd700; /* Золотий */
+    box-shadow: 0 0 10px #ffd700, inset 0 0 10px #ffd700;
+  }
+  100% {
+    border-color: #ff0000;
+    box-shadow: 0 0 10px #ff0000, inset 0 0 10px #ff0000;
+  }
 }
 
 .song-card.song-xmas {
@@ -1402,9 +1404,12 @@ canvas#rhythmCanvas {
   animation: xmas-border 3s linear infinite;
 }
 
-.song-card.song-xmas h3::before { content: "🎄 "; }
+/* Додаємо сніжинку біля назви новорічних пісень */
+.song-card.song-xmas h3::before {
+  content: "🎄 ";
+}
 
-/* --- Анімація для ЗОЛОТИХ пісень --- */
+/* --- Анімація для ЗОЛОТИХ (Перевірених) пісень --- */
 @keyframes gold-shimmer-border {
   0% { border-color: #b8860b; box-shadow: 0 0 5px #b8860b; }
   50% { border-color: #ffd700; box-shadow: 0 0 15px #ffd700; }
@@ -1428,7 +1433,6 @@ canvas#rhythmCanvas {
   margin-left: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
-
 /* ==========================================
    🔍 SEARCH BAR STYLES (FIXED CLICKS)
    ========================================== */
@@ -1439,7 +1443,7 @@ canvas#rhythmCanvas {
   margin: 0 auto 15px auto; // Центрування
   position: relative;
   
-  // 🔥 ВАЖЛИВО: Контейнер пропускає кліки
+  // 🔥 ВАЖЛИВО: Контейнер пропускає кліки, щоб не блокувати список під ним
   z-index: 5; 
   pointer-events: none; 
 }
@@ -1478,13 +1482,13 @@ canvas#rhythmCanvas {
 // 🔥 ГАРАНТІЯ КЛІКАБЕЛЬНОСТІ СПИСКУ
 .song-list-container {
   position: relative;
-  z-index: 10; 
+  z-index: 10; // Вище за контейнер пошуку
   pointer-events: auto !important;
 }
 
 .song-card {
   position: relative;
-  z-index: 11; 
+  z-index: 11; // Вище за контейнер списку
   pointer-events: auto !important;
 }
 
@@ -1496,7 +1500,7 @@ canvas#rhythmCanvas {
 }
 
 /* ==========================================
-   🔥 FINAL MOBILE FIXES (NO LAGS + STATIC EFFECTS)
+   🔥 FINAL MOBILE FIXES (CLEAN & WORKING)
    ========================================== */
 
 @media (max-width: 768px) {
@@ -1507,108 +1511,49 @@ canvas#rhythmCanvas {
     touch-action: none !important;
   }
 
-  /* 2. Ховаємо важкий оверлей */
+  /* 2. Ховаємо важкий HTML-оверлей (тепер працюють CSS тіні container-legendary) */
   #legendary-border-overlay {
       display: none !important;
       animation: none !important;
   }
 
-  /* 3. ТЕКСТ КОМБО (Центр) */
+  /* 3. 🔥 ФІКС ТЕКСТУ КОМБО (Щоб не з'їжджав вліво) */
   #combo-display.combo-legendary {
+      /* Скидаємо складні стилі позиціонування */
       transform: none !important; 
       left: 0 !important;
       right: 0 !important;
-      width: 100% !important;
-      text-align: center !important;
+      width: 100% !important; /* Розтягуємо на всю ширину */
+      text-align: center !important; /* Центруємо текст всередині */
       margin: 0 auto !important;
+      
+      /* Адаптація стилю під мобільний (читабельність) */
       font-size: 2.8rem !important;
       background: none !important;
       color: #fff !important;
       -webkit-text-fill-color: #fff !important;
-      text-shadow: 0 0 10px #00e5ff !important;
+      text-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff !important; /* Яскравий неон */
       opacity: 1 !important;
   }
 
-  /* 4. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
+  /* 4. ФІКС ПРОМАХУ (Червоний удар) */
+  #game-container.shake-screen {
+      animation: shake 0.5s !important;
+      border: 5px solid #ff0000 !important;
+      box-shadow: inset 0 0 50px #ff0000 !important; /* Червона заливка всередину */
+      transition: none !important;
+  }
+
+  /* 5. UI Адаптація і ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
   #game-container {
+      /* 🔥 GPU ACCELERATION: Це змушує телефон обробляти шар окремо */
       transform: translateZ(0);
       will-change: border-color, box-shadow; 
       backface-visibility: hidden;
       perspective: 1000px;
   }
-/* =========================================
-     5. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
-     ========================================= */
 
-  /* 🟡 GOLD (200+) - Пульсація */
-  @keyframes mobile-gold-pulse {
-      0% { 
-          border-color: rgba(255, 215, 0, 0.6); 
-          box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.5); 
-      }
-      50% { 
-          border-color: rgba(255, 215, 0, 1); 
-          /* Максимум 20px blur - це безпечна межа для плавності */
-          box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8); 
-      }
-      100% { 
-          border-color: rgba(255, 215, 0, 0.6); 
-          box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.5); 
-      }
-  }
-
-  #game-container.container-ripple-gold {
-      border: 2px solid #FFD700 !important;
-      animation: mobile-gold-pulse 2s infinite ease-in-out !important;
-      z-index: 15;
-  }
-
-  /* 🟣 COSMIC (400+) - Пульсація */
-  @keyframes mobile-cosmic-pulse {
-      0% { 
-          border-color: #00e5ff; 
-          box-shadow: inset 0 0 5px #d500f9; 
-      }
-      50% { 
-          border-color: #d500f9; 
-          /* Максимум 25px blur */
-          box-shadow: inset 0 0 25px #00e5ff; 
-      }
-      100% { 
-          border-color: #00e5ff; 
-          box-shadow: inset 0 0 5px #d500f9; 
-      }
-  }
-
-  #game-container.container-ripple-cosmic {
-      border: 2px solid #00e5ff !important;
-      animation: mobile-cosmic-pulse 1.5s infinite ease-in-out !important;
-      z-index: 15;
-  }
-
-  /* 🔵 LEGENDARY (800+) - Пульсація */
-  @keyframes mobile-legendary-pulse {
-      0% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
-      50% { border-color: #00e5ff; box-shadow: inset 0 0 30px #00e5ff; }
-      100% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
-  }
-
-  #game-container.container-legendary {
-      border: 3px solid #FFFFFF !important;
-      animation: mobile-legendary-pulse 1s infinite alternate !important;
-      z-index: 20;
-      &::after { display: none !important; }
-  }
-
-  /* 6. ФІКС ПРОМАХУ */
-  #game-container.shake-screen {
-      animation: shake 0.5s !important;
-      border: 5px solid #ff0000 !important;
-      box-shadow: inset 0 0 30px #ff0000 !important;
-      transition: none !important;
-  }
-
-  /* 7. UI Адаптація */
+  /* 5. UI Адаптація */
   #game-container .game-header {
       top: 50px !important;
       width: 90% !important;
