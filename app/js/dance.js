@@ -1,6 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // RENDERER: Native Canvas 2D (Performance Optimized)
+   // RENDERER: Canvas 2D (DPI Optimized)
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -38,6 +38,8 @@ let currentLang = localStorage.getItem('siteLang') || 'UA';
 
 // OPTIMIZED: Cached environment variables
 let isMobile = window.innerWidth < 768;
+let gameWidth = 0;
+let gameHeight = 0;
 
 let startTime = 0;
 let score = 0;
@@ -66,7 +68,7 @@ let activeRatings = [];
 
 // PERFORMANCE: Gradient Cache
 const GRADIENT_CACHE = {
-    tap: {}, // Stores CanvasGradient objects
+    tap: {}, 
     longHead: {}
 };
 
@@ -79,7 +81,7 @@ let starsElements = [];
 
 // DOM Elements
 let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl;
-let scoreEl; // Cached reference
+let scoreEl; 
 
 // Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -302,7 +304,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM REFERENCES ---
     canvas = document.getElementById('rhythmCanvas');
-    ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null; // Performance flags
+    ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null;
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
@@ -416,19 +418,12 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // Helper to create and cache
         const createTapGrad = (colors, key) => {
-            // Note height is fixed: CONFIG.noteHeight
-            // Gradient assumes 0,0 is top-left of note, draws down to CONFIG.noteHeight
-            const grad = ctx.createLinearGradient(0, -CONFIG.noteHeight, 0, 0); 
-            // Note: In draw logic we translate so 0,0 is bottom of note or top?
-            // Actually existing logic: grad(x, yTop, x, visualY)
-            // To optimize, we will use a relative gradient (0, 0 to 0, height) and translate context
             const g = ctx.createLinearGradient(0, 0, 0, CONFIG.noteHeight);
             g.addColorStop(0, colors[0]);
             g.addColorStop(1, colors[1]);
             GRADIENT_CACHE.tap[key] = g;
         };
 
-        // Create for all palettes
         const palettes = [
             {name: 'steel', cols: [PALETTES.STEEL.light, PALETTES.STEEL.main]},
             {name: 'electric', cols: [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2]},
@@ -452,7 +447,6 @@ document.addEventListener('DOMContentLoaded', () => {
         lastComboUpdateTime = 0;
         activeTiles = []; mapTiles = [];
         
-        // OPTIMIZED: Reset Pools and Combo State
         for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
         activeRatings = [];
         
@@ -463,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         keyState = [false, false, false, false];
         laneBeamAlpha = [0, 0, 0, 0];
 
-        if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (ctx && canvas) ctx.clearRect(0, 0, gameWidth, gameHeight);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
         if (gameContainer) {
@@ -474,7 +468,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const legendaryOverlay = document.getElementById('legendary-border-overlay');
         if (legendaryOverlay) legendaryOverlay.classList.remove('active');
         
-        updateScoreUI(); // Initial reset
+        updateScoreUI(); 
         if (progressBar) progressBar.style.width = '0%';
         document.getElementById('pause-modal')?.classList.add('hidden');
         document.getElementById('result-screen')?.classList.add('hidden');
@@ -482,7 +476,6 @@ document.addEventListener('DOMContentLoaded', () => {
         laneElements.forEach(el => { if (el) el.classList.remove('active'); });
         updateGameText();
         
-        // Re-init gradients based on potentially new context/size
         if(ctx) initGradients();
     }
 
@@ -537,7 +530,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let lastLane = -1;
             let maxPossibleScoreTemp = 0;
 
-            const trackHeight = (canvas && canvas.height) ? (canvas.height * CONFIG.hitPosition) : 600;
+            const trackHeight = (gameHeight > 0) ? (gameHeight * CONFIG.hitPosition) : 600;
             const noteSizeFraction = CONFIG.noteHeight / trackHeight;
 
             for (let i = STEP_SIZE; i < normalizedData.length; i += STEP_SIZE) {
@@ -636,7 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateProgressBar(songTime, durationMs);
 
-        // Update Combo Scale Animation (Decay back to 1)
+        // Update Combo Scale Animation
         comboScale += (1.0 - comboScale) * 0.15;
 
         if (songTime > durationMs + 1000) {
@@ -660,7 +653,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function update(songTime) {
         const hitTimeWindow = currentSpeed;
-        const hitY = canvas.height * CONFIG.hitPosition;
+        const hitY = gameHeight * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
 
         // Spawn
@@ -718,7 +711,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             combo += 5;
                             lastComboUpdateTime = Date.now();
                             if (combo > maxCombo) maxCombo = combo;
-                            updateScoreUI(true); // Is hit
+                            updateScoreUI(true); 
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
                         }
                         tile.holding = true;
@@ -741,7 +734,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const limitY = canvas.height + 50;
+            const limitY = gameHeight + 50;
             if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY)) {
                 if (!tile.hit && !tile.completed && !tile.failed) {
                      missNote(tile, true);
@@ -782,16 +775,15 @@ document.addEventListener('DOMContentLoaded', () => {
             p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent; p.name = 'legendary';
         }
 
-        // Clear
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
+        // Clear using logical coordinates
+        ctx.clearRect(0, 0, gameWidth, gameHeight);
+        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, gameWidth, gameHeight); }
 
-        const laneW = canvas.width / 4;
-        const hitY = canvas.height * CONFIG.hitPosition;
+        const laneW = gameWidth / 4;
+        const hitY = gameHeight * CONFIG.hitPosition;
         const padding = 6;
         const noteRadius = 10;
         
-        // PERFORMANCE: Disable Heavy Shadows if too many objects or mobile
         const enableHeavyEffects = !isMobile && activeTiles.length < 50;
 
         // --- DRAW LANES & BEAMS ---
@@ -803,25 +795,21 @@ document.addEventListener('DOMContentLoaded', () => {
             let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
             if (laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
-                // Just use simple fill for performance instead of gradient if needed, but linear is fast enough usually
-                // Optimization: Don't create gradient here every frame if possible. 
-                // But height changes. So we use fillRect with color/alpha
                 ctx.fillStyle = p.glow;
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.3; // Use simple transparency
+                ctx.globalAlpha = laneBeamAlpha[i] * 0.3; 
                 ctx.fillRect(beamX, 0, laneW, hitY);
                 ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
             }
-            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, canvas.height); }
+            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, gameHeight); }
         }
         ctx.stroke();
 
         // Hit Line
         ctx.strokeStyle = (combo >= 200) ? p.border : p.glow;
         ctx.lineWidth = (combo >= 200) ? 3 : 2;
-        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(gameWidth, hitY); ctx.stroke();
 
         // --- DRAW NOTES ---
-        // Optimization: Use cached gradient for TAP notes
         const tapGradient = GRADIENT_CACHE.tap[p.name];
 
         activeTiles.forEach(tile => {
@@ -837,13 +825,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 
-                // OPTIMIZED BATCH DRAWING:
                 // Translate context to use cached gradient at 0,0
                 ctx.save();
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
                 ctx.translate(cx, cy); 
                 ctx.scale(scale, scale); 
-                // Move to top-left of note relative to center
                 ctx.translate(-w/2, -CONFIG.noteHeight/2); 
 
                 // Shadow check
@@ -868,16 +854,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 // Highlight
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
                 ctx.beginPath(); 
-                // relative coords
                 ctx.ellipse(w/2, 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); 
                 ctx.fill();
                 ctx.restore();
 
             } else if (tile.type === 'long') {
-                // Long notes vary in length, so we must generate logic per frame,
-                // but we can optimize gradients by using just colors if lag persists.
-                // Keeping gradient for fidelity, but minimizing context switches.
-
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
                 let yTail = Math.min(progressEnd * hitY, hitY);
                 let yHead = (tile.hit && tile.holding) ? hitY : visualY;
@@ -911,8 +892,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Long Note Head
                 let headColors = (combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
-                // Optimize: Simple fill or cached tap gradient if colors match?
-                // Just creating gradient for head is okay as it is limited number.
                 let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
@@ -939,17 +918,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         // --- DRAW PARTICLES (OPTIMIZED) ---
-        // Optimization: Batch drawing and avoid Save/Restore/Rotate for every particle
-        // Use Math.cos/sin for manual rotation calculation
-        
-        ctx.shadowBlur = 0; // Disable shadow for particles to save GPU
+        ctx.shadowBlur = 0; 
         
         for (let i = 0; i < MAX_PARTICLES; i++) {
             let pt = particlePool[i];
             if (!pt.active) continue;
 
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
-            // Update rotation
             if (combo >= 400) pt.angle += pt.spin; 
             
             if (pt.life <= 0.05) { pt.active = false; continue; }
@@ -959,21 +934,12 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.beginPath();
             
             if (combo >= 800 || combo >= 400) {
-                 // Rectangles with manual rotation (No context switch)
-                 const size = combo >= 800 ? 6 : 8; // Width
-                 const thickness = 2; // Height
-                 const hw = size/2; const hh = thickness/2;
+                 const size = combo >= 800 ? 6 : 8; 
+                 const thickness = 2; 
                  
-                 // Pre-calc cos/sin
                  const c = Math.cos(pt.angle);
                  const s = Math.sin(pt.angle);
                  
-                 // Cross shape (two rects)
-                 // Rect 1: (-hw, -hh) to (hw, hh)
-                 // Rotated x = x*c - y*s + tx
-                 // Rotated y = x*s + y*c + ty
-                 
-                 // Draw Rect 1
                  const drawRotatedRect = (w, h) => {
                      const hw = w/2; const hh = h/2;
                      const p1x = (-hw)*c - (-hh)*s + pt.x; const p1y = (-hw)*s + (-hh)*c + pt.y;
@@ -983,11 +949,10 @@ document.addEventListener('DOMContentLoaded', () => {
                      ctx.moveTo(p1x, p1y); ctx.lineTo(p2x, p2y); ctx.lineTo(p3x, p3y); ctx.lineTo(p4x, p4y); ctx.lineTo(p1x, p1y);
                  };
                  
-                 drawRotatedRect(size, thickness); // Horizontal part
-                 drawRotatedRect(thickness, size); // Vertical part
+                 drawRotatedRect(size, thickness); 
+                 drawRotatedRect(thickness, size); 
                  
             } else if (combo >= 200) {
-                // Diamond shape
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
             } else {
                 ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
@@ -1004,7 +969,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawMultiplier(p.border); 
     }
 
-function drawMultiplier(color) {
+    function drawMultiplier(color) {
         const mult = getComboMultiplier();
         if (mult <= 1.0) return;
 
@@ -1018,13 +983,8 @@ function drawMultiplier(color) {
         ctx.save();
         ctx.globalAlpha = alpha;
         
-        const cx = canvas.width / 2;
-        
-        // --- ВИПРАВЛЕННЯ ТУТ ---
-        // Було: const cy = isMobile ? 145 : 90; 
-        // Стало: Опускаємо для ПК (160), щоб не перекривало рахунок
+        const cx = gameWidth / 2;
         const cy = isMobile ? 145 : 160; 
-        // -----------------------
 
         ctx.translate(cx, cy);
         ctx.scale(comboScale, comboScale);
@@ -1054,12 +1014,6 @@ function drawMultiplier(color) {
              alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000); 
         }
         if (alpha <= 0) return;
-
-        // Simplify gradients creation - only if needed or keep cache?
-        // Since text changes rarely (colors), it's fine to keep as is, 
-        // but avoid createLinearGradient if possible. 
-        // Here we just use colors for performance if laggy, but let's keep fidelity for now
-        // as this is only one object.
         
         let gradColors = ['#fff', '#ccc'];
         let fontSize = 60;
@@ -1081,8 +1035,8 @@ function drawMultiplier(color) {
 
         ctx.save();
         ctx.globalAlpha = alpha;
-        const cx = canvas.width / 2;
-        const cy = canvas.height * 0.3; 
+        const cx = gameWidth / 2;
+        const cy = gameHeight * 0.3; 
         
         ctx.translate(cx, cy);
         ctx.scale(comboScale, comboScale);
@@ -1152,7 +1106,7 @@ function drawMultiplier(color) {
             
             if (!isMobile) {
                 ctx.shadowColor = r.color;
-                ctx.shadowBlur = 10; // Reduced from 20
+                ctx.shadowBlur = 10; 
             }
             ctx.fillStyle = r.color;
             ctx.fillText(r.text, 0, 0);
@@ -1164,7 +1118,7 @@ function drawMultiplier(color) {
 
     // --- INPUT HANDLING ---
     function spawnSparks(lane, y, color, type = 'good') {
-        const laneW = canvas.width / 4;
+        const laneW = gameWidth / 4;
         const x = lane * laneW + laneW / 2;
         let finalColor = '#cfd8dc';
         if (combo >= 800) finalColor = Math.random() > 0.4 ? '#ffffffff' : '#101006ff';
@@ -1236,11 +1190,11 @@ function drawMultiplier(color) {
             if (diff < 70) {
                 score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
-                spawnSparks(lane, canvas.height * CONFIG.hitPosition, '#ff00ff', 'perfect');
+                spawnSparks(lane, gameHeight * CONFIG.hitPosition, '#ff00ff', 'perfect');
             } else {
                 score += Math.round(CONFIG.scoreGood * mult);
                 showRating(getText('good'), "rating-good");
-                spawnSparks(lane, canvas.height * CONFIG.hitPosition, '#00ffff', 'good');
+                spawnSparks(lane, gameHeight * CONFIG.hitPosition, '#00ffff', 'good');
             }
 
             if (target.type === 'long') {
@@ -1303,7 +1257,6 @@ function drawMultiplier(color) {
         updateContainerEffects();
     }
 
-    // OPTIMIZED: State Machine for Container Effects
     function updateContainerEffects() {
         let newTier = 'none';
         if (combo >= 800) newTier = 'legendary';
@@ -1311,14 +1264,11 @@ function drawMultiplier(color) {
         else if (combo >= 200) newTier = 'gold';
         else if (combo >= 100) newTier = 'electric';
 
-        // ONLY Update DOM if tier changed
         if (newTier !== currentComboTier) {
             currentComboTier = newTier;
             
             if (gameContainer) {
-                // Remove all possible classes first
                 gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
-                // Add specific class
                 if (newTier === 'gold') gameContainer.classList.add('container-ripple-gold');
                 if (newTier === 'cosmic') gameContainer.classList.add('container-ripple-cosmic');
                 if (newTier === 'legendary') gameContainer.classList.add('container-legendary');
@@ -1343,8 +1293,8 @@ function drawMultiplier(color) {
             type: cssClass,
             color: color,
             startTime: Date.now(),
-            x: canvas.width / 2,
-            y: canvas.height * 0.4
+            x: gameWidth / 2,
+            y: gameHeight * 0.4
         });
     }
 
@@ -1359,11 +1309,8 @@ function drawMultiplier(color) {
             holdEffectsContainer.appendChild(effect);
         }
         
-        // Optimize: check if style actually needs changing
         if (active) {
             if (effect.style.display !== 'block') effect.style.display = 'block';
-            // Only update color if needed (checking simple property)
-            // But gradient string creation is fast enough here
             effect.style.background = `linear-gradient(to top, ${color}, transparent)`;
         } else {
             if (effect.style.display !== 'none') effect.style.display = 'none';
@@ -1374,13 +1321,10 @@ function drawMultiplier(color) {
         if (!progressBar) return;
         const ratio = Math.min(1, current / total);
         progressBar.style.width = `${ratio * 100}%`;
-        const isSecret = songsDB[currentSongIndex].isSecret;
-
-        // Reset all first (This loop is small, 3-5 items, okay to keep)
-        // Optimization: track active star index to avoid looping? 
-        // Current implementation is fine for 5 elements.
+        
+        // Optimize: Only check stars when needed (simple check is fine)
         starsElements.forEach(s => s?.classList.remove('active'));
-
+        const isSecret = songsDB[currentSongIndex].isSecret;
         const t = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
         t.forEach((limit, i) => {
              if (ratio > limit && starsElements[i]) starsElements[i].classList.add('active');
@@ -1745,7 +1689,7 @@ function drawMultiplier(color) {
             });
         }
 
-        // Canvas Input (Preserved on original Canvas Element)
+        // Canvas Input
         if (canvas) {
             const handleTouch = (e, isDown) => {
                 e.preventDefault();
@@ -1795,7 +1739,6 @@ function drawMultiplier(color) {
             document.body.setAttribute('data-theme', next);
             localStorage.setItem('siteTheme', next);
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
-            // Re-init gradients for theme change if using cache
             if(ctx) initGradients();
         });
         setupBtn('soundToggle', (btn) => {
@@ -1853,9 +1796,16 @@ function drawMultiplier(color) {
 
     function resizeCanvas() { 
         if (gameContainer && gameContainer.clientWidth && canvas) { 
-            canvas.width = gameContainer.clientWidth; 
-            canvas.height = gameContainer.clientHeight; 
-            // Re-init gradients on resize as dimensions might affect quality
+            const dpr = Math.min(window.devicePixelRatio || 1, 1.5); 
+            gameWidth = gameContainer.clientWidth;
+            gameHeight = gameContainer.clientHeight;
+            
+            canvas.width = gameWidth * dpr;
+            canvas.height = gameHeight * dpr;
+            
+            ctx.setTransform(1, 0, 0, 1, 0, 0); 
+            ctx.scale(dpr, dpr); 
+            
             initGradients();
         }
         isMobile = window.innerWidth < 768;
@@ -1865,7 +1815,6 @@ function drawMultiplier(color) {
     // Initial Start
     initControls();
     renderMenu();
-    // Delay resize slightly to ensure DOM is ready
     setTimeout(resizeCanvas, 100);
 
 }); // END DOMContentLoaded
