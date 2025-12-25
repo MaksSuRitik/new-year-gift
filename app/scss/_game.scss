@@ -1,3 +1,7 @@
+{
+type: uploaded file
+fileName: _game.scss
+fullContent:
 * { box-sizing: border-box; }
 
 html, body {
@@ -11,6 +15,8 @@ body {
   transition: background 0.6s;
   /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
   touch-action: none;
+  /* ОПТИМІЗАЦІЯ: Прискорює рендеринг тексту під час анімацій */
+  text-rendering: optimizeSpeed;
 }
 
 // ==========================================
@@ -23,6 +29,8 @@ body {
   top: 0; left: 0; width: 100%; height: 100%;
   pointer-events: none;
   z-index: 1;
+  /* ОПТИМІЗАЦІЯ: Ізоляція перемальовки */
+  contain: strict;
 }
 
 .snowflake {
@@ -34,6 +42,8 @@ body {
   animation-name: fall;
   animation-timing-function: linear;
   animation-iteration-count: infinite;
+  /* ОПТИМІЗАЦІЯ: Підказка для GPU */
+  will-change: transform;
 }
 
 @keyframes fall {
@@ -45,13 +55,23 @@ body {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   z-index: 0;
   overflow: hidden;
+  /* ОПТИМІЗАЦІЯ: Ізоляція важких блюр-ефектів */
+  contain: paint layout;
 
-  .blob { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.4; }
+  .blob { 
+    position: absolute; 
+    border-radius: 50%; 
+    filter: blur(80px); 
+    opacity: 0.4;
+    /* ОПТИМІЗАЦІЯ: Винос в окремий шар GPU */
+    will-change: transform;
+    transform: translate3d(0,0,0);
+  }
   .blob-1 { top: -10%; left: -10%; width: 50vw; height: 50vw; background: var(--blob-1); animation: drift 20s infinite alternate; }
   .blob-2 { bottom: -10%; right: -10%; width: 60vw; height: 60vw; background: var(--blob-2); animation: drift 25s infinite alternate-reverse; }
 }
 
-@keyframes drift { from { transform: translate(0,0); } to { transform: translate(30px, 50px); } }
+@keyframes drift { from { transform: translate3d(0,0,0); } to { transform: translate3d(30px, 50px, 0); } }
 
 // ==========================================
 // 3. ГЛОБАЛЬНІ КОНТРОЛЕРИ (КНОПКИ)
@@ -97,6 +117,8 @@ body {
   position: absolute; width: 100%; height: 100%;
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.6s ease, transform 0.6s ease;
+  /* ОПТИМІЗАЦІЯ: Запобігання лагам при перемиканні */
+  will-change: opacity, transform;
 
   &.active { opacity: 1; pointer-events: all; transform: scale(1); z-index: 10; }
   &.hidden { opacity: 0; pointer-events: none; transform: scale(1.2); z-index: 0; }
@@ -129,6 +151,10 @@ body {
 
 .panel {
   position: absolute; width: 300px; height: 500px; transition: all 0.6s var(--ease-smooth);
+  /* ОПТИМІЗАЦІЯ: 3D трансформації та приховування зворотної сторони */
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
 
   .panel-content {
     width: 100%; height: 100%; display: flex; flex-direction: column;
@@ -283,7 +309,8 @@ body {
   flex-direction: row; // ГОРИЗОНТАЛЬНО
   align-items: center;
   height: 100%;
-  will-change: transform; // Оптимізація для анімації
+  /* ОПТИМІЗАЦІЯ: Підказка для анімації обертання рулетки */
+  will-change: transform; 
 }
 
 // Елемент рулетки (Текст)
@@ -308,6 +335,9 @@ body {
   text-shadow: 0 2px 5px rgba(0,0,0,0.8);
   white-space: normal; // Дозволяємо перенос тексту
   letter-spacing: 1px;
+  
+  /* ОПТИМІЗАЦІЯ: Тіні та фільтри дуже важкі для анімації */
+  will-change: opacity, filter;
   animation: neonPulse 2s infinite alternate; // Вмикаємо пульсацію
 }
 
@@ -450,6 +480,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
+  
+  /* ОПТИМІЗАЦІЯ */
+  will-change: transform, box-shadow;
 
   &:hover {
     transform: scale(1.03);
@@ -624,6 +657,8 @@ body {
    /* Гарний скролбар */
    scrollbar-width: thin;
    scrollbar-color: var(--highlight) transparent;
+   /* ОПТИМІЗАЦІЯ: Ізоляція вмісту списку */
+   contain: layout;
 }
 
 .song-card {
@@ -637,6 +672,8 @@ body {
    cursor: pointer;
    border: 1px solid transparent;
    transition: 0.2s;
+   /* ОПТИМІЗАЦІЯ */
+   will-change: transform, border-color;
 }
 
 .song-card:hover {
@@ -695,6 +732,8 @@ body {
 
    // ВАЖЛИВО: Забороняємо браузерні дії (зум/скрол) всередині гри
    touch-action: none;
+   /* ОПТИМІЗАЦІЯ: Ізоляція ігрового поля */
+   contain: layout paint;
 }
 
 /* Канвас на весь контейнер */
@@ -752,6 +791,7 @@ canvas#rhythmCanvas {
    pointer-events: none;
    animation: fadeOut 0.3s forwards;
    z-index: 10;
+   will-change: opacity, transform;
 }
 
 @keyframes fadeOut {
@@ -781,6 +821,7 @@ canvas#rhythmCanvas {
    animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
    z-index: 100;
    text-shadow: 0 0 20px rgba(255,255,255,0.8);
+   will-change: transform, opacity;
 }
 
 .rating-perfect { color: #ff00ff; text-shadow: 0 0 20px #ff00ff; }
@@ -808,6 +849,7 @@ canvas#rhythmCanvas {
    border-radius: 50%;
    animation: spin 1s linear infinite;
    margin-bottom: 20px;
+   will-change: transform;
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
@@ -843,6 +885,7 @@ canvas#rhythmCanvas {
    border-radius: 10px;
    transition: width 0.1s linear;
    box-shadow: 0 0 10px var(--highlight);
+   will-change: width;
 }
 
 .star-marker {
@@ -1200,6 +1243,8 @@ canvas#rhythmCanvas {
   border: 3px solid transparent;
   background: rgba(0, 0, 0, 0.6) !important;
   animation: rainbow-border 2s linear infinite;
+  /* ОПТИМІЗАЦІЯ */
+  will-change: border-color, box-shadow;
 }
 
 /* Заблокована пісня */
@@ -1265,18 +1310,22 @@ canvas#rhythmCanvas {
   z-index: 15;
   /* Використовуємо універсальну анімацію */
   animation: ripple-gold 2s infinite ease-in-out !important;
+  /* ОПТИМІЗАЦІЯ: Тіні - це важко, попереджаємо браузер */
+  will-change: border-color, box-shadow;
 }
 
 .container-ripple-cosmic {
   border: 3px solid #00e5ff !important;
   z-index: 15;
   animation: ripple-cosmic 1.5s infinite ease-in-out !important;
+  will-change: border-color, box-shadow;
 }
 
 .container-legendary {
   border: 4px solid #FFFFFF !important;
   z-index: 20;
   animation: flow-legendary 1s infinite ease-in-out !important;
+  will-change: border-color, box-shadow;
 }
 
 /* --- 3. ТЕКСТ КОМБО (ЛЕГЕНДАРНИЙ) --- */
@@ -1299,6 +1348,7 @@ canvas#rhythmCanvas {
   font-size: 3rem !important;
   font-weight: 900;
   z-index: 50;
+  will-change: background-position;
 }
 
 /* ==========================================
@@ -1402,6 +1452,7 @@ canvas#rhythmCanvas {
   background: linear-gradient(to right, rgba(20, 0, 0, 0.8), rgba(0, 20, 0, 0.8));
   border: 2px solid transparent;
   animation: xmas-border 3s linear infinite;
+  will-change: border-color, box-shadow;
 }
 
 /* Додаємо сніжинку біля назви новорічних пісень */
@@ -1420,6 +1471,7 @@ canvas#rhythmCanvas {
   border: 1px solid #ffd700;
   background: rgba(40, 30, 10, 0.6); /* Легкий золотий відтінок фону */
   animation: gold-shimmer-border 2s ease-in-out infinite;
+  will-change: border-color, box-shadow;
 }
 
 /* --- Стиль для тривалості пісні (Час) --- */
@@ -1569,4 +1621,5 @@ canvas#rhythmCanvas {
   #hold-effects-container, .hit-line, .lane-hints, .click-effect, #legendary-border-overlay {
       pointer-events: none !important;
   }
+}
 }
