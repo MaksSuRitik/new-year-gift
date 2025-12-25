@@ -946,6 +946,7 @@ document.addEventListener('DOMContentLoaded', () => {
         return 1.0;
     }
 
+   // Знайдіть і замініть функцію updateScoreUI
     function updateScoreUI(isHit = false) {
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
@@ -955,34 +956,55 @@ document.addEventListener('DOMContentLoaded', () => {
         if (comboDisplay) {
             const mult = getComboMultiplier();
             const textStr = `${getText('combo')} ${combo} (x${mult})`;
-            comboDisplay.innerText = textStr;
-            comboDisplay.setAttribute('data-text', textStr);
             
-            comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
-            if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
-    
-            if (legendaryOverlay) legendaryOverlay.classList.remove('active');
-
-            if (combo >= 800) {
-                comboDisplay.classList.add('combo-legendary');
-                if (legendaryOverlay) legendaryOverlay.classList.add('active');
-                
-                // ДОДАТИ ЦЕЙ РЯДОК:
-                if (gameContainer) gameContainer.classList.add('container-legendary'); 
-
-            } else if (combo >= 400) {
-                comboDisplay.classList.add('combo-cosmic');
-                if (gameContainer) gameContainer.classList.add('container-ripple-cosmic');
-            } else if (combo >= 200) {
-                comboDisplay.classList.add('combo-gold');
-                if (gameContainer) gameContainer.classList.add('container-ripple-gold');
-            } else if (combo >= 100) {
-                comboDisplay.classList.add('combo-electric');
+            // Оновлюємо текст (це легка операція)
+            if (comboDisplay.innerText !== textStr) {
+                comboDisplay.innerText = textStr;
+                comboDisplay.setAttribute('data-text', textStr);
             }
+            
+            // 🔥 ОПТИМІЗАЦІЯ: Визначаємо поточний необхідний "тір" (рівень)
+            let targetClass = '';
+            let targetContainerClass = '';
+            
+            if (combo >= 800) {
+                targetClass = 'combo-legendary';
+                targetContainerClass = 'container-legendary';
+            } else if (combo >= 400) {
+                targetClass = 'combo-cosmic';
+                targetContainerClass = 'container-ripple-cosmic';
+            } else if (combo >= 200) {
+                targetClass = 'combo-gold';
+                targetContainerClass = 'container-ripple-gold';
+            } else if (combo >= 100) {
+                targetClass = 'combo-electric';
+            }
+
+            // Перевіряємо, чи ми вже в цьому стані. Якщо так - НІЧОГО не робимо (економимо CPU)
+            const currentComboClass = comboDisplay.classList.contains(targetClass);
+            
+            if (!currentComboClass) {
+                // Тільки якщо рівень змінився, робимо "важку" роботу з класами
+                comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
+                if (targetClass) comboDisplay.classList.add(targetClass);
+
+                if (gameContainer) {
+                    gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+                    if (targetContainerClass) gameContainer.classList.add(targetContainerClass);
+                }
+
+                if (legendaryOverlay) {
+                    if (combo >= 800) legendaryOverlay.classList.add('active');
+                    else legendaryOverlay.classList.remove('active');
+                }
+            }
+
             comboDisplay.style.opacity = combo > 2 ? 1 : 0;
+            
+            // Анімація "поп" при ударі (легка)
             if (isHit) {
                 comboDisplay.classList.remove('combo-pop');
-                void comboDisplay.offsetWidth;
+                void comboDisplay.offsetWidth; // Trigger reflow
                 comboDisplay.classList.add('combo-pop');
             }
         }
