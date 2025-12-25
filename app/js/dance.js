@@ -717,8 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineWidth = (combo >= 200) ? 3 : 2;
         ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
-        // Notes
-// Notes drawing logic
+        // Notes drawing logic (MOBILE OPTIMIZED)
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
@@ -946,7 +945,6 @@ document.addEventListener('DOMContentLoaded', () => {
         return 1.0;
     }
 
-   // Знайдіть і замініть функцію updateScoreUI
     function updateScoreUI(isHit = false) {
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
