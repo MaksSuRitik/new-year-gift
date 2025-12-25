@@ -1,6 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // OPTIMIZED: Performance Refactoring
+   // OPTIMIZED: Canvas Combo & Performance
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -43,10 +43,15 @@ let startTime = 0;
 let score = 0;
 let maxPossibleScore = 0;
 let combo = 0;
+let maxCombo = 0; // Track max combo for session
 let consecutiveMisses = 0;
 let currentSongIndex = 0;
 let lastHitTime = 0;
 let currentSpeed = 1000;
+
+// COMBO ANIMATION STATE
+let comboScale = 1.0;
+let currentComboTier = 'none'; // 'none', 'electric', 'gold', 'cosmic', 'legendary'
 
 // Game Objects
 let mapTiles = [];
@@ -66,8 +71,8 @@ let laneBeamAlpha = [0, 0, 0, 0];
 let starsElements = [];
 
 // DOM Elements
-let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, comboDisplay, bgMusicEl;
-// Note: ratingContainer removed as we use Canvas now
+let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl;
+// comboDisplay removed (moved to Canvas)
 
 // Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -99,7 +104,7 @@ const CONFIG = {
     }
 };
 
-// OPTIMIZED: Pre-defined Palettes to avoid creation in loop
+// OPTIMIZED: Pre-defined Palettes
 const PALETTES = {
     STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
     GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f', light: '#bcaaa4', glow: '#e6953f', border: '#e6953f' },
@@ -110,17 +115,17 @@ const PALETTES = {
 
 const TRANSLATIONS = {
     UA: {
-        icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "Комбо", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено"
+        icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "КОМБО", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено"
     },
     RU: {
-        icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "Комбо", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот...", leaderboard: "Таблица Лидеров", enterName: "Введите ваше имя для рекорда:", req: "Пройдите 5 песен на 3 звезды!", namePls: "Введите имя", lbTitle: "Лидеры Секретного Уровня", lbRank: "Ранг", lbName: "Имя", lbScore: "Очки", lbNoRecords: "Рекордов еще нет!", lbLoading: "Загрузка...", lbError: "Ошибка загрузки", nameTaken: "Это имя уже занято! Выберите другое.", checking: "Проверка...", secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень", close: "Закрыть", changeName: "Сменить Имя", nameUpdated: "Имя обновлено!", enterNewName: "Введите новое имя:", migrationSuccess: "Ваш старый рекорд найден и привязан!", btnOk: "ОК", btnCancel: "Отмена", searchPlaceholder: "🔍 Поиск песни или автора...", noSongsFound: "🚫 Песен не найдено"
+        icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "КОМБО", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот...", leaderboard: "Таблица Лидеров", enterName: "Введите ваше имя для рекорда:", req: "Пройдите 5 песен на 3 звезды!", namePls: "Введите имя", lbTitle: "Лидеры Секретного Уровня", lbRank: "Ранг", lbName: "Имя", lbScore: "Очки", lbNoRecords: "Рекордов еще нет!", lbLoading: "Загрузка...", lbError: "Ошибка загрузки", nameTaken: "Это имя уже занято! Выберите другое.", checking: "Проверка...", secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень", close: "Закрыть", changeName: "Сменить Имя", nameUpdated: "Имя обновлено!", enterNewName: "Введите новое имя:", migrationSuccess: "Ваш старый рекорд найден и привязан!", btnOk: "ОК", btnCancel: "Отмена", searchPlaceholder: "🔍 Поиск песни или автора...", noSongsFound: "🚫 Песен не найдено"
     },
     MEOW: {
         icon: "🐱", instructions: "Meow meow meow S D J K meow", score: "Meow", combo: "Meow-bo", paused: "MEOW?", resume: "Meow!", quit: "Grrr", complete: "WeOWW", failed: "WeowWWWW", restart: "Meow-gain", menu: "Meow-nu", perfect: "WeowE", good: "MEOW", miss: "Weow", loading: "Meowing...", leaderboard: "Meow-Weowt", enterName: "Meow name:", req: "Meow Weow Weow Weow Weow!", namePls: "Meow?", lbTitle: "Meow Leaders", lbRank: "Meow #", lbName: "Meow Weow", lbScore: "Meows", lbNoRecords: "Weow Weow Weow!", lbLoading: "Meowing...", lbError: "Meow Weow", nameTaken: "MEOW! Meow! Meow weow!", checking: "Weow...", secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow", close: "Meow", changeName: "Meow Name", nameUpdated: "Meow meow!", enterNewName: "Meow new meow:", migrationSuccess: "Meow weow meow!", btnOk: "Meow!", btnCancel: "Grrr...", searchPlaceholder: "🔍 Meow search...", noSongsFound: "🚫 Meow weow grrr"
     }
 };
 
-// Songs DB (Identical to original)
+// Songs DB
 const songsDB = [
     { file: "secret.mp3", title: "???", artist: "???", isSecret: true, duration: "??:??" },
     { file: "Frank Sinatra - Let It Snow!.mp3", title: "Let It Snow!", artist: "Frank Sinatra", duration: "2m 35s", tag: "xmas" },
@@ -292,10 +297,9 @@ document.addEventListener('DOMContentLoaded', () => {
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
-    // ratingContainer removed (using canvas)
     holdEffectsContainer = document.getElementById('hold-effects-container');
     progressBar = document.getElementById('game-progress-bar');
-    comboDisplay = document.getElementById('combo-display');
+    // comboDisplay removed entirely
     
     // Init Stars Array
     starsElements = [
@@ -404,12 +408,15 @@ document.addEventListener('DOMContentLoaded', () => {
         isPlaying = false; isPaused = false;
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
-        score = 0; combo = 0; consecutiveMisses = 0;
+        score = 0; combo = 0; maxCombo = 0; consecutiveMisses = 0;
         activeTiles = []; mapTiles = [];
         
-        // OPTIMIZED: Reset Pools
+        // OPTIMIZED: Reset Pools and Combo State
         for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
         activeRatings = [];
+        
+        comboScale = 1.0;
+        currentComboTier = 'none'; // Reset tier tracking
 
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
@@ -417,12 +424,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
-        if (comboDisplay) {
-            comboDisplay.style.opacity = 0;
-            comboDisplay.style.color = '#fff';
-            comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
+        
+        // Clear container effects
+        if (gameContainer) {
+            gameContainer.className = ''; 
+            gameContainer.id = 'game-container'; // Keep ID
         }
-        if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+        
+        const legendaryOverlay = document.getElementById('legendary-border-overlay');
+        if (legendaryOverlay) legendaryOverlay.classList.remove('active');
         
         updateScoreUI();
         if (progressBar) progressBar.style.width = '0%';
@@ -583,9 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateProgressBar(songTime, durationMs);
 
-        if (Date.now() - lastHitTime > 2000 && combo > 0) {
-            if (comboDisplay) comboDisplay.style.opacity = Math.max(0, 1 - (Date.now() - lastHitTime - 2000) / 1000);
-        }
+        // Update Combo Scale Animation (Decay back to 1)
+        comboScale += (1.0 - comboScale) * 0.15;
 
         if (songTime > durationMs + 1000) {
             endGame(true);
@@ -654,7 +663,8 @@ document.addEventListener('DOMContentLoaded', () => {
                             const mult = getComboMultiplier();
                             score += Math.round(CONFIG.scoreHoldTick * mult);
                             combo += 5;
-                            updateScoreUI();
+                            if (combo > maxCombo) maxCombo = combo;
+                            updateScoreUI(true); // Is hit (triggers container effects)
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
                         }
                         tile.holding = true;
@@ -666,7 +676,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         const mult = getComboMultiplier();
                         score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
                         combo++; 
-                        updateScoreUI();
+                        if (combo > maxCombo) maxCombo = combo;
+                        updateScoreUI(true);
                     }
                 } else {
                     // Failed hold
@@ -736,7 +747,6 @@ document.addEventListener('DOMContentLoaded', () => {
             let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
             if (laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
-                // OPTIMIZED: Avoid string parsing in loop if possible, but gradient needs x/y
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
                 beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
                 
@@ -871,8 +881,76 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.globalAlpha = 1;
         }
 
-        // --- DRAW RATINGS (CANVAS TEXT INSTEAD OF DOM) ---
+        // --- DRAW RATINGS (CANVAS TEXT) ---
         drawRatings();
+
+        // --- DRAW COMBO (CANVAS) ---
+        drawComboDisplay();
+    }
+
+    // NEW: Canvas-based Combo Display (Replaces DOM)
+    function drawComboDisplay() {
+        if (combo < 3) return; // Hide if low combo
+
+        // Configuration based on tier
+        let gradColors = ['#fff', '#ccc'];
+        let fontSize = 60;
+        let labelColor = '#fff';
+
+        if (combo >= 800) {
+            gradColors = ['#ffffff', '#7b1fa2']; // Platinum/Purple
+            fontSize = 70;
+            labelColor = '#e1bee7';
+        } else if (combo >= 400) {
+            gradColors = ['#00e5ff', '#d500f9']; // Cosmic
+            fontSize = 68;
+            labelColor = '#00e5ff';
+        } else if (combo >= 200) {
+            gradColors = ['#FFD700', '#FDB931']; // Gold
+            fontSize = 66;
+            labelColor = '#FFF8E1';
+        } else if (combo >= 100) {
+            gradColors = ['#00bcd4', '#b2ebf2']; // Electric
+            fontSize = 64;
+            labelColor = '#00bcd4';
+        }
+
+        ctx.save();
+        
+        // Position: 30% from top (Higher than before)
+        const cx = canvas.width / 2;
+        const cy = canvas.height * 0.3; 
+        
+        ctx.translate(cx, cy);
+        ctx.scale(comboScale, comboScale);
+        
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Draw "COMBO" Label
+        ctx.font = "italic 900 24px 'Comic Sans MS'";
+        ctx.fillStyle = labelColor;
+        // Text Shadow manually
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(getText('combo'), 2, -40 + 2);
+        ctx.fillStyle = labelColor; ctx.fillText(getText('combo'), 0, -40);
+
+        // Draw Number
+        ctx.font = `italic 900 ${fontSize}px 'Comic Sans MS'`;
+        
+        // Gradient for number
+        let gradient = ctx.createLinearGradient(0, -30, 0, 30);
+        gradient.addColorStop(0, gradColors[0]);
+        gradient.addColorStop(1, gradColors[1]);
+
+        // Shadow for number
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillText(combo, 4, 14);
+
+        // Main Number
+        ctx.fillStyle = gradient;
+        ctx.fillText(combo, 0, 10);
+
+        ctx.restore();
     }
 
     // OPTIMIZED: Render text ratings on canvas
@@ -882,38 +960,31 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        // Match CSS Font: font-family: 'Comic Sans MS', sans-serif; font-weight: 900;
-        // Perfect: size 3.5rem (~56px), Good/Miss: 2.5rem (~40px)
-        
         for (let i = activeRatings.length - 1; i >= 0; i--) {
             const r = activeRatings[i];
             const elapsed = now - r.startTime;
-            const duration = 500; // ms
+            const duration = 500; 
             
             if (elapsed > duration) {
                 activeRatings.splice(i, 1);
                 continue;
             }
 
-            // Animation logic matching CSS @keyframes popUp
             let progress = elapsed / duration;
             let alpha = 1;
             let scale = 1;
             let yOffset = 0;
 
             if (progress < 0.5) {
-                // Pop Up
-                let t = progress * 2; // 0 to 1
-                // cubic-bezier approximation
-                scale = 0.5 + (0.7 * t); // 0.5 -> 1.2
+                let t = progress * 2;
+                scale = 0.5 + (0.7 * t);
                 alpha = t;
-                yOffset = -30 * t; // Move up
+                yOffset = -30 * t;
             } else {
-                // Fade out & scale down
-                let t = (progress - 0.5) * 2; // 0 to 1
-                scale = 1.2 - (0.2 * t); // 1.2 -> 1.0
+                let t = (progress - 0.5) * 2;
+                scale = 1.2 - (0.2 * t);
                 alpha = 1 - t;
-                yOffset = -30 - (20 * t); // Continue up
+                yOffset = -30 - (20 * t);
             }
 
             ctx.globalAlpha = Math.max(0, alpha);
@@ -921,22 +992,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.translate(r.x, r.y + yOffset);
             ctx.scale(scale, scale);
 
-            // Set styling based on type
             let fontSize = 40;
             if (r.type === 'rating-perfect') fontSize = 56;
             
             ctx.font = `900 italic ${fontSize}px "Comic Sans MS", sans-serif`;
             
-            // Stroke/Shadow for readability
             if (!isMobile) {
                 ctx.shadowColor = r.color;
                 ctx.shadowBlur = 20;
             }
             ctx.fillStyle = r.color;
             ctx.fillText(r.text, 0, 0);
-
-            // Optional: Stroke to mimic -webkit-text-stroke if needed, but shadow is usually enough
-            // ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.strokeText(r.text, 0, 0);
 
             ctx.restore();
             ctx.globalAlpha = 1;
@@ -959,10 +1025,7 @@ document.addEventListener('DOMContentLoaded', () => {
         
         for (let i = 0; i < MAX_PARTICLES; i++) {
             if (spawned >= count) break;
-            
-            // Find next available index in circular manner or just linear search
             let idx = (particlePoolIndex + i) % MAX_PARTICLES;
-            
             if (!particlePool[idx].active) {
                 const pt = particlePool[idx];
                 pt.active = true;
@@ -975,7 +1038,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 spawned++;
             }
         }
-        // Advance index hint for next spawn to reduce search time
         particlePoolIndex = (particlePoolIndex + count) % MAX_PARTICLES;
     }
 
@@ -1036,6 +1098,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 showRating(getText('perfect'), "rating-perfect");
             } else {
                 combo++;
+                if(combo > maxCombo) maxCombo = combo;
             }
             updateScoreUI(true);
         } else {
@@ -1053,7 +1116,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function missNote(tile, isSpawnedMiss) {
         consecutiveMisses++;
         combo = 0;
-        updateScoreUI();
+        updateScoreUI(); // Updates effects
         showRating(getText('miss'), "rating-miss");
         if (gameContainer) {
             gameContainer.classList.add('shake-screen');
@@ -1071,42 +1134,43 @@ document.addEventListener('DOMContentLoaded', () => {
         return 1.0;
     }
 
+    // NEW: Updated Score Logic to handle Container Effects efficiently
     function updateScoreUI(isHit = false) {
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
-        const gameContainer = document.getElementById('game-container');
-        const legendaryOverlay = document.getElementById('legendary-border-overlay');
 
-        if (comboDisplay) {
-            const mult = getComboMultiplier();
-            const textStr = `${getText('combo')} ${combo} (x${mult})`;
-            comboDisplay.innerText = textStr;
-            comboDisplay.setAttribute('data-text', textStr);
+        // Apply Combo Pop Animation Logic
+        if (isHit && combo > 0) {
+            comboScale = 1.3; // Pop effect
+        }
+
+        updateContainerEffects();
+    }
+
+    // OPTIMIZED: Update Container Styles only on tier change (State Machine)
+    function updateContainerEffects() {
+        let newTier = 'none';
+        if (combo >= 800) newTier = 'legendary';
+        else if (combo >= 400) newTier = 'cosmic';
+        else if (combo >= 200) newTier = 'gold';
+        else if (combo >= 100) newTier = 'electric';
+
+        if (newTier !== currentComboTier) {
+            currentComboTier = newTier;
             
-            comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
-            if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
-    
-            if (legendaryOverlay) legendaryOverlay.classList.remove('active');
-
-            if (combo >= 800) {
-                comboDisplay.classList.add('combo-legendary');
-                if (legendaryOverlay) legendaryOverlay.classList.add('active');
-                if (gameContainer) gameContainer.classList.add('container-legendary'); 
-
-            } else if (combo >= 400) {
-                comboDisplay.classList.add('combo-cosmic');
-                if (gameContainer) gameContainer.classList.add('container-ripple-cosmic');
-            } else if (combo >= 200) {
-                comboDisplay.classList.add('combo-gold');
-                if (gameContainer) gameContainer.classList.add('container-ripple-gold');
-            } else if (combo >= 100) {
-                comboDisplay.classList.add('combo-electric');
+            // Container Border Effects
+            if (gameContainer) {
+                gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+                if (newTier === 'gold') gameContainer.classList.add('container-ripple-gold');
+                if (newTier === 'cosmic') gameContainer.classList.add('container-ripple-cosmic');
+                if (newTier === 'legendary') gameContainer.classList.add('container-legendary');
             }
-            comboDisplay.style.opacity = combo > 2 ? 1 : 0;
-            if (isHit) {
-                comboDisplay.classList.remove('combo-pop');
-                void comboDisplay.offsetWidth;
-                comboDisplay.classList.add('combo-pop');
+
+            // Tunnel Effect (God Mode) - Works on Mobile now too via CSS
+            const legendaryOverlay = document.getElementById('legendary-border-overlay');
+            if (legendaryOverlay) {
+                if (newTier === 'legendary') legendaryOverlay.classList.add('active');
+                else legendaryOverlay.classList.remove('active');
             }
         }
     }

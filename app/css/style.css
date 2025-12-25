@@ -1328,6 +1328,10 @@ body[data-theme=light] #no-songs-msg {
     opacity: 0;
   }
 }
+/* ==========================================
+   🎹 NEON PIANO: ULTIMATE EDITION
+   // SCSS OPTIMIZED: Visuals & Performance
+   ========================================== */
 * {
   -webkit-box-sizing: border-box;
           box-sizing: border-box;
@@ -2519,6 +2523,7 @@ body {
           box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
   border-left: 1px solid #333;
   border-right: 1px solid #333;
+  will-change: border-color, box-shadow;
   -ms-touch-action: none;
       touch-action: none;
 }
@@ -2625,74 +2630,6 @@ canvas#rhythmCanvas {
   transition: background 0.1s;
 }
 
-/* Оцінка удару (Perfect / Good / Miss) */
-.hit-rating {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  -webkit-transform: translate(-50%, -50%);
-      -ms-transform: translate(-50%, -50%);
-          transform: translate(-50%, -50%);
-  font-size: 3rem;
-  font-weight: 900;
-  font-family: "Comic Sans MS", sans-serif; /* Або твій шрифт */
-  pointer-events: none;
-  -webkit-animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-          animation: popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
-  z-index: 100;
-  text-shadow: 0 0 20px rgba(255, 255, 255, 0.8);
-}
-
-.rating-perfect {
-  color: #ff00ff;
-  text-shadow: 0 0 20px #ff00ff;
-}
-
-.rating-good {
-  color: #66FCF1;
-  text-shadow: 0 0 20px #66FCF1;
-}
-
-.rating-miss {
-  color: #ff3333;
-  text-shadow: 0 0 20px #ff3333;
-}
-
-@-webkit-keyframes popUp {
-  0% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -30%) scale(0.5);
-            transform: translate(-50%, -30%) scale(0.5);
-  }
-  50% {
-    opacity: 1;
-    -webkit-transform: translate(-50%, -60%) scale(1.2);
-            transform: translate(-50%, -60%) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -80%) scale(1);
-            transform: translate(-50%, -80%) scale(1);
-  }
-}
-
-@keyframes popUp {
-  0% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -30%) scale(0.5);
-            transform: translate(-50%, -30%) scale(0.5);
-  }
-  50% {
-    opacity: 1;
-    -webkit-transform: translate(-50%, -60%) scale(1.2);
-            transform: translate(-50%, -60%) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -80%) scale(1);
-            transform: translate(-50%, -80%) scale(1);
-  }
-}
 /* Екран завантаження аналізу пісні */
 .loading-overlay {
   position: absolute;
@@ -2917,39 +2854,6 @@ canvas#rhythmCanvas {
   z-index: 10;
 }
 
-/* Оцінка (Good / Perfect) */
-.hit-rating {
-  position: absolute;
-  left: 50%;
-  top: 40%;
-  -webkit-transform: translate(-50%, -50%);
-      -ms-transform: translate(-50%, -50%);
-          transform: translate(-50%, -50%);
-  font-size: 4rem;
-  font-weight: 900;
-  pointer-events: none;
-  z-index: 100;
-  -webkit-animation: popUp 0.5s forwards;
-          animation: popUp 0.5s forwards;
-}
-
-@keyframes popUp {
-  0% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -20%) scale(0.5);
-            transform: translate(-50%, -20%) scale(0.5);
-  }
-  50% {
-    opacity: 1;
-    -webkit-transform: translate(-50%, -50%) scale(1.2);
-            transform: translate(-50%, -50%) scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    -webkit-transform: translate(-50%, -80%) scale(1);
-            transform: translate(-50%, -80%) scale(1);
-  }
-}
 /* --- ОНОВЛЕНИЙ СПИСОК ПІСЕНЬ --- */
 .song-card {
   display: -webkit-box;
@@ -3043,38 +2947,10 @@ canvas#rhythmCanvas {
 
 /* Текст в грі */
 .game-header h2,
-#combo-display,
 .lane-key {
   /* Текст завжди світлий в грі для контрасту, або адаптивний */
   color: white !important;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
-}
-
-/* --- ОЦІНКИ (ЛОКАЛІЗОВАНІ СТИЛІ) --- */
-.hit-rating {
-  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-  font-weight: 900;
-  font-style: italic;
-  text-transform: uppercase;
-  -webkit-text-stroke: 1px rgba(0, 0, 0, 0.5);
-}
-
-.rating-perfect {
-  color: #ff00ff;
-  text-shadow: 0 0 20px #ff00ff;
-  font-size: 3.5rem;
-}
-
-.rating-good {
-  color: #66FCF1;
-  text-shadow: 0 0 20px #66FCF1;
-  font-size: 2.5rem;
-}
-
-.rating-miss {
-  color: #ff3333;
-  text-shadow: 0 0 20px #ff3333;
-  font-size: 2.5rem;
 }
 
 /* Інші елементи інтерфейсу */
@@ -3230,6 +3106,10 @@ canvas#rhythmCanvas {
     padding: 20px !important;
   }
   /* --- 🔥 ВИПРАВЛЕННЯ ДЛЯ ГРИ --- */
+  /* Зміщення гри на 1px вправо */
+  #game-container {
+    margin-left: 1px;
+  }
   /* 1. Опускаємо шкалу прогресу нижче кнопок меню */
   .game-header {
     top: 85px !important;
@@ -3364,17 +3244,16 @@ canvas#rhythmCanvas {
   font-size: 2rem;
 }
 
-/* --- 1. АНІМАЦІЇ (ТЕПЕР З ВНУТРІШНІМ СВІТІННЯМ ДЛЯ МОБІЛОК) --- */
+/* --- 1. АНІМАЦІЇ --- */
 /* ОПТИМІЗОВАНІ АНІМАЦІЇ (Менше навантаження на GPU) */
+/* Використовуємо will-change для підказки браузеру */
 @-webkit-keyframes ripple-gold {
   0% {
     border-color: rgba(255, 215, 0, 0.8);
-    /* Inset тіні дешевші, ніж зовнішні. Blur 10px краще ніж 20px */
     -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
             box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
   50% {
-    /* Зменшили радіус розмиття з 40px до 25px - візуально майже те саме, але швидше */
     -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
             box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
   }
@@ -3387,12 +3266,10 @@ canvas#rhythmCanvas {
 @keyframes ripple-gold {
   0% {
     border-color: rgba(255, 215, 0, 0.8);
-    /* Inset тіні дешевші, ніж зовнішні. Blur 10px краще ніж 20px */
     -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
             box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
   50% {
-    /* Зменшили радіус розмиття з 40px до 25px - візуально майже те саме, але швидше */
     -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
             box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
   }
@@ -3412,7 +3289,7 @@ canvas#rhythmCanvas {
     border-color: #d500f9;
     -webkit-box-shadow: inset 0 0 35px #00e5ff;
             box-shadow: inset 0 0 35px #00e5ff;
-  } /* Було 60px */
+  }
   100% {
     border-color: #00e5ff;
     -webkit-box-shadow: inset 0 0 15px #d500f9;
@@ -3429,7 +3306,7 @@ canvas#rhythmCanvas {
     border-color: #d500f9;
     -webkit-box-shadow: inset 0 0 35px #00e5ff;
             box-shadow: inset 0 0 35px #00e5ff;
-  } /* Було 60px */
+  }
   100% {
     border-color: #00e5ff;
     -webkit-box-shadow: inset 0 0 15px #d500f9;
@@ -3446,7 +3323,7 @@ canvas#rhythmCanvas {
     border-color: #00e5ff;
     -webkit-box-shadow: inset 0 0 50px #00e5ff;
             box-shadow: inset 0 0 50px #00e5ff;
-  } /* Було 80px */
+  }
   100% {
     border-color: #FFFFFF;
     -webkit-box-shadow: inset 0 0 20px #00e5ff;
@@ -3463,7 +3340,7 @@ canvas#rhythmCanvas {
     border-color: #00e5ff;
     -webkit-box-shadow: inset 0 0 50px #00e5ff;
             box-shadow: inset 0 0 50px #00e5ff;
-  } /* Було 80px */
+  }
   100% {
     border-color: #FFFFFF;
     -webkit-box-shadow: inset 0 0 20px #00e5ff;
@@ -3474,7 +3351,6 @@ canvas#rhythmCanvas {
 .container-ripple-gold {
   border: 2px solid #FFD700 !important;
   z-index: 15;
-  /* Використовуємо універсальну анімацію */
   -webkit-animation: ripple-gold 2s infinite ease-in-out !important;
           animation: ripple-gold 2s infinite ease-in-out !important;
 }
@@ -3493,78 +3369,6 @@ canvas#rhythmCanvas {
           animation: flow-legendary 1s infinite ease-in-out !important;
 }
 
-/* --- 3. ТЕКСТ КОМБО (ЛЕГЕНДАРНИЙ) --- */
-@-webkit-keyframes text-flow-legendary {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-@keyframes text-flow-legendary {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-#combo-display.combo-legendary {
-  background: linear-gradient(120deg, #FFD700 10%, #000000 30%, #000000 50%, #FFFFFF 60%, #FFD700 80%);
-  background-size: 300% auto;
-  -webkit-animation: text-flow-legendary 3s linear infinite;
-          animation: text-flow-legendary 3s linear infinite;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  text-shadow: none !important;
-  -webkit-filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
-          filter: drop-shadow(0 0 5px rgba(255, 215, 0, 0.8));
-  font-size: 3rem !important;
-  font-weight: 900;
-  z-index: 50;
-}
-
-/* Ефект ELECTRIC (100+) - Блакитний струм */
-#combo-display.combo-electric {
-  color: #00bcd4; /* Ціан */
-  text-shadow: 0 0 10px #00bcd4, 0 0 20px #00bcd4;
-  -webkit-transform: scale(1.1);
-      -ms-transform: scale(1.1);
-          transform: scale(1.1); /* Трохи збільшуємо */
-  -webkit-animation: electric-flicker 0.1s infinite alternate;
-          animation: electric-flicker 0.1s infinite alternate; /* Швидке мерехтіння */
-}
-
-/* Анімація мерехтіння для електрики */
-@-webkit-keyframes electric-flicker {
-  0% {
-    opacity: 1;
-    text-shadow: 0 0 10px #00bcd4;
-  }
-  100% {
-    opacity: 0.8;
-    text-shadow: 0 0 20px #00e5ff;
-  }
-}
-@keyframes electric-flicker {
-  0% {
-    opacity: 1;
-    text-shadow: 0 0 10px #00bcd4;
-  }
-  100% {
-    opacity: 0.8;
-    text-shadow: 0 0 20px #00e5ff;
-  }
-}
 /* ==========================================
    ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
    ========================================== */
@@ -3593,51 +3397,7 @@ canvas#rhythmCanvas {
     opacity: 1;
   }
 }
-#combo-display.combo-legendary {
-  /* Платиновий градієнт з фіолетовим відливом */
-  background: linear-gradient(110deg, #ffffff 10%, #ffffff 45%, #ffffff 50%, #ffffff 55%, #ffffff 90%);
-  background-size: 200% auto;
-  -webkit-animation: platinum-shimmer 2s linear infinite;
-          animation: platinum-shimmer 2s linear infinite;
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent !important;
-  -webkit-text-fill-color: transparent !important;
-  text-shadow: none !important;
-  /* Світіння: Біле + Фіолетове */
-  -webkit-filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
-          filter: drop-shadow(0 0 5px #fff) drop-shadow(0 0 15px #7b1fa2);
-  font-size: 3.2rem !important; /* Зменшений розмір, як ти просив */
-  font-weight: 900;
-  -webkit-transform: none;
-      -ms-transform: none;
-          transform: none;
-  z-index: 50;
-}
-
-/* Анімація удару для тексту (легке збільшення) */
-@-webkit-keyframes pulse-size {
-  0% {
-    -webkit-transform: scale(1.1);
-            transform: scale(1.1);
-  }
-  100% {
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
-@keyframes pulse-size {
-  0% {
-    -webkit-transform: scale(1.1);
-            transform: scale(1.1);
-  }
-  100% {
-    -webkit-transform: scale(1);
-            transform: scale(1);
-  }
-}
 /* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
-/* Це для того HTML div, який ми створили минулого разу */
 #legendary-border-overlay.active {
   display: block;
   padding: 0; /* Прибираємо рамку, робимо віньєтку */
@@ -3647,6 +3407,7 @@ canvas#rhythmCanvas {
           mask-composite: auto;
   -webkit-animation: vignette-pulse 3s infinite ease-in-out;
           animation: vignette-pulse 3s infinite ease-in-out;
+  will-change: box-shadow, opacity;
   /* Створюємо ефект тунелю */
   -webkit-box-shadow: inset 0 0 120px #2a003b;
           box-shadow: inset 0 0 120px #2a003b;
@@ -3858,30 +3619,14 @@ canvas#rhythmCanvas {
     -ms-touch-action: none !important;
         touch-action: none !important;
   }
-  /* 2. Ховаємо важкий оверлей */
-  #legendary-border-overlay {
-    display: none !important;
-    -webkit-animation: none !important;
-            animation: none !important;
+  /* 2. ТУНЕЛЬ ТЕПЕР ПРАЦЮЄ */
+  #legendary-border-overlay.active {
+    display: block !important; /* Увімкнено на мобільних */
+    -webkit-animation: vignette-pulse 3s infinite ease-in-out !important;
+            animation: vignette-pulse 3s infinite ease-in-out !important;
+    will-change: opacity, box-shadow;
   }
-  /* 3. ТЕКСТ КОМБО (Центр) */
-  #combo-display.combo-legendary {
-    -webkit-transform: none !important;
-        -ms-transform: none !important;
-            transform: none !important;
-    left: 0 !important;
-    right: 0 !important;
-    width: 100% !important;
-    text-align: center !important;
-    margin: 0 auto !important;
-    font-size: 2.8rem !important;
-    background: none !important;
-    color: #fff !important;
-    -webkit-text-fill-color: #fff !important;
-    text-shadow: 0 0 10px #00e5ff !important;
-    opacity: 1 !important;
-  }
-  /* 4. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
+  /* 3. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
   #game-container {
     -webkit-transform: translateZ(0);
             transform: translateZ(0);
@@ -3892,7 +3637,7 @@ canvas#rhythmCanvas {
             perspective: 1000px;
   }
   /* =========================================
-       5. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
+       4. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
        ========================================= */
   /* 🟡 GOLD (200+) - Пульсація */
   @-webkit-keyframes mobile-gold-pulse {
