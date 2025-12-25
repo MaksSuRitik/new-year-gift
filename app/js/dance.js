@@ -1,6 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // OPTIMIZED: Dynamic Beams & Visual Fixes
+   // OPTIMIZED: High Combo Performance Fix
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -43,8 +43,8 @@ let startTime = 0;
 let score = 0;
 let maxPossibleScore = 0;
 let combo = 0;
-let maxCombo = 0; // Track max combo for session
-let lastComboUpdateTime = 0; // For fade-out logic
+let maxCombo = 0;
+let lastComboUpdateTime = 0;
 let consecutiveMisses = 0;
 let currentSongIndex = 0;
 let lastHitTime = 0;
@@ -52,7 +52,7 @@ let currentSpeed = 1000;
 
 // COMBO ANIMATION STATE
 let comboScale = 1.0;
-let currentComboTier = 'none'; // 'none', 'electric', 'gold', 'cosmic', 'legendary'
+let currentComboTier = 'none';
 
 // Game Objects
 let mapTiles = [];
@@ -60,9 +60,15 @@ let activeTiles = [];
 
 // OPTIMIZED: Object Pools & Render Arrays
 const MAX_PARTICLES = 300;
-let particlePool = []; // Fixed array
+let particlePool = [];
 let particlePoolIndex = 0;
-let activeRatings = []; // For canvas-based text
+let activeRatings = [];
+
+// PERFORMANCE: Gradient Cache
+const GRADIENT_CACHE = {
+    tap: {}, // Stores CanvasGradient objects
+    longHead: {}
+};
 
 let keyState = [false, false, false, false];
 let holdingTiles = [null, null, null, null];
@@ -73,6 +79,7 @@ let starsElements = [];
 
 // DOM Elements
 let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl;
+let scoreEl; // Cached reference
 
 // Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -92,7 +99,7 @@ const CONFIG = {
         tap: ['#00d2ff', '#3a7bd5'],
         long: ['#ff0099', '#493240'],
         dead: ['#555', '#222'],
-        released: ['#666', '#444'], // Color for released long notes
+        released: ['#666', '#444'],
         stroke: "rgba(255,255,255,0.8)",
         laneLine: "rgba(255,255,255,0.1)"
     },
@@ -106,7 +113,6 @@ const CONFIG = {
     }
 };
 
-// OPTIMIZED: Pre-defined Palettes
 const PALETTES = {
     STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
     GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f', light: '#bcaaa4', glow: '#e6953f', border: '#e6953f' },
@@ -127,7 +133,6 @@ const TRANSLATIONS = {
     }
 };
 
-// Songs DB
 const songsDB = [
     { file: "secret.mp3", title: "???", artist: "???", isSecret: true, duration: "??:??" },
     { file: "Frank Sinatra - Let It Snow!.mp3", title: "Let It Snow!", artist: "Frank Sinatra", duration: "2m 35s", tag: "xmas" },
@@ -284,7 +289,9 @@ function initParticlePool() {
             x: 0, y: 0,
             vx: 0, vy: 0,
             life: 0,
-            color: '#fff'
+            color: '#fff',
+            angle: 0, // For rotation
+            spin: 0   // Spin speed
         });
     }
 }
@@ -295,12 +302,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM REFERENCES ---
     canvas = document.getElementById('rhythmCanvas');
-    ctx = canvas ? canvas.getContext('2d') : null;
+    ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null; // Performance flags
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
     holdEffectsContainer = document.getElementById('hold-effects-container');
     progressBar = document.getElementById('game-progress-bar');
+    scoreEl = document.getElementById('score-display');
     
     // Init Stars Array
     starsElements = [
@@ -401,6 +409,37 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initPlayerIdentity();
 
+    // --- OPTIMIZED: CACHE GRADIENTS ---
+    function initGradients() {
+        // Clear cache
+        for(let key in GRADIENT_CACHE.tap) delete GRADIENT_CACHE.tap[key];
+        
+        // Helper to create and cache
+        const createTapGrad = (colors, key) => {
+            // Note height is fixed: CONFIG.noteHeight
+            // Gradient assumes 0,0 is top-left of note, draws down to CONFIG.noteHeight
+            const grad = ctx.createLinearGradient(0, -CONFIG.noteHeight, 0, 0); 
+            // Note: In draw logic we translate so 0,0 is bottom of note or top?
+            // Actually existing logic: grad(x, yTop, x, visualY)
+            // To optimize, we will use a relative gradient (0, 0 to 0, height) and translate context
+            const g = ctx.createLinearGradient(0, 0, 0, CONFIG.noteHeight);
+            g.addColorStop(0, colors[0]);
+            g.addColorStop(1, colors[1]);
+            GRADIENT_CACHE.tap[key] = g;
+        };
+
+        // Create for all palettes
+        const palettes = [
+            {name: 'steel', cols: [PALETTES.STEEL.light, PALETTES.STEEL.main]},
+            {name: 'electric', cols: [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2]},
+            {name: 'gold', cols: [PALETTES.GOLD.black, PALETTES.GOLD.choco]},
+            {name: 'cosmic', cols: ['#000000', PALETTES.COSMIC.core]},
+            {name: 'legendary', cols: [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2]}
+        ];
+
+        palettes.forEach(p => createTapGrad(p.cols, p.name));
+    }
+
     // --- GAME LOOP & LOGIC ---
     function resetGameState() {
         currentSessionId++;
@@ -418,7 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
         activeRatings = [];
         
         comboScale = 1.0;
-        currentComboTier = 'none'; // Reset tier tracking
+        currentComboTier = 'none';
 
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
@@ -427,22 +466,24 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
-        // Clear container effects
         if (gameContainer) {
             gameContainer.className = ''; 
-            gameContainer.id = 'game-container'; // Keep ID
+            gameContainer.id = 'game-container';
         }
         
         const legendaryOverlay = document.getElementById('legendary-border-overlay');
         if (legendaryOverlay) legendaryOverlay.classList.remove('active');
         
-        updateScoreUI();
+        updateScoreUI(); // Initial reset
         if (progressBar) progressBar.style.width = '0%';
         document.getElementById('pause-modal')?.classList.add('hidden');
         document.getElementById('result-screen')?.classList.add('hidden');
         starsElements.forEach(s => { if (s) { s.classList.remove('active'); s.style.display = ''; } });
         laneElements.forEach(el => { if (el) el.classList.remove('active'); });
         updateGameText();
+        
+        // Re-init gradients based on potentially new context/size
+        if(ctx) initGradients();
     }
 
     function getSavedData(songTitle) {
@@ -556,7 +597,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 endTime: (time + dur) * 1000,
                                 lane: lane,
                                 type: type,
-                                hit: false, holding: false, completed: false, failed: false, released: false, // Added 'released'
+                                hit: false, holding: false, completed: false, failed: false, released: false,
                                 holdTicks: 0,
                                 hitAnimStart: 0, lastValidHoldTime: 0
                             });
@@ -572,7 +613,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             maxPossibleScore = maxPossibleScoreTemp;
             audioBuffer = decodedAudio;
-            console.log(`✅ PULSE ENGINE V4.2: Generated ${tiles.length} notes`);
             return tiles;
 
         } catch (error) {
@@ -609,14 +649,11 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    // NEW HELPER: Get Dynamic Beam Color based on Combo
     function getCurrentBeamColor() {
         if (combo >= 800) return PALETTES.LEGENDARY.glow;
         if (combo >= 400) return PALETTES.COSMIC.glow;
         if (combo >= 200) return PALETTES.GOLD.glow;
         if (combo >= 100) return PALETTES.ELECTRIC.glow;
-        
-        // Default Color (Theme Dependent)
         const isLight = document.body.getAttribute('data-theme') === 'light';
         return isLight ? CONFIG.colorsLight.long[1] : CONFIG.colorsDark.long[1];
     }
@@ -646,12 +683,9 @@ document.addEventListener('DOMContentLoaded', () => {
                         tile.hit = true;
                         tile.lastValidHoldTime = Date.now();
                         holdingTiles[tile.lane] = tile;
-                        
-                        // 🔥 USE DYNAMIC COLOR
                         toggleHoldEffect(tile.lane, true, getCurrentBeamColor());
-                        
                         score += CONFIG.scorePerfect;
-                        lastComboUpdateTime = Date.now(); // Update activity
+                        lastComboUpdateTime = Date.now();
                         showRating(getText('perfect'), "rating-perfect");
                         spawnSparks(tile.lane, hitY, '#ff00ff', 'perfect');
                         lastHitTime = Date.now();
@@ -675,7 +709,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 const isKeyPressed = keyState[tile.lane];
                 if (isKeyPressed) tile.lastValidHoldTime = Date.now();
 
-                // Increased grace period slightly to 150ms for better feel
                 if (isKeyPressed || (Date.now() - tile.lastValidHoldTime) < 150) {
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
@@ -683,38 +716,32 @@ document.addEventListener('DOMContentLoaded', () => {
                             const mult = getComboMultiplier();
                             score += Math.round(CONFIG.scoreHoldTick * mult);
                             combo += 5;
-                            lastComboUpdateTime = Date.now(); // Update activity
+                            lastComboUpdateTime = Date.now();
                             if (combo > maxCombo) maxCombo = combo;
-                            updateScoreUI(true); // Is hit (triggers container effects)
+                            updateScoreUI(true); // Is hit
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
                         }
                         tile.holding = true;
                         lastHitTime = Date.now();
                     } else {
-                        // Complete
                         tile.completed = true;
                         tile.holding = false;
                         const mult = getComboMultiplier();
                         score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
                         combo++; 
-                        lastComboUpdateTime = Date.now(); // Update activity
+                        lastComboUpdateTime = Date.now();
                         if (combo > maxCombo) maxCombo = combo;
                         updateScoreUI(true);
                     }
                 } else {
-                    // FIX: Failed hold (released too early)
-                    // NOW: Just stop scoring, do NOT miss, do NOT break combo, do NOT remove
                     if (songTime < tile.endTime) {
                         tile.holding = false;
-                        tile.released = true; // Mark as released (visual dimming)
-                        // Note continues to fall but no score is added
+                        tile.released = true; 
                     }
                 }
             }
 
-            // Miss detection
             const limitY = canvas.height + 50;
-            // IMPORTANT: Check !tile.hit to prevent counting released long notes as misses
             if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY)) {
                 if (!tile.hit && !tile.completed && !tile.failed) {
                      missNote(tile, true);
@@ -730,29 +757,29 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
-        let p = { tapColor: [], longColor: [], glow: '', border: '' };
+        let p = { tapColor: [], longColor: [], glow: '', border: '', name: 'steel' };
 
         // Determine Palette based on Combo
         if (combo < 100) {
             p.tapColor = [PALETTES.STEEL.light, PALETTES.STEEL.main];
             p.longColor = [PALETTES.STEEL.main, PALETTES.STEEL.dark];
-            p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border;
+            p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border; p.name = 'steel';
         } else if (combo < 200) {
             p.tapColor = [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2];
             p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2];
-            p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border;
+            p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border; p.name = 'electric';
         } else if (combo < 400) {
             p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
             p.longColor = [PALETTES.GOLD.amber, PALETTES.GOLD.light];
-            p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border;
+            p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border; p.name = 'gold';
         } else if (combo < 800) {
             p.tapColor = ['#000000', PALETTES.COSMIC.core];
             p.longColor = [PALETTES.COSMIC.accent, PALETTES.COSMIC.glitch];
-            p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border;
+            p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border; p.name = 'cosmic';
         } else {
             p.tapColor = [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2];
             p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2];
-            p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent;
+            p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent; p.name = 'legendary';
         }
 
         // Clear
@@ -763,6 +790,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const hitY = canvas.height * CONFIG.hitPosition;
         const padding = 6;
         const noteRadius = 10;
+        
+        // PERFORMANCE: Disable Heavy Shadows if too many objects or mobile
+        const enableHeavyEffects = !isMobile && activeTiles.length < 50;
 
         // --- DRAW LANES & BEAMS ---
         ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
@@ -773,11 +803,11 @@ document.addEventListener('DOMContentLoaded', () => {
             let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
             if (laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
-                let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
-                beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
-                
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; 
-                ctx.fillStyle = beamGrad;
+                // Just use simple fill for performance instead of gradient if needed, but linear is fast enough usually
+                // Optimization: Don't create gradient here every frame if possible. 
+                // But height changes. So we use fillRect with color/alpha
+                ctx.fillStyle = p.glow;
+                ctx.globalAlpha = laneBeamAlpha[i] * 0.3; // Use simple transparency
                 ctx.fillRect(beamX, 0, laneW, hitY);
                 ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
             }
@@ -791,6 +821,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
         // --- DRAW NOTES ---
+        // Optimization: Use cached gradient for TAP notes
+        const tapGradient = GRADIENT_CACHE.tap[p.name];
+
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
@@ -803,26 +836,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
+                
+                // OPTIMIZED BATCH DRAWING:
+                // Translate context to use cached gradient at 0,0
                 ctx.save();
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
-                ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
+                ctx.translate(cx, cy); 
+                ctx.scale(scale, scale); 
+                // Move to top-left of note relative to center
+                ctx.translate(-w/2, -CONFIG.noteHeight/2); 
 
-                // Note Body
-                let grad = ctx.createLinearGradient(x, yTop, x, visualY);
-                grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
-                
-                // Shadow only on Desktop
-                if (!isMobile) {
+                // Shadow check
+                if (enableHeavyEffects) {
                     ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
                 } else {
                     ctx.shadowBlur = 0; 
                 }
                 
-                ctx.fillStyle = grad;
+                // Use Cached Gradient
+                ctx.fillStyle = tapGradient || p.tapColor[0];
+                
                 ctx.beginPath();
-                if (ctx.roundRect) ctx.roundRect(x, yTop, w, CONFIG.noteHeight, noteRadius);
-                else ctx.fillRect(x, yTop, w, CONFIG.noteHeight);
+                if (ctx.roundRect) ctx.roundRect(0, 0, w, CONFIG.noteHeight, noteRadius);
+                else ctx.fillRect(0, 0, w, CONFIG.noteHeight);
                 ctx.fill();
 
                 // Border
@@ -830,10 +867,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 // Highlight
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
-                ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); 
+                // relative coords
+                ctx.ellipse(w/2, 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); 
+                ctx.fill();
                 ctx.restore();
 
             } else if (tile.type === 'long') {
+                // Long notes vary in length, so we must generate logic per frame,
+                // but we can optimize gradients by using just colors if lag persists.
+                // Keeping gradient for fidelity, but minimizing context switches.
+
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
                 let yTail = Math.min(progressEnd * hitY, hitY);
                 let yHead = (tile.hit && tile.holding) ? hitY : visualY;
@@ -843,19 +887,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 const actualYHeadTop = yHead - headH;
                 const tailH = actualYHeadTop - yTail;
                 
-                // Handle Color Logic (Failed vs Released vs Active)
                 let colorSet = p.longColor;
                 if (tile.failed) colorSet = colors.dead;
-                else if (tile.released) colorSet = colors.released; // Use released color
+                else if (tile.released) colorSet = colors.released;
 
                 // Long Note Tail
                 if (tailH > 1) {
-                    let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
+                    let grad = ctx.createLinearGradient(0, yTail, 0, actualYHeadTop);
                     grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
                     
-                    // Fade out tail if released
                     if (tile.released) ctx.globalAlpha = 0.5;
                     
                     ctx.fillStyle = grad;
@@ -869,18 +911,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
                 // Long Note Head
                 let headColors = (combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
-                let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
+                // Optimize: Simple fill or cached tap gradient if colors match?
+                // Just creating gradient for head is okay as it is limited number.
+                let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                if (!isMobile && !tile.released) {
+                if (enableHeavyEffects && !tile.released) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
                 } else {
                     ctx.shadowBlur = 0;
                 }
                 
-                if (tile.released) ctx.globalAlpha = 0.7; // Dim head if released
+                if (tile.released) ctx.globalAlpha = 0.7;
 
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
@@ -894,47 +938,76 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // --- DRAW PARTICLES (OPTIMIZED POOL) ---
+        // --- DRAW PARTICLES (OPTIMIZED) ---
+        // Optimization: Batch drawing and avoid Save/Restore/Rotate for every particle
+        // Use Math.cos/sin for manual rotation calculation
+        
+        ctx.shadowBlur = 0; // Disable shadow for particles to save GPU
+        
         for (let i = 0; i < MAX_PARTICLES; i++) {
             let pt = particlePool[i];
             if (!pt.active) continue;
 
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
+            // Update rotation
+            if (combo >= 400) pt.angle += pt.spin; 
+            
             if (pt.life <= 0.05) { pt.active = false; continue; }
 
             ctx.globalAlpha = Math.max(0, pt.life);
             ctx.fillStyle = pt.color;
             ctx.beginPath();
             
-            if (combo >= 800) {
-                 if (isMobile) ctx.fillRect(pt.x, pt.y, 4, 4);
-                 else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(Math.random() * Math.PI); ctx.fillRect(-3, -1, 6, 2); ctx.fillRect(-1, -3, 2, 6); ctx.restore(); }
-            } else if (combo >= 400) {
-                 if (isMobile) ctx.fillRect(pt.x, pt.y, 3, 3);
-                 else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5); ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8); ctx.restore(); }
+            if (combo >= 800 || combo >= 400) {
+                 // Rectangles with manual rotation (No context switch)
+                 const size = combo >= 800 ? 6 : 8; // Width
+                 const thickness = 2; // Height
+                 const hw = size/2; const hh = thickness/2;
+                 
+                 // Pre-calc cos/sin
+                 const c = Math.cos(pt.angle);
+                 const s = Math.sin(pt.angle);
+                 
+                 // Cross shape (two rects)
+                 // Rect 1: (-hw, -hh) to (hw, hh)
+                 // Rotated x = x*c - y*s + tx
+                 // Rotated y = x*s + y*c + ty
+                 
+                 // Draw Rect 1
+                 const drawRotatedRect = (w, h) => {
+                     const hw = w/2; const hh = h/2;
+                     const p1x = (-hw)*c - (-hh)*s + pt.x; const p1y = (-hw)*s + (-hh)*c + pt.y;
+                     const p2x = (hw)*c - (-hh)*s + pt.x;  const p2y = (hw)*s + (-hh)*c + pt.y;
+                     const p3x = (hw)*c - (hh)*s + pt.x;   const p3y = (hw)*s + (hh)*c + pt.y;
+                     const p4x = (-hw)*c - (hh)*s + pt.x;  const p4y = (-hw)*s + (hh)*c + pt.y;
+                     ctx.moveTo(p1x, p1y); ctx.lineTo(p2x, p2y); ctx.lineTo(p3x, p3y); ctx.lineTo(p4x, p4y); ctx.lineTo(p1x, p1y);
+                 };
+                 
+                 drawRotatedRect(size, thickness); // Horizontal part
+                 drawRotatedRect(thickness, size); // Vertical part
+                 
             } else if (combo >= 200) {
+                // Diamond shape
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
             } else {
                 ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
             }
             ctx.fill();
-            ctx.globalAlpha = 1;
         }
+        ctx.globalAlpha = 1;
 
         // --- DRAW RATINGS (CANVAS TEXT) ---
         drawRatings();
 
         // --- DRAW COMBO & MULTIPLIER (CANVAS) ---
         drawComboDisplay();
-        drawMultiplier(p.border); // Pass current palette color
+        drawMultiplier(p.border); 
     }
 
-// NEW: Draw Multiplier UNDER the score (Centered)
     function drawMultiplier(color) {
         const mult = getComboMultiplier();
         if (mult <= 1.0) return;
 
-        // FADE LOGIC: Same as Combo
         const timeSinceUpdate = Date.now() - lastComboUpdateTime;
         let alpha = 1.0;
         if (timeSinceUpdate > 2000) {
@@ -945,32 +1018,21 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.save();
         ctx.globalAlpha = alpha;
         
-        // --- 📐 ПОЗИЦІОНУВАННЯ (ПІД РАХУНКОМ) ---
-        
-        // X: Рівно по центру
         const cx = canvas.width / 2;
-        
-        // Y: Вниз від верху екрану
-        // Mobile Header ~85px, тому ставимо 145px
-        // PC Header ~20px, тому ставимо 90px
         const cy = isMobile ? 145 : 90; 
 
         ctx.translate(cx, cy);
         ctx.scale(comboScale, comboScale);
-
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Робимо шрифт трохи меншим, щоб він влазив гарно під рахунок
         const fontSize = isMobile ? 24 : 28; 
         const text = `${mult.toFixed(1)}x`;
 
-        // Shadow
         ctx.font = `italic 900 ${fontSize}px 'Comic Sans MS'`;
         ctx.fillStyle = "rgba(0,0,0,0.5)";
         ctx.fillText(text, 2, 2);
 
-        // Main Text
         ctx.fillStyle = color;
         ctx.fillText(text, 0, 0);
 
@@ -978,82 +1040,68 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.globalAlpha = 1.0;
     }
 
-    // NEW: Canvas-based Combo Display (Replaces DOM)
     function drawComboDisplay() {
-        if (combo < 3) return; // Hide if low combo
+        if (combo < 3) return; 
 
-        // FADE LOGIC
         const timeSinceUpdate = Date.now() - lastComboUpdateTime;
         let alpha = 1.0;
         if (timeSinceUpdate > 2000) {
-             alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000); // Fade out over 1s
+             alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000); 
         }
         if (alpha <= 0) return;
 
-        // Configuration based on tier
+        // Simplify gradients creation - only if needed or keep cache?
+        // Since text changes rarely (colors), it's fine to keep as is, 
+        // but avoid createLinearGradient if possible. 
+        // Here we just use colors for performance if laggy, but let's keep fidelity for now
+        // as this is only one object.
+        
         let gradColors = ['#fff', '#ccc'];
         let fontSize = 60;
         let labelColor = '#fff';
 
         if (combo >= 800) {
-            gradColors = ['#ffffff', '#7b1fa2']; // Platinum/Purple
-            fontSize = 70;
-            labelColor = '#e1bee7';
+            gradColors = ['#ffffff', '#7b1fa2']; 
+            fontSize = 70; labelColor = '#e1bee7';
         } else if (combo >= 400) {
-            gradColors = ['#00e5ff', '#d500f9']; // Cosmic
-            fontSize = 68;
-            labelColor = '#00e5ff';
+            gradColors = ['#00e5ff', '#d500f9']; 
+            fontSize = 68; labelColor = '#00e5ff';
         } else if (combo >= 200) {
-            gradColors = ['#FFD700', '#FDB931']; // Gold
-            fontSize = 66;
-            labelColor = '#FFF8E1';
+            gradColors = ['#FFD700', '#FDB931']; 
+            fontSize = 66; labelColor = '#FFF8E1';
         } else if (combo >= 100) {
-            gradColors = ['#00bcd4', '#b2ebf2']; // Electric
-            fontSize = 64;
-            labelColor = '#00bcd4';
+            gradColors = ['#00bcd4', '#b2ebf2']; 
+            fontSize = 64; labelColor = '#00bcd4';
         }
 
         ctx.save();
         ctx.globalAlpha = alpha;
-        
-        // Position: 30% from top (Higher than before)
         const cx = canvas.width / 2;
         const cy = canvas.height * 0.3; 
         
         ctx.translate(cx, cy);
         ctx.scale(comboScale, comboScale);
-        
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        // Draw "COMBO" Label
         ctx.font = "italic 900 24px 'Comic Sans MS'";
         ctx.fillStyle = labelColor;
-        // Text Shadow manually
         ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(getText('combo'), 2, -40 + 2);
         ctx.fillStyle = labelColor; ctx.fillText(getText('combo'), 0, -40);
 
-        // Draw Number
         ctx.font = `italic 900 ${fontSize}px 'Comic Sans MS'`;
         
-        // Gradient for number
         let gradient = ctx.createLinearGradient(0, -30, 0, 30);
         gradient.addColorStop(0, gradColors[0]);
         gradient.addColorStop(1, gradColors[1]);
 
-        // Shadow for number
-        ctx.fillStyle = "rgba(0,0,0,0.5)";
-        ctx.fillText(combo, 4, 14);
-
-        // Main Number
-        ctx.fillStyle = gradient;
-        ctx.fillText(combo, 0, 10);
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(combo, 4, 14);
+        ctx.fillStyle = gradient; ctx.fillText(combo, 0, 10);
 
         ctx.restore();
         ctx.globalAlpha = 1.0;
     }
 
-    // OPTIMIZED: Render text ratings on canvas
     function drawRatings() {
         if (activeRatings.length === 0) return;
         const now = Date.now();
@@ -1099,7 +1147,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             if (!isMobile) {
                 ctx.shadowColor = r.color;
-                ctx.shadowBlur = 20;
+                ctx.shadowBlur = 10; // Reduced from 20
             }
             ctx.fillStyle = r.color;
             ctx.fillText(r.text, 0, 0);
@@ -1110,7 +1158,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- INPUT HANDLING ---
-    // OPTIMIZED: Use Pool
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = canvas.width / 4;
         const x = lane * laneW + laneW / 2;
@@ -1135,6 +1182,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 pt.vy = (Math.random() - 1) * 12 - 4;
                 pt.life = 1.0;
                 pt.color = finalColor;
+                // Init rotation props
+                pt.angle = Math.random() * Math.PI * 2;
+                pt.spin = (Math.random() - 0.5) * 0.2;
                 spawned++;
             }
         }
@@ -1155,10 +1205,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeHold) {
             holdingTiles[lane] = activeHold;
             activeHold.lastValidHoldTime = Date.now();
-            
-            // 🔥 USE DYNAMIC COLOR HERE
             toggleHoldEffect(lane, true, getCurrentBeamColor());
-            
             return;
         }
 
@@ -1176,11 +1223,8 @@ document.addEventListener('DOMContentLoaded', () => {
             target.hit = true;
             consecutiveMisses = 0;
             lastHitTime = Date.now();
-            lastComboUpdateTime = Date.now(); // Update activity
+            lastComboUpdateTime = Date.now();
             
-            const colors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
-            // Removed static color selection
-
             if (target.type === 'tap') target.hitAnimStart = Date.now();
             const mult = getComboMultiplier();
 
@@ -1197,10 +1241,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.type === 'long') {
                 holdingTiles[lane] = target;
                 target.lastValidHoldTime = Date.now();
-                
-                // 🔥 USE DYNAMIC COLOR HERE
                 toggleHoldEffect(lane, true, getCurrentBeamColor());
-                
                 score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
             } else {
@@ -1223,8 +1264,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function missNote(tile, isSpawnedMiss) {
         consecutiveMisses++;
         combo = 0;
-        lastComboUpdateTime = 0; // Reset fade timer immediately
-        updateScoreUI(); // Updates effects
+        lastComboUpdateTime = 0; 
+        updateScoreUI(); 
         showRating(getText('miss'), "rating-miss");
         if (gameContainer) {
             gameContainer.classList.add('shake-screen');
@@ -1242,20 +1283,22 @@ document.addEventListener('DOMContentLoaded', () => {
         return 1.0;
     }
 
-    // NEW: Updated Score Logic to handle Container Effects efficiently
+    // OPTIMIZED: Throttle score and DOM updates
+    let lastRenderedScore = -1;
     function updateScoreUI(isHit = false) {
-        const scoreEl = document.getElementById('score-display');
-        if (scoreEl) scoreEl.innerText = score;
+        if (scoreEl && score !== lastRenderedScore) {
+            scoreEl.innerText = score;
+            lastRenderedScore = score;
+        }
 
-        // Apply Combo Pop Animation Logic
         if (isHit && combo > 0) {
-            comboScale = 1.3; // Pop effect
+            comboScale = 1.3; 
         }
 
         updateContainerEffects();
     }
 
-    // OPTIMIZED: Update Container Styles only on tier change (State Machine)
+    // OPTIMIZED: State Machine for Container Effects
     function updateContainerEffects() {
         let newTier = 'none';
         if (combo >= 800) newTier = 'legendary';
@@ -1263,18 +1306,19 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (combo >= 200) newTier = 'gold';
         else if (combo >= 100) newTier = 'electric';
 
+        // ONLY Update DOM if tier changed
         if (newTier !== currentComboTier) {
             currentComboTier = newTier;
             
-            // Container Border Effects
             if (gameContainer) {
+                // Remove all possible classes first
                 gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+                // Add specific class
                 if (newTier === 'gold') gameContainer.classList.add('container-ripple-gold');
                 if (newTier === 'cosmic') gameContainer.classList.add('container-ripple-cosmic');
                 if (newTier === 'legendary') gameContainer.classList.add('container-legendary');
             }
 
-            // Tunnel Effect (God Mode) - Works on Mobile now too via CSS
             const legendaryOverlay = document.getElementById('legendary-border-overlay');
             if (legendaryOverlay) {
                 if (newTier === 'legendary') legendaryOverlay.classList.add('active');
@@ -1283,9 +1327,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // OPTIMIZED: Canvas-based rating pusher
     function showRating(text, cssClass) {
-        // Colors mapping based on CSS
         let color = '#fff';
         if (cssClass === 'rating-perfect') color = '#ff00ff';
         else if (cssClass === 'rating-good') color = '#66FCF1';
@@ -1311,11 +1353,15 @@ document.addEventListener('DOMContentLoaded', () => {
             effect.style.left = (lane * 25) + '%';
             holdEffectsContainer.appendChild(effect);
         }
+        
+        // Optimize: check if style actually needs changing
         if (active) {
+            if (effect.style.display !== 'block') effect.style.display = 'block';
+            // Only update color if needed (checking simple property)
+            // But gradient string creation is fast enough here
             effect.style.background = `linear-gradient(to top, ${color}, transparent)`;
-            effect.style.display = 'block';
         } else {
-            effect.style.display = 'none';
+            if (effect.style.display !== 'none') effect.style.display = 'none';
         }
     }
 
@@ -1325,10 +1371,11 @@ document.addEventListener('DOMContentLoaded', () => {
         progressBar.style.width = `${ratio * 100}%`;
         const isSecret = songsDB[currentSongIndex].isSecret;
 
-        // Reset all first
+        // Reset all first (This loop is small, 3-5 items, okay to keep)
+        // Optimization: track active star index to avoid looping? 
+        // Current implementation is fine for 5 elements.
         starsElements.forEach(s => s?.classList.remove('active'));
 
-        // Thresholds
         const t = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
         t.forEach((limit, i) => {
              if (ratio > limit && starsElements[i]) starsElements[i].classList.add('active');
@@ -1349,7 +1396,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (bgMusicEl) bgMusicEl.pause();
         resetGameState();
 
-        // Stars UI Setup
         const starContainer = document.querySelector('.stars-container');
         if (starContainer) {
             starContainer.innerHTML = '';
@@ -1744,6 +1790,8 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.setAttribute('data-theme', next);
             localStorage.setItem('siteTheme', next);
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
+            // Re-init gradients for theme change
+            if(ctx) initGradients();
         });
         setupBtn('soundToggle', (btn) => {
             isMuted = !isMuted;
@@ -1798,11 +1846,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // OPTIMIZED: Update Mobile check on resize
     function resizeCanvas() { 
         if (gameContainer && gameContainer.clientWidth && canvas) { 
             canvas.width = gameContainer.clientWidth; 
             canvas.height = gameContainer.clientHeight; 
+            // Re-init gradients on resize as dimensions might affect quality
+            initGradients();
         }
         isMobile = window.innerWidth < 768;
     }
@@ -1811,6 +1860,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Start
     initControls();
     renderMenu();
-    resizeCanvas(); // Ensure initial state is correct
+    resizeCanvas(); 
 
 }); // END DOMContentLoaded

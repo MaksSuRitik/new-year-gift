@@ -1354,6 +1354,11 @@ body {
   /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
   -ms-touch-action: none;
       touch-action: none;
+  /* OPTIMIZED: Prevent text selection flicker */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+   -ms-user-select: none;
+       user-select: none;
 }
 
 #snow-container {
@@ -1401,6 +1406,9 @@ body {
   height: 100%;
   z-index: 0;
   overflow: hidden;
+  /* OPTIMIZED: Promote to GPU layer */
+  -webkit-transform: translateZ(0);
+          transform: translateZ(0);
 }
 .bg-blobs .blob {
   position: absolute;
@@ -1641,6 +1649,8 @@ body {
   height: 500px;
   -webkit-transition: all 0.6s var(--ease-smooth);
   transition: all 0.6s var(--ease-smooth);
+  /* OPTIMIZED: Hint for browser */
+  will-change: transform, opacity;
 }
 .panel .panel-content {
   width: 100%;
@@ -2600,11 +2610,12 @@ canvas#rhythmCanvas {
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  /* Зміни для "менш помітного" вигляду */
+  /* Зміни для "менш помітного" вигляду та оптимізації */
   opacity: 0.25; /* Було 1.0, тепер напівпрозорий */
   mix-blend-mode: screen; /* М'яке накладання світла */
   -webkit-transition: background 0.2s ease, opacity 0.2s ease;
   transition: background 0.2s ease, opacity 0.2s ease;
+  will-change: background, opacity;
 }
 
 /* Ефекти натискання (Спаркли) */
