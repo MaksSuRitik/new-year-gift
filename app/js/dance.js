@@ -737,10 +737,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 let grad = ctx.createLinearGradient(x, yTop, x, visualY);
                 grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
                 
-                if (window.innerWidth >= 768) {
+               // if (window.innerWidth >= 768) {
                     ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
-                }
+             //   }
                 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
@@ -783,10 +783,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                if (window.innerWidth >= 768) {
+               // if (window.innerWidth >= 768) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
-                }
+               // }
 
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
@@ -944,12 +944,17 @@ document.addEventListener('DOMContentLoaded', () => {
             comboDisplay.setAttribute('data-text', textStr);
             
             comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
-            if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic');
+            if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+    
             if (legendaryOverlay) legendaryOverlay.classList.remove('active');
 
             if (combo >= 800) {
                 comboDisplay.classList.add('combo-legendary');
                 if (legendaryOverlay) legendaryOverlay.classList.add('active');
+                
+                // ДОДАТИ ЦЕЙ РЯДОК:
+                if (gameContainer) gameContainer.classList.add('container-legendary'); 
+
             } else if (combo >= 400) {
                 comboDisplay.classList.add('combo-cosmic');
                 if (gameContainer) gameContainer.classList.add('container-ripple-cosmic');
