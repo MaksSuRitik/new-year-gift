@@ -1,5 +1,10 @@
+{
+type: uploaded file
+fileName: dance.js
+fullContent:
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
+   (OPTIMIZED FOR 60 FPS MOBILE)
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -21,6 +26,9 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+
+// --- PERFORMANCE FLAGS ---
+const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
 
 // --- GLOBAL VARIABLES & STATE ---
 let audioCtx = null;
@@ -47,13 +55,34 @@ let currentSpeed = 1000;
 // Game Objects
 let mapTiles = [];
 let activeTiles = [];
-let particles = [];
 let keyState = [false, false, false, false];
 let holdingTiles = [null, null, null, null];
 let laneElements = [null, null, null, null];
 let laneLastInputTime = [0, 0, 0, 0];
 let laneBeamAlpha = [0, 0, 0, 0];
 let starsElements = [];
+
+// --- POOLING SYSTEMS (OPTIMIZATION) ---
+// 1. Particle Pool
+const MAX_PARTICLES = 150;
+const particlePool = new Array(MAX_PARTICLES).fill(null).map(() => ({
+    active: false, x: 0, y: 0, vx: 0, vy: 0, life: 0, color: '#fff'
+}));
+let activeParticleCount = 0; // Optimization to avoid iterating full array
+
+// 2. Rating DOM Pool
+const MAX_RATING_ELS = 8;
+let ratingPool = []; // Populated in init
+let ratingPoolIndex = 0;
+
+// 3. Gradient Cache
+let gradientCache = {
+    tap: null,
+    longHead: null,
+    longTail: null,
+    lastTheme: '',
+    lastComboTier: -1
+};
 
 // DOM Elements (assigned in init)
 let canvas, ctx, gameContainer, menuLayer, loader, ratingContainer, holdEffectsContainer, progressBar, comboDisplay, bgMusicEl;
@@ -168,7 +197,7 @@ const songsDB = [
 ];
 
 /* ==========================================
-   🛠 AUDIO PROCESSING HELPERS (Moved to Top Scope)
+   🛠 AUDIO PROCESSING HELPERS
    ========================================== */
 
 function normalizeBufferAggressive(buffer) {
@@ -255,7 +284,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM REFERENCES ---
     canvas = document.getElementById('rhythmCanvas');
-    ctx = canvas ? canvas.getContext('2d') : null;
+    ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null; // Optimize Canvas
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
@@ -270,6 +299,17 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('star-3'), document.getElementById('star-4'),
         document.getElementById('star-5')
     ].filter(el => el !== null);
+
+    // --- DOM POOL INIT ---
+    if (ratingContainer) {
+        for (let i = 0; i < MAX_RATING_ELS; i++) {
+            const el = document.createElement('div');
+            el.className = 'hit-rating hidden'; 
+            el.style.display = 'none'; // Initially hidden
+            ratingContainer.appendChild(el);
+            ratingPool.push(el);
+        }
+    }
 
     // --- AUDIO INIT ---
     const sfxClick = new Audio('audio/click.mp3');
@@ -369,14 +409,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
         score = 0; combo = 0; consecutiveMisses = 0;
-        activeTiles = []; mapTiles = []; particles = [];
+        activeTiles = []; mapTiles = [];
+        
+        // Reset Particle Pool
+        for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
+        activeParticleCount = 0;
+
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
         laneBeamAlpha = [0, 0, 0, 0];
 
+        // Clear Gradient Cache
+        gradientCache.tap = null;
+        gradientCache.longHead = null;
+        gradientCache.longTail = null;
+        gradientCache.lastComboTier = -1;
+
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
-        if (ratingContainer) ratingContainer.innerHTML = '';
+        if (holdEffectsContainer) {
+            // Hide all hold effects instead of clearing innerHTML
+            const effects = holdEffectsContainer.children;
+            for(let i=0; i<effects.length; i++) effects[i].style.display = 'none';
+        }
+        
+        // Hide all ratings in pool
+        ratingPool.forEach(el => { el.style.display = 'none'; el.className = 'hit-rating hidden'; });
+
         if (comboDisplay) {
             comboDisplay.style.opacity = 0;
             comboDisplay.style.color = '#fff';
@@ -656,27 +714,35 @@ document.addEventListener('DOMContentLoaded', () => {
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
-        // Palette Config
+        // Palette Config (Pre-defined)
         const PALETTE_STEEL = { light: '#cfd8dc', main: '#90a4ae', dark: '#263238' };
         const PALETTE_GOLD = { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f' };
         const PALETTE_COSMIC = { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff' };
         const PALETTE_LEGENDARY = { body: '#f4f4f4ff', accent: '#ffffffff', glow: '#ffffffff', aura: 'rgba(153, 147, 102, 1)' };
 
+        // Determine current style state
+        let currentComboTier = 0;
+        if (combo >= 800) currentComboTier = 4;
+        else if (combo >= 400) currentComboTier = 3;
+        else if (combo >= 200) currentComboTier = 2;
+        else if (combo >= 100) currentComboTier = 1;
+
         let p = { tapColor: [], longColor: [], glow: '', border: '' };
 
-        if (combo < 100) {
+        // Logic for palette selection (Same as original)
+        if (currentComboTier === 0) {
             p.tapColor = [PALETTE_STEEL.light, PALETTE_STEEL.main];
             p.longColor = [PALETTE_STEEL.main, PALETTE_STEEL.dark];
             p.glow = PALETTE_STEEL.main; p.border = '#eceff1';
-        } else if (combo < 200) {
+        } else if (currentComboTier === 1) {
             p.tapColor = ['#eceff1', '#607d8b'];
             p.longColor = ['#607d8b', '#37474f'];
             p.glow = '#00bcd4'; p.border = '#80deea';
-        } else if (combo < 400) {
+        } else if (currentComboTier === 2) {
             p.tapColor = [PALETTE_GOLD.black, PALETTE_GOLD.choco];
             p.longColor = [PALETTE_GOLD.amber, '#bcaaa4'];
             p.glow = PALETTE_GOLD.amber; p.border = PALETTE_GOLD.amber;
-        } else if (combo < 800) {
+        } else if (currentComboTier === 3) {
             p.tapColor = ['#000000', PALETTE_COSMIC.core];
             p.longColor = [PALETTE_COSMIC.accent, PALETTE_COSMIC.glitch];
             p.glow = PALETTE_COSMIC.accent; p.border = PALETTE_COSMIC.glitch;
@@ -686,6 +752,7 @@ document.addEventListener('DOMContentLoaded', () => {
             p.glow = PALETTE_LEGENDARY.glow; p.border = PALETTE_LEGENDARY.accent;
         }
 
+        // --- OPTIMIZED CLEAR ---
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
@@ -693,6 +760,19 @@ document.addEventListener('DOMContentLoaded', () => {
         const hitY = canvas.height * CONFIG.hitPosition;
         const padding = 6;
         const noteRadius = 10;
+        const noteW = laneW - (padding * 2);
+
+        // --- GRADIENT CACHING LOGIC ---
+        // Only regenerate gradients if combo tier changed
+        if (currentComboTier !== gradientCache.lastComboTier || gradientCache.tap === null) {
+            // TAP GRADIENT (Cached relative to height)
+            const gTap = ctx.createLinearGradient(0, 0, 0, CONFIG.noteHeight);
+            gTap.addColorStop(0, p.tapColor[0]);
+            gTap.addColorStop(1, p.tapColor[1]);
+            gradientCache.tap = gTap;
+
+            gradientCache.lastComboTier = currentComboTier;
+        }
 
         // Lanes & Beams
         ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
@@ -701,7 +781,9 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < 4; i++) {
             let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
             if (laneBeamAlpha[i] > 0) {
+                // Beam drawing
                 const beamX = (i * laneW) + shakeX;
+                // Optimization: Simple fill on mobile if needed, but gradient is usually fine for few elements
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
                 beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
                 ctx.globalAlpha = laneBeamAlpha[i] * 0.5; ctx.fillStyle = beamGrad;
@@ -718,47 +800,43 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
         // Notes
-// Notes drawing logic
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
             let tileShake = (tile.type === 'long' && tile.holding) ? (Math.random() - 0.5) * 3 : 0;
             const x = tile.lane * laneW + padding + tileShake;
-            const w = laneW - (padding * 2);
             const progressStart = 1 - (tile.time - songTime) / currentSpeed;
             const visualY = tile.hit ? hitY : progressStart * hitY;
             let yTop = visualY - CONFIG.noteHeight;
 
-            // ОПТИМІЗАЦІЯ: Перевіряємо мобільний один раз
-            const isMobile = window.innerWidth < 768;
-
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
-                ctx.save();
-                const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
-                ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
-
-                let grad = ctx.createLinearGradient(x, yTop, x, visualY);
-                grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
                 
-                // 🔥 ВАЖЛИВО: Тіні тільки на ПК. На телефоні вони вбивають FPS.
+                // --- OPTIMIZED DRAWING ---
+                ctx.save();
+                const cx = x + noteW / 2; const cy = yTop + CONFIG.noteHeight / 2;
+                ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
+                // Translate so we can use cached gradient at (0,0)
+                ctx.translate(x, yTop);
+
+                // Shadow: Disable on mobile
                 if (!isMobile) {
                     ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
-                } else {
-                    ctx.shadowBlur = 0; 
                 }
-                
-                ctx.fillStyle = grad;
+
+                ctx.fillStyle = gradientCache.tap; // USE CACHE
                 ctx.beginPath();
-                if (ctx.roundRect) ctx.roundRect(x, yTop, w, CONFIG.noteHeight, noteRadius);
-                else ctx.fillRect(x, yTop, w, CONFIG.noteHeight);
+                if (ctx.roundRect) ctx.roundRect(0, 0, noteW, CONFIG.noteHeight, noteRadius);
+                else ctx.fillRect(0, 0, noteW, CONFIG.noteHeight);
                 ctx.fill();
 
                 ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
-                // Блік малюємо без тіні завжди
+                
+                // Highlight
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
-                ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+                ctx.beginPath(); ctx.ellipse(noteW / 2, 10, noteW / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
+                
                 ctx.restore();
 
             } else if (tile.type === 'long') {
@@ -773,39 +851,35 @@ document.addEventListener('DOMContentLoaded', () => {
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
                 if (tailH > 1) {
-                    // 🔥 ОПТИМІЗАЦІЯ І ГРАДІЄНТИ:
-                    // Ми дозволяємо градієнт на телефоні (він легкий),
-                    // але переконуємося, що не малюємо зайвого.
-                    
-                    let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
-                    grad.addColorStop(0, "rgba(0,0,0,0)"); // Прозорий хвіст
+                    // Long note tail gradient (dynamic height, hard to cache perfectly, creating new is OKish or use solid)
+                    // Optimization: Use vertical gradient
+                    let grad = ctx.createLinearGradient(0, yTail, 0, actualYHeadTop);
+                    grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
                     ctx.fillStyle = grad;
 
-                    ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
+                    ctx.fillRect(x + 10, yTail, noteW - 20, tailH + 10);
                     
-                    // Смужка посередині (спрощена для мобільного)
                     ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
-                    ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
+                    ctx.fillRect(x + noteW / 2 - 1, yTail, 2, tailH);
                 }
 
+                // Head
                 let headColors = (combo >= 200 && !tile.failed) ? p.tapColor : colorSet;
-                let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
+                // Create temp head gradient (cached logic could be applied here too but let's keep it simple for long notes)
+                let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                // Тіні голови тільки на ПК
                 if (!isMobile) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
-                } else {
-                    ctx.shadowBlur = 0;
                 }
 
                 ctx.beginPath();
-                if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
-                else ctx.fillRect(x, actualYHeadTop, w, headH);
+                if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, noteW, headH, noteRadius);
+                else ctx.fillRect(x, actualYHeadTop, noteW, headH);
                 ctx.fill();
 
                 ctx.strokeStyle = tile.failed ? colors.dead[0] : p.border; 
@@ -813,33 +887,36 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Particles
-        const isMobileParticles = window.innerWidth < 768;
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let pt = particles[i];
+        // --- POOLED PARTICLES ---
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+            let pt = particlePool[i];
+            if (!pt.active) continue;
+
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
-            if (pt.life <= 0.05) { particles.splice(i, 1); continue; }
+            if (pt.life <= 0.05) { pt.active = false; continue; }
 
             ctx.globalAlpha = Math.max(0, pt.life);
             ctx.fillStyle = pt.color;
-            ctx.beginPath();
-            if (combo >= 800) {
-                 if (isMobileParticles) ctx.fillRect(pt.x, pt.y, 4, 4);
-                 else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(Math.random() * Math.PI); ctx.fillRect(-3, -1, 6, 2); ctx.fillRect(-1, -3, 2, 6); ctx.restore(); }
-            } else if (combo >= 400) {
-                 if (isMobileParticles) ctx.fillRect(pt.x, pt.y, 3, 3);
-                 else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5); ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8); ctx.restore(); }
-            } else if (combo >= 200) {
-                ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
+            
+            // Simplified drawing for particles
+            if (isMobile) {
+                 ctx.fillRect(pt.x, pt.y, 4, 4);
             } else {
-                ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
+                 ctx.beginPath();
+                 if (combo >= 200) {
+                    ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5); 
+                    ctx.fillRect(-2, -2, 4, 4); 
+                    ctx.restore();
+                 } else {
+                    ctx.arc(pt.x, pt.y, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                 }
             }
-            ctx.fill();
             ctx.globalAlpha = 1;
         }
     }
 
-    // --- INPUT HANDLING ---
+    // --- INPUT HANDLING & POOL USAGE ---
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = canvas.width / 4;
         const x = lane * laneW + laneW / 2;
@@ -848,9 +925,23 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
         else if (combo >= 200) finalColor = '#e6953f';
         else if (combo >= 100) finalColor = '#00bcd4';
-        const count = type === 'perfect' ? 20 : 10;
-        for (let i = 0; i < count; i++) {
-            particles.push({ x: x + (Math.random() - 0.5) * 40, y: y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 1) * 12 - 4, life: 1.0, color: finalColor });
+        
+        const count = isMobile ? (type === 'perfect' ? 5 : 3) : (type === 'perfect' ? 15 : 8); // Less particles on mobile
+
+        let spawned = 0;
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+            if (spawned >= count) break;
+            if (!particlePool[i].active) {
+                let p = particlePool[i];
+                p.active = true;
+                p.x = x + (Math.random() - 0.5) * 40;
+                p.y = y;
+                p.vx = (Math.random() - 0.5) * 12;
+                p.vy = (Math.random() - 1) * 12 - 4;
+                p.life = 1.0;
+                p.color = finalColor;
+                spawned++;
+            }
         }
     }
 
@@ -966,8 +1057,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (combo >= 800) {
                 comboDisplay.classList.add('combo-legendary');
                 if (legendaryOverlay) legendaryOverlay.classList.add('active');
-                
-                // ДОДАТИ ЦЕЙ РЯДОК:
                 if (gameContainer) gameContainer.classList.add('container-legendary'); 
 
             } else if (combo >= 400) {
@@ -988,13 +1077,30 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // --- OPTIMIZED RATING SHOW ---
     function showRating(text, cssClass) {
-        if (!ratingContainer) return;
-        const el = document.createElement('div');
+        if (!ratingPool.length) return;
+        
+        // Find a hidden element or cycle through
+        let el = ratingPool[ratingPoolIndex];
+        ratingPoolIndex = (ratingPoolIndex + 1) % MAX_RATING_ELS;
+
         el.className = `hit-rating ${cssClass}`;
         el.innerText = text;
-        ratingContainer.appendChild(el);
-        setTimeout(() => el.remove(), 500);
+        el.style.display = 'block';
+        
+        // Trigger reflow for animation restart
+        el.style.animation = 'none';
+        el.offsetHeight; /* trigger reflow */
+        el.style.animation = 'popUp 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards';
+
+        // Auto hide is handled by animation ending visually, but let's hide logic later if needed
+        // For simple DOM pool, we just overwrite active ones if we run out.
+        // We can set a timeout to hide it to be clean.
+        setTimeout(() => { 
+             // Only hide if it hasn't been reused already (simple check: if text matches)
+             if (el.innerText === text) el.style.display = 'none'; 
+        }, 500);
     }
 
     function toggleHoldEffect(lane, active, color) {
@@ -1449,31 +1555,28 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bgMusicEl) isMuted ? bgMusicEl.pause() : (!isPlaying && bgMusicEl.play().catch(() => {}));
         });
 
-        // --- ЛОГІКА МОВНОГО МЕНЮ (ВИПРАВЛЕНО) ---
+        // --- ЛОГІКА МОВНОГО МЕНЮ ---
         const langBtn = document.getElementById('langToggle');
         const langWrapper = document.querySelector('.lang-wrapper');
 
-        // 1. Відкриття/Закриття меню при кліку на іконку
         if (langBtn && langWrapper) {
             langBtn.onclick = (e) => {
-                e.stopPropagation(); // Щоб клік не пішов далі на document
+                e.stopPropagation(); 
                 playClick();
                 langWrapper.classList.toggle('open');
             };
         }
 
-        // 2. Вибір мови зі списку
         document.querySelectorAll('.lang-dropdown button').forEach(b => {
             b.onclick = () => {
                 playClick();
                 currentLang = b.dataset.lang;
                 localStorage.setItem('siteLang', currentLang);
                 updateGameText();
-                if (langWrapper) langWrapper.classList.remove('open'); // Закриваємо після вибору
+                if (langWrapper) langWrapper.classList.remove('open'); 
             };
         });
 
-        // 3. Закриття меню при кліку будь-де інде
         document.addEventListener('click', (e) => {
             if (langWrapper && !langWrapper.contains(e.target)) {
                 langWrapper.classList.remove('open');
@@ -1506,3 +1609,4 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMenu();
 
 }); // END DOMContentLoaded
+}
