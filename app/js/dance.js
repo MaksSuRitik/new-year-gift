@@ -1,4 +1,3 @@
-
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
    ========================================== */
@@ -44,11 +43,6 @@ let consecutiveMisses = 0;
 let currentSongIndex = 0;
 let lastHitTime = 0;
 let currentSpeed = 1000;
-
-// Optimization Caches
-let lastRenderedScore = -1;
-let lastRenderedCombo = -1;
-let isMobileCached = window.innerWidth < 768;
 
 // Game Objects
 let mapTiles = [];
@@ -261,7 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- DOM REFERENCES ---
     canvas = document.getElementById('rhythmCanvas');
-    ctx = canvas ? canvas.getContext('2d', { alpha: false }) : null; // Optimize: alpha false if opaque
+    ctx = canvas ? canvas.getContext('2d') : null;
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
@@ -375,8 +369,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
         score = 0; combo = 0; consecutiveMisses = 0;
-        lastRenderedScore = -1; lastRenderedCombo = -1; // Reset Cache
-        
         activeTiles = []; mapTiles = []; particles = [];
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
@@ -573,7 +565,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const hitTimeWindow = currentSpeed;
         const hitY = canvas.height * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
-        const now = Date.now();
 
         // Spawn
         mapTiles.forEach(tile => {
@@ -593,13 +584,13 @@ document.addEventListener('DOMContentLoaded', () => {
                     const diff = tile.time - songTime;
                     if (Math.abs(diff) < 50) {
                         tile.hit = true;
-                        tile.lastValidHoldTime = now;
+                        tile.lastValidHoldTime = Date.now();
                         holdingTiles[tile.lane] = tile;
                         toggleHoldEffect(tile.lane, true, themeColors.long[1]);
                         score += CONFIG.scorePerfect;
                         showRating(getText('perfect'), "rating-perfect");
                         spawnSparks(tile.lane, hitY, '#ff00ff', 'perfect');
-                        lastHitTime = now;
+                        lastHitTime = Date.now();
                         updateScoreUI();
                     }
                 }
@@ -607,7 +598,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Remove hit taps
             if (tile.type === 'tap' && tile.hit) {
-                if (now - tile.hitAnimStart > 100) activeTiles.splice(i, 1);
+                if (Date.now() - tile.hitAnimStart > 100) activeTiles.splice(i, 1);
                 continue;
             }
 
@@ -618,9 +609,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (tile.type === 'long' && tile.hit && !tile.completed && !tile.failed) {
                 const isKeyPressed = keyState[tile.lane];
-                if (isKeyPressed) tile.lastValidHoldTime = now;
+                if (isKeyPressed) tile.lastValidHoldTime = Date.now();
 
-                if (isKeyPressed || (now - tile.lastValidHoldTime) < 100) {
+                if (isKeyPressed || (Date.now() - tile.lastValidHoldTime) < 100) {
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
@@ -631,7 +622,7 @@ document.addEventListener('DOMContentLoaded', () => {
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
                         }
                         tile.holding = true;
-                        lastHitTime = now;
+                        lastHitTime = Date.now();
                     } else {
                         // Complete
                         tile.completed = true;
@@ -664,15 +655,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!ctx) return;
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
-        
-        // Cache simple values
-        const cWidth = canvas.width;
-        const cHeight = canvas.height;
-        const laneW = cWidth / 4;
-        const hitY = cHeight * CONFIG.hitPosition;
-        
-        // Use cached mobile flag (prevents layout thrashing)
-        const isMobile = isMobileCached;
 
         // Palette Config
         const PALETTE_STEEL = { light: '#cfd8dc', main: '#90a4ae', dark: '#263238' };
@@ -704,21 +686,13 @@ document.addEventListener('DOMContentLoaded', () => {
             p.glow = PALETTE_LEGENDARY.glow; p.border = PALETTE_LEGENDARY.accent;
         }
 
-        ctx.clearRect(0, 0, cWidth, cHeight);
-        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, cWidth, cHeight); }
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
+        const laneW = canvas.width / 4;
+        const hitY = canvas.height * CONFIG.hitPosition;
         const padding = 6;
         const noteRadius = 10;
-        
-        // Helper to avoid redundant state changes
-        let currentShadowBlur = -1;
-        const setShadow = (blur, color) => {
-            if (blur !== currentShadowBlur) {
-                ctx.shadowBlur = blur;
-                currentShadowBlur = blur;
-            }
-            if (blur > 0 && ctx.shadowColor !== color) ctx.shadowColor = color;
-        };
 
         // Lanes & Beams
         ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
@@ -730,25 +704,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const beamX = (i * laneW) + shakeX;
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
                 beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
-                
-                // Batch state change
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; 
-                ctx.fillStyle = beamGrad;
+                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
-                ctx.globalAlpha = 1.0; 
-                
-                laneBeamAlpha[i] -= 0.08;
+                ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
             }
-            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, cHeight); }
+            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, canvas.height); }
         }
         ctx.stroke();
 
         // Hit Line
         ctx.strokeStyle = (combo >= 200) ? p.border : p.glow;
         ctx.lineWidth = (combo >= 200) ? 3 : 2;
-        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(cWidth, hitY); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
         // Notes
+// Notes drawing logic
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
@@ -759,6 +729,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const visualY = tile.hit ? hitY : progressStart * hitY;
             let yTop = visualY - CONFIG.noteHeight;
 
+            // ОПТИМІЗАЦІЯ: Перевіряємо мобільний один раз
+            const isMobile = window.innerWidth < 768;
+
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 ctx.save();
@@ -768,10 +741,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 let grad = ctx.createLinearGradient(x, yTop, x, visualY);
                 grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
                 
+                // 🔥 ВАЖЛИВО: Тіні тільки на ПК. На телефоні вони вбивають FPS.
                 if (!isMobile) {
-                    setShadow((tile.hit) ? 35 : (combo >= 200 ? 20 : 10), p.glow);
+                    ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
+                    ctx.shadowColor = p.glow;
                 } else {
-                    setShadow(0, 'transparent'); 
+                    ctx.shadowBlur = 0; 
                 }
                 
                 ctx.fillStyle = grad;
@@ -781,15 +756,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fill();
 
                 ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
-                
-                // Highlight
-                setShadow(0, 'transparent');
-                ctx.fillStyle = "rgba(255,255,255,0.2)";
+                // Блік малюємо без тіні завжди
+                ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
                 ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
-                
-                // Restore shadow tracker after context restore
-                currentShadowBlur = -1; 
 
             } else if (tile.type === 'long') {
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
@@ -803,14 +773,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
                 if (tailH > 1) {
+                    // 🔥 ОПТИМІЗАЦІЯ І ГРАДІЄНТИ:
+                    // Ми дозволяємо градієнт на телефоні (він легкий),
+                    // але переконуємося, що не малюємо зайвого.
+                    
                     let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
-                    grad.addColorStop(0, "rgba(0,0,0,0)"); 
+                    grad.addColorStop(0, "rgba(0,0,0,0)"); // Прозорий хвіст
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
                     ctx.fillStyle = grad;
 
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
                     
+                    // Смужка посередині (спрощена для мобільного)
                     ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
@@ -820,10 +795,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
+                // Тіні голови тільки на ПК
                 if (!isMobile) {
-                    setShadow(tile.hit && tile.holding ? 30 : 0, p.glow);
+                    ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
+                    ctx.shadowColor = p.glow;
                 } else {
-                    setShadow(0, 'transparent');
+                    ctx.shadowBlur = 0;
                 }
 
                 ctx.beginPath();
@@ -836,26 +813,16 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Particles - Optimization: Swap and Pop
-        const isMobileParticles = isMobile;
+        // Particles
+        const isMobileParticles = window.innerWidth < 768;
         for (let i = particles.length - 1; i >= 0; i--) {
             let pt = particles[i];
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
-            if (pt.life <= 0.05) { 
-                // Swap-pop is O(1) compared to splice O(N)
-                particles[i] = particles[particles.length - 1];
-                particles.pop();
-                continue; 
-            }
+            if (pt.life <= 0.05) { particles.splice(i, 1); continue; }
 
-            // Simple alpha check to prevent heavy rendering
-            if (pt.life <= 0) continue;
-
-            ctx.globalAlpha = pt.life; // No check needed, pt.life is float
+            ctx.globalAlpha = Math.max(0, pt.life);
             ctx.fillStyle = pt.color;
             ctx.beginPath();
-            
-            // Simplified particle drawing for performance
             if (combo >= 800) {
                  if (isMobileParticles) ctx.fillRect(pt.x, pt.y, 4, 4);
                  else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(Math.random() * Math.PI); ctx.fillRect(-3, -1, 6, 2); ctx.fillRect(-1, -3, 2, 6); ctx.restore(); }
@@ -868,8 +835,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
             }
             ctx.fill();
+            ctx.globalAlpha = 1;
         }
-        ctx.globalAlpha = 1;
     }
 
     // --- INPUT HANDLING ---
@@ -881,11 +848,7 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
         else if (combo >= 200) finalColor = '#e6953f';
         else if (combo >= 100) finalColor = '#00bcd4';
-        
-        // Limit particle count on mobile
-        let count = type === 'perfect' ? 20 : 10;
-        if (isMobileCached) count = Math.ceil(count / 2);
-
+        const count = type === 'perfect' ? 20 : 10;
         for (let i = 0; i < count; i++) {
             particles.push({ x: x + (Math.random() - 0.5) * 40, y: y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 1) * 12 - 4, life: 1.0, color: finalColor });
         }
@@ -984,47 +947,39 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateScoreUI(isHit = false) {
-        // Optimization: Don't touch DOM if values match cached render values
-        if (score === lastRenderedScore && combo === lastRenderedCombo && !isHit) return;
-
         const scoreEl = document.getElementById('score-display');
         if (scoreEl) scoreEl.innerText = score;
-        lastRenderedScore = score;
-
         const gameContainer = document.getElementById('game-container');
         const legendaryOverlay = document.getElementById('legendary-border-overlay');
 
         if (comboDisplay) {
-            // Only update combo text if combo changed
-            if (combo !== lastRenderedCombo) {
-                const mult = getComboMultiplier();
-                const textStr = `${getText('combo')} ${combo} (x${mult})`;
-                comboDisplay.innerText = textStr;
-                comboDisplay.setAttribute('data-text', textStr);
+            const mult = getComboMultiplier();
+            const textStr = `${getText('combo')} ${combo} (x${mult})`;
+            comboDisplay.innerText = textStr;
+            comboDisplay.setAttribute('data-text', textStr);
+            
+            comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
+            if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+    
+            if (legendaryOverlay) legendaryOverlay.classList.remove('active');
+
+            if (combo >= 800) {
+                comboDisplay.classList.add('combo-legendary');
+                if (legendaryOverlay) legendaryOverlay.classList.add('active');
                 
-                comboDisplay.classList.remove('combo-electric', 'combo-gold', 'combo-cosmic', 'combo-legendary');
-                if (gameContainer) gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
-        
-                if (legendaryOverlay) legendaryOverlay.classList.remove('active');
+                // ДОДАТИ ЦЕЙ РЯДОК:
+                if (gameContainer) gameContainer.classList.add('container-legendary'); 
 
-                if (combo >= 800) {
-                    comboDisplay.classList.add('combo-legendary');
-                    if (legendaryOverlay) legendaryOverlay.classList.add('active');
-                    if (gameContainer) gameContainer.classList.add('container-legendary'); 
-
-                } else if (combo >= 400) {
-                    comboDisplay.classList.add('combo-cosmic');
-                    if (gameContainer) gameContainer.classList.add('container-ripple-cosmic');
-                } else if (combo >= 200) {
-                    comboDisplay.classList.add('combo-gold');
-                    if (gameContainer) gameContainer.classList.add('container-ripple-gold');
-                } else if (combo >= 100) {
-                    comboDisplay.classList.add('combo-electric');
-                }
-                comboDisplay.style.opacity = combo > 2 ? 1 : 0;
-                lastRenderedCombo = combo;
+            } else if (combo >= 400) {
+                comboDisplay.classList.add('combo-cosmic');
+                if (gameContainer) gameContainer.classList.add('container-ripple-cosmic');
+            } else if (combo >= 200) {
+                comboDisplay.classList.add('combo-gold');
+                if (gameContainer) gameContainer.classList.add('container-ripple-gold');
+            } else if (combo >= 100) {
+                comboDisplay.classList.add('combo-electric');
             }
-
+            comboDisplay.style.opacity = combo > 2 ? 1 : 0;
             if (isHit) {
                 comboDisplay.classList.remove('combo-pop');
                 void comboDisplay.offsetWidth;
@@ -1543,18 +1498,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function resizeCanvas() { 
-        if (gameContainer && gameContainer.clientWidth && canvas) { 
-            canvas.width = gameContainer.clientWidth; 
-            canvas.height = gameContainer.clientHeight; 
-            // Update cached mobile state
-            isMobileCached = window.innerWidth < 768;
-        } 
-    }
+    function resizeCanvas() { if (gameContainer && gameContainer.clientWidth && canvas) { canvas.width = gameContainer.clientWidth; canvas.height = gameContainer.clientHeight; } }
     window.addEventListener('resize', resizeCanvas);
 
     // Initial Start
     initControls();
     renderMenu();
 
-}); // END DOMContentLoade
+}); // END DOMContentLoaded
