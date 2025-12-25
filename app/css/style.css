@@ -3365,116 +3365,109 @@ canvas#rhythmCanvas {
 }
 
 /* --- 1. АНІМАЦІЇ (ТЕПЕР З ВНУТРІШНІМ СВІТІННЯМ ДЛЯ МОБІЛОК) --- */
+/* ОПТИМІЗОВАНІ АНІМАЦІЇ (Менше навантаження на GPU) */
 @-webkit-keyframes ripple-gold {
   0% {
     border-color: rgba(255, 215, 0, 0.8);
-    /* Додано inset для видимості на телефоні */
-    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.5);
+    /* Inset тіні дешевші, ніж зовнішні. Blur 10px краще ніж 20px */
+    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
   50% {
-    /* На піку тінь заходить всередину екрану */
-    -webkit-box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.8);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.8);
+    /* Зменшили радіус розмиття з 40px до 25px - візуально майже те саме, але швидше */
+    -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
+            box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
   }
   100% {
     border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), inset 0 0 10px rgba(255, 215, 0, 0.5);
+    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
 }
 @keyframes ripple-gold {
   0% {
     border-color: rgba(255, 215, 0, 0.8);
-    /* Додано inset для видимості на телефоні */
-    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.5);
+    /* Inset тіні дешевші, ніж зовнішні. Blur 10px краще ніж 20px */
+    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
   50% {
-    /* На піку тінь заходить всередину екрану */
-    -webkit-box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.8);
-            box-shadow: 0 0 20px rgba(255, 215, 0, 0.5), inset 0 0 30px rgba(255, 215, 0, 0.8);
+    /* Зменшили радіус розмиття з 40px до 25px - візуально майже те саме, але швидше */
+    -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
+            box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
   }
   100% {
     border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: 0 0 0 0 rgba(255, 215, 0, 0), inset 0 0 10px rgba(255, 215, 0, 0.5);
+    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
   }
 }
 @-webkit-keyframes ripple-cosmic {
   0% {
     border-color: #00e5ff;
-    /* Inset 20px */
-    -webkit-box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
-            box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
+    -webkit-box-shadow: inset 0 0 15px #d500f9;
+            box-shadow: inset 0 0 15px #d500f9;
   }
   50% {
     border-color: #d500f9;
-    /* Inset 50px - сильна хвиля всередину */
-    -webkit-box-shadow: 0 0 30px #00e5ff, inset 0 0 50px #00e5ff;
-            box-shadow: 0 0 30px #00e5ff, inset 0 0 50px #00e5ff;
-  }
+    -webkit-box-shadow: inset 0 0 35px #00e5ff;
+            box-shadow: inset 0 0 35px #00e5ff;
+  } /* Було 60px */
   100% {
     border-color: #00e5ff;
-    -webkit-box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
-            box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
+    -webkit-box-shadow: inset 0 0 15px #d500f9;
+            box-shadow: inset 0 0 15px #d500f9;
   }
 }
 @keyframes ripple-cosmic {
   0% {
     border-color: #00e5ff;
-    /* Inset 20px */
-    -webkit-box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
-            box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
+    -webkit-box-shadow: inset 0 0 15px #d500f9;
+            box-shadow: inset 0 0 15px #d500f9;
   }
   50% {
     border-color: #d500f9;
-    /* Inset 50px - сильна хвиля всередину */
-    -webkit-box-shadow: 0 0 30px #00e5ff, inset 0 0 50px #00e5ff;
-            box-shadow: 0 0 30px #00e5ff, inset 0 0 50px #00e5ff;
-  }
+    -webkit-box-shadow: inset 0 0 35px #00e5ff;
+            box-shadow: inset 0 0 35px #00e5ff;
+  } /* Було 60px */
   100% {
     border-color: #00e5ff;
-    -webkit-box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
-            box-shadow: 0 0 10px #d500f9, inset 0 0 20px #d500f9;
+    -webkit-box-shadow: inset 0 0 15px #d500f9;
+            box-shadow: inset 0 0 15px #d500f9;
   }
 }
 @-webkit-keyframes flow-legendary {
   0% {
     border-color: #FFFFFF;
-    /* Дуже сильне світіння всередину */
-    -webkit-box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
-            box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
+    -webkit-box-shadow: inset 0 0 20px #00e5ff;
+            box-shadow: inset 0 0 20px #00e5ff;
   }
   50% {
     border-color: #00e5ff;
-    /* Хвиля займає значну частину екрану на мобільному */
-    -webkit-box-shadow: 0 0 50px #00e5ff, inset 0 0 60px #00e5ff;
-            box-shadow: 0 0 50px #00e5ff, inset 0 0 60px #00e5ff;
-  }
+    -webkit-box-shadow: inset 0 0 50px #00e5ff;
+            box-shadow: inset 0 0 50px #00e5ff;
+  } /* Було 80px */
   100% {
     border-color: #FFFFFF;
-    -webkit-box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
-            box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
+    -webkit-box-shadow: inset 0 0 20px #00e5ff;
+            box-shadow: inset 0 0 20px #00e5ff;
   }
 }
 @keyframes flow-legendary {
   0% {
     border-color: #FFFFFF;
-    /* Дуже сильне світіння всередину */
-    -webkit-box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
-            box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
+    -webkit-box-shadow: inset 0 0 20px #00e5ff;
+            box-shadow: inset 0 0 20px #00e5ff;
   }
   50% {
     border-color: #00e5ff;
-    /* Хвиля займає значну частину екрану на мобільному */
-    -webkit-box-shadow: 0 0 50px #00e5ff, inset 0 0 60px #00e5ff;
-            box-shadow: 0 0 50px #00e5ff, inset 0 0 60px #00e5ff;
-  }
+    -webkit-box-shadow: inset 0 0 50px #00e5ff;
+            box-shadow: inset 0 0 50px #00e5ff;
+  } /* Було 80px */
   100% {
     border-color: #FFFFFF;
-    -webkit-box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
-            box-shadow: 0 0 20px #00e5ff, inset 0 0 20px #00e5ff;
+    -webkit-box-shadow: inset 0 0 20px #00e5ff;
+            box-shadow: inset 0 0 20px #00e5ff;
   }
 }
 /* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА --- */
@@ -3868,6 +3861,17 @@ canvas#rhythmCanvas {
             box-shadow: inset 0 0 50px #ff0000 !important; /* Червона заливка всередину */
     -webkit-transition: none !important;
     transition: none !important;
+  }
+  /* 5. UI Адаптація і ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
+  #game-container {
+    /* 🔥 GPU ACCELERATION: Це змушує телефон обробляти шар окремо */
+    -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+    will-change: border-color, box-shadow;
+    -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+            perspective: 1000px;
   }
   /* 5. UI Адаптація */
   #game-container .game-header {

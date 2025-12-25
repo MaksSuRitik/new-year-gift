@@ -718,6 +718,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
         // Notes
+// Notes drawing logic
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
@@ -728,6 +729,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const visualY = tile.hit ? hitY : progressStart * hitY;
             let yTop = visualY - CONFIG.noteHeight;
 
+            // ОПТИМІЗАЦІЯ: Перевіряємо мобільний один раз
+            const isMobile = window.innerWidth < 768;
+
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 ctx.save();
@@ -737,10 +741,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 let grad = ctx.createLinearGradient(x, yTop, x, visualY);
                 grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
                 
-               // if (window.innerWidth >= 768) {
+                // 🔥 ВАЖЛИВО: Тіні тільки на ПК. На телефоні вони вбивають FPS.
+                if (!isMobile) {
                     ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
-             //   }
+                } else {
+                    ctx.shadowBlur = 0; 
+                }
                 
                 ctx.fillStyle = grad;
                 ctx.beginPath();
@@ -749,9 +756,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.fill();
 
                 ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
+                // Блік малюємо без тіні завжди
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
                 ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
+
             } else if (tile.type === 'long') {
                 const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
                 let yTail = Math.min(progressEnd * hitY, hitY);
@@ -764,16 +773,19 @@ document.addEventListener('DOMContentLoaded', () => {
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
                 if (tailH > 1) {
-                    if (window.innerWidth < 768) {
-                        ctx.fillStyle = colorSet[1];
-                    } else {
-                        let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
-                        grad.addColorStop(0, "rgba(0,0,0,0)");
-                        grad.addColorStop(0.2, colorSet[1]);
-                        grad.addColorStop(1, colorSet[0]);
-                        ctx.fillStyle = grad;
-                    }
+                    // 🔥 ОПТИМІЗАЦІЯ І ГРАДІЄНТИ:
+                    // Ми дозволяємо градієнт на телефоні (він легкий),
+                    // але переконуємося, що не малюємо зайвого.
+                    
+                    let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
+                    grad.addColorStop(0, "rgba(0,0,0,0)"); // Прозорий хвіст
+                    grad.addColorStop(0.2, colorSet[1]);
+                    grad.addColorStop(1, colorSet[0]);
+                    ctx.fillStyle = grad;
+
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
+                    
+                    // Смужка посередині (спрощена для мобільного)
                     ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
@@ -783,10 +795,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-               // if (window.innerWidth >= 768) {
+                // Тіні голови тільки на ПК
+                if (!isMobile) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
-               // }
+                } else {
+                    ctx.shadowBlur = 0;
+                }
 
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
