@@ -3899,6 +3899,16 @@ canvas#rhythmCanvas {
               box-shadow: inset 0 0 10px #00e5ff;
     }
   }
+  #game-container {
+    /* 🔥 GPU ACCELERATION: Це змушує телефон обробляти шар окремо */
+    -webkit-transform: translateZ(0);
+            transform: translateZ(0);
+    will-change: border-color, box-shadow;
+    -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+    -webkit-perspective: 1000px;
+            perspective: 1000px;
+  }
   #game-container.container-legendary {
     border: 3px solid #FFFFFF !important;
     -webkit-animation: mobile-legendary-pulse 1s infinite alternate !important;

@@ -1553,6 +1553,13 @@ canvas#rhythmCanvas {
       50% { border-color: #00e5ff; box-shadow: inset 0 0 25px #00e5ff; } /* Макс 25px, не 50px! */
       100% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
   }
+  #game-container {
+      /* 🔥 GPU ACCELERATION: Це змушує телефон обробляти шар окремо */
+      transform: translateZ(0);
+      will-change: border-color, box-shadow; 
+      backface-visibility: hidden;
+      perspective: 1000px;
+  }
 
   #game-container.container-legendary {
       border: 3px solid #FFFFFF !important;
