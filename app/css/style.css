@@ -2523,6 +2523,8 @@ body {
           box-shadow: 0 0 100px rgba(0, 0, 0, 0.5);
   border-left: 1px solid #333;
   border-right: 1px solid #333;
+  -webkit-transform: translateZ(0);
+          transform: translateZ(0);
   will-change: border-color, box-shadow;
   -ms-touch-action: none;
       touch-action: none;
@@ -2589,6 +2591,20 @@ canvas#rhythmCanvas {
   height: 100%;
   pointer-events: none;
   z-index: 25;
+}
+
+.long-note-hold-effect {
+  position: absolute;
+  bottom: 0;
+  width: 25%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 5;
+  /* Зміни для "менш помітного" вигляду */
+  opacity: 0.25; /* Було 1.0, тепер напівпрозорий */
+  mix-blend-mode: screen; /* М'яке накладання світла */
+  -webkit-transition: background 0.2s ease, opacity 0.2s ease;
+  transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 /* Ефекти натискання (Спаркли) */
@@ -2702,6 +2718,10 @@ canvas#rhythmCanvas {
           align-items: center;
   -webkit-transition: top 0.3s;
   transition: top 0.3s;
+  pointer-events: none;
+}
+.game-header * {
+  pointer-events: auto;
 }
 
 .progress-container {
@@ -3375,45 +3395,39 @@ canvas#rhythmCanvas {
 /* --- 1. АНІМАЦІЇ --- */
 @-webkit-keyframes vignette-pulse {
   0%, 100% {
-    -webkit-box-shadow: inset 0 0 100px #2a003b;
-            box-shadow: inset 0 0 100px #2a003b;
-    opacity: 0.7;
+    opacity: 0.5;
   }
   50% {
-    -webkit-box-shadow: inset 0 0 150px #4a0072;
-            box-shadow: inset 0 0 150px #4a0072;
-    opacity: 1;
+    opacity: 0.8;
   }
 }
 @keyframes vignette-pulse {
   0%, 100% {
-    -webkit-box-shadow: inset 0 0 100px #2a003b;
-            box-shadow: inset 0 0 100px #2a003b;
-    opacity: 0.7;
+    opacity: 0.5;
   }
   50% {
-    -webkit-box-shadow: inset 0 0 150px #4a0072;
-            box-shadow: inset 0 0 150px #4a0072;
-    opacity: 1;
+    opacity: 0.8;
   }
 }
 /* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
+#legendary-border-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+  will-change: opacity;
+  -webkit-box-shadow: inset 0 0 100px #2a003b;
+          box-shadow: inset 0 0 100px #2a003b;
+}
+
 #legendary-border-overlay.active {
   display: block;
-  padding: 0; /* Прибираємо рамку, робимо віньєтку */
-  background: transparent;
-  -webkit-mask: none;
-  -webkit-mask-composite: auto;
-          mask-composite: auto;
   -webkit-animation: vignette-pulse 3s infinite ease-in-out;
           animation: vignette-pulse 3s infinite ease-in-out;
-  will-change: box-shadow, opacity;
-  /* Створюємо ефект тунелю */
-  -webkit-box-shadow: inset 0 0 120px #2a003b;
-          box-shadow: inset 0 0 120px #2a003b;
-}
-#legendary-border-overlay.active::before {
-  display: none;
 }
 
 /* ==========================================
@@ -3621,10 +3635,10 @@ canvas#rhythmCanvas {
   }
   /* 2. ТУНЕЛЬ ТЕПЕР ПРАЦЮЄ */
   #legendary-border-overlay.active {
-    display: block !important; /* Увімкнено на мобільних */
+    display: block !important;
     -webkit-animation: vignette-pulse 3s infinite ease-in-out !important;
             animation: vignette-pulse 3s infinite ease-in-out !important;
-    will-change: opacity, box-shadow;
+    will-change: opacity;
   }
   /* 3. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
   #game-container {
@@ -3639,7 +3653,7 @@ canvas#rhythmCanvas {
   /* =========================================
        4. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
        ========================================= */
-  /* 🟡 GOLD (200+) - Пульсація */
+  /* 🟡 GOLD (200+) - Спрощена пульсація */
   @-webkit-keyframes mobile-gold-pulse {
     0% {
       border-color: rgba(255, 215, 0, 0.6);
@@ -3648,9 +3662,9 @@ canvas#rhythmCanvas {
     }
     50% {
       border-color: rgb(255, 215, 0);
-      /* Максимум 20px blur - це безпечна межа для плавності */
-      -webkit-box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8);
-              box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8);
+      /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 25px до 15px */
+      -webkit-box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.8);
+              box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.8);
     }
     100% {
       border-color: rgba(255, 215, 0, 0.6);
@@ -3666,9 +3680,9 @@ canvas#rhythmCanvas {
     }
     50% {
       border-color: rgb(255, 215, 0);
-      /* Максимум 20px blur - це безпечна межа для плавності */
-      -webkit-box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8);
-              box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8);
+      /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 25px до 15px */
+      -webkit-box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.8);
+              box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.8);
     }
     100% {
       border-color: rgba(255, 215, 0, 0.6);
@@ -3682,7 +3696,7 @@ canvas#rhythmCanvas {
             animation: mobile-gold-pulse 2s infinite ease-in-out !important;
     z-index: 15;
   }
-  /* 🟣 COSMIC (400+) - Пульсація */
+  /* 🟣 COSMIC (400+) - Спрощена пульсація */
   @-webkit-keyframes mobile-cosmic-pulse {
     0% {
       border-color: #00e5ff;
@@ -3691,9 +3705,9 @@ canvas#rhythmCanvas {
     }
     50% {
       border-color: #d500f9;
-      /* Максимум 25px blur */
-      -webkit-box-shadow: inset 0 0 25px #00e5ff;
-              box-shadow: inset 0 0 25px #00e5ff;
+      /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 35px до 20px */
+      -webkit-box-shadow: inset 0 0 20px #00e5ff;
+              box-shadow: inset 0 0 20px #00e5ff;
     }
     100% {
       border-color: #00e5ff;
@@ -3709,9 +3723,9 @@ canvas#rhythmCanvas {
     }
     50% {
       border-color: #d500f9;
-      /* Максимум 25px blur */
-      -webkit-box-shadow: inset 0 0 25px #00e5ff;
-              box-shadow: inset 0 0 25px #00e5ff;
+      /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 35px до 20px */
+      -webkit-box-shadow: inset 0 0 20px #00e5ff;
+              box-shadow: inset 0 0 20px #00e5ff;
     }
     100% {
       border-color: #00e5ff;
@@ -3725,39 +3739,39 @@ canvas#rhythmCanvas {
             animation: mobile-cosmic-pulse 1.5s infinite ease-in-out !important;
     z-index: 15;
   }
-  /* 🔵 LEGENDARY (800+) - Пульсація */
+  /* 🔵 LEGENDARY (800+) - Спрощена пульсація */
   @-webkit-keyframes mobile-legendary-pulse {
     0% {
       border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 10px #00e5ff;
-              box-shadow: inset 0 0 10px #00e5ff;
+      -webkit-box-shadow: inset 0 0 5px #00e5ff;
+              box-shadow: inset 0 0 5px #00e5ff;
     }
     50% {
       border-color: #00e5ff;
-      -webkit-box-shadow: inset 0 0 30px #00e5ff;
-              box-shadow: inset 0 0 30px #00e5ff;
+      -webkit-box-shadow: inset 0 0 15px #00e5ff;
+              box-shadow: inset 0 0 15px #00e5ff;
     }
     100% {
       border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 10px #00e5ff;
-              box-shadow: inset 0 0 10px #00e5ff;
+      -webkit-box-shadow: inset 0 0 5px #00e5ff;
+              box-shadow: inset 0 0 5px #00e5ff;
     }
   }
   @keyframes mobile-legendary-pulse {
     0% {
       border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 10px #00e5ff;
-              box-shadow: inset 0 0 10px #00e5ff;
+      -webkit-box-shadow: inset 0 0 5px #00e5ff;
+              box-shadow: inset 0 0 5px #00e5ff;
     }
     50% {
       border-color: #00e5ff;
-      -webkit-box-shadow: inset 0 0 30px #00e5ff;
-              box-shadow: inset 0 0 30px #00e5ff;
+      -webkit-box-shadow: inset 0 0 15px #00e5ff;
+              box-shadow: inset 0 0 15px #00e5ff;
     }
     100% {
       border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 10px #00e5ff;
-              box-shadow: inset 0 0 10px #00e5ff;
+      -webkit-box-shadow: inset 0 0 5px #00e5ff;
+              box-shadow: inset 0 0 5px #00e5ff;
     }
   }
   #game-container.container-legendary {

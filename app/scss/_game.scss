@@ -698,7 +698,9 @@ body {
    border-left: 1px solid #333;
    border-right: 1px solid #333;
    
-   // Оптимізація для анімацій бордера
+   // 🔥 ОПТИМІЗАЦІЯ ДЛЯ БРАУЗЕРА (FIX LAGS)
+   // Створюємо окремий шар композитора
+   transform: translateZ(0); 
    will-change: border-color, box-shadow;
 
    // ВАЖЛИВО: Забороняємо браузерні дії (зум/скрол) всередині гри
@@ -749,6 +751,21 @@ canvas#rhythmCanvas {
    // 🔥 ВАЖЛИВО: Пропускаємо кліки крізь цей контейнер
    pointer-events: none;
    z-index: 25;
+}
+
+// 🔥 ВАЖЛИВО: Клас для відображення променів (Hold Beams)
+.long-note-hold-effect {
+    position: absolute;
+    bottom: 0;
+    width: 25%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+    
+    /* Зміни для "менш помітного" вигляду */
+    opacity: 0.25; /* Було 1.0, тепер напівпрозорий */
+    mix-blend-mode: screen; /* М'яке накладання світла */
+    transition: background 0.2s ease, opacity 0.2s ease;
 }
 
 /* Ефекти натискання (Спаркли) */
@@ -807,6 +824,12 @@ canvas#rhythmCanvas {
    flex-direction: column;
    align-items: center;
    transition: top 0.3s;
+   
+   // Гарантуємо, що Header не перекриває кліки нижче, якщо він прозорий
+   pointer-events: none;
+   
+   // Але кнопки всередині мають працювати
+   * { pointer-events: auto; }
 }
 
 .progress-container {
@@ -1239,31 +1262,27 @@ canvas#rhythmCanvas {
 
 /* --- 1. АНІМАЦІЇ --- */
 @keyframes vignette-pulse {
-  0%, 100% {
-    box-shadow: inset 0 0 100px #2a003b;
-    opacity: 0.7;
-  }
-  50% {
-    box-shadow: inset 0 0 150px #4a0072;
-    opacity: 1;
-  }
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
 }
 
 /* --- 2. ЕФЕКТ РАМКИ (Обертання Енергії) --- */
 
+#legendary-border-overlay {
+  position: absolute;
+  top: 0; left: 0; width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 50;
+  display: none;
+  will-change: opacity;
+  
+  // Статичний градієнт, змінюється тільки opacity
+  box-shadow: inset 0 0 100px #2a003b; 
+}
+
 #legendary-border-overlay.active {
   display: block;
-  padding: 0; /* Прибираємо рамку, робимо віньєтку */
-  background: transparent;
-  -webkit-mask: none;
-  mask-composite: auto;
   animation: vignette-pulse 3s infinite ease-in-out;
-  will-change: box-shadow, opacity;
-
-  /* Створюємо ефект тунелю */
-  box-shadow: inset 0 0 120px #2a003b;
-
-  &::before { display: none; }
 }
 
 /* ==========================================
@@ -1391,9 +1410,10 @@ canvas#rhythmCanvas {
 
   /* 2. ТУНЕЛЬ ТЕПЕР ПРАЦЮЄ */
   #legendary-border-overlay.active {
-      display: block !important; /* Увімкнено на мобільних */
+      display: block !important; 
+      // Прибираємо важкі тіні, використовуємо тільки напівпрозорий фон
       animation: vignette-pulse 3s infinite ease-in-out !important;
-      will-change: opacity, box-shadow;
+      will-change: opacity;
   }
 
   /* 3. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
@@ -1408,7 +1428,7 @@ canvas#rhythmCanvas {
      4. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
      ========================================= */
 
-  /* 🟡 GOLD (200+) - Пульсація */
+  /* 🟡 GOLD (200+) - Спрощена пульсація */
   @keyframes mobile-gold-pulse {
       0% { 
           border-color: rgba(255, 215, 0, 0.6); 
@@ -1416,8 +1436,8 @@ canvas#rhythmCanvas {
       }
       50% { 
           border-color: rgba(255, 215, 0, 1); 
-          /* Максимум 20px blur - це безпечна межа для плавності */
-          box-shadow: inset 0 0 20px rgba(255, 215, 0, 0.8); 
+          /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 25px до 15px */
+          box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.8); 
       }
       100% { 
           border-color: rgba(255, 215, 0, 0.6); 
@@ -1431,7 +1451,7 @@ canvas#rhythmCanvas {
       z-index: 15;
   }
 
-  /* 🟣 COSMIC (400+) - Пульсація */
+  /* 🟣 COSMIC (400+) - Спрощена пульсація */
   @keyframes mobile-cosmic-pulse {
       0% { 
           border-color: #00e5ff; 
@@ -1439,8 +1459,8 @@ canvas#rhythmCanvas {
       }
       50% { 
           border-color: #d500f9; 
-          /* Максимум 25px blur */
-          box-shadow: inset 0 0 25px #00e5ff; 
+          /* ⚡ ОПТИМІЗАЦІЯ: Зменшено з 35px до 20px */
+          box-shadow: inset 0 0 20px #00e5ff; 
       }
       100% { 
           border-color: #00e5ff; 
@@ -1454,11 +1474,11 @@ canvas#rhythmCanvas {
       z-index: 15;
   }
 
-  /* 🔵 LEGENDARY (800+) - Пульсація */
+  /* 🔵 LEGENDARY (800+) - Спрощена пульсація */
   @keyframes mobile-legendary-pulse {
-      0% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
-      50% { border-color: #00e5ff; box-shadow: inset 0 0 30px #00e5ff; }
-      100% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
+      0% { border-color: #FFFFFF; box-shadow: inset 0 0 5px #00e5ff; }
+      50% { border-color: #00e5ff; box-shadow: inset 0 0 15px #00e5ff; }
+      100% { border-color: #FFFFFF; box-shadow: inset 0 0 5px #00e5ff; }
   }
 
   #game-container.container-legendary {

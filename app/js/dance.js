@@ -1,6 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // OPTIMIZED: Canvas Combo & Performance
+   // OPTIMIZED: Dynamic Beams & Visual Fixes
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -44,6 +44,7 @@ let score = 0;
 let maxPossibleScore = 0;
 let combo = 0;
 let maxCombo = 0; // Track max combo for session
+let lastComboUpdateTime = 0; // For fade-out logic
 let consecutiveMisses = 0;
 let currentSongIndex = 0;
 let lastHitTime = 0;
@@ -72,7 +73,6 @@ let starsElements = [];
 
 // DOM Elements
 let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl;
-// comboDisplay removed (moved to Canvas)
 
 // Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -92,6 +92,7 @@ const CONFIG = {
         tap: ['#00d2ff', '#3a7bd5'],
         long: ['#ff0099', '#493240'],
         dead: ['#555', '#222'],
+        released: ['#666', '#444'], // Color for released long notes
         stroke: "rgba(255,255,255,0.8)",
         laneLine: "rgba(255,255,255,0.1)"
     },
@@ -99,6 +100,7 @@ const CONFIG = {
         tap: ['#0077aa', '#005588'],
         long: ['#aa0066', '#770044'],
         dead: ['#999', '#777'],
+        released: ['#888', '#666'],
         stroke: "#000000",
         laneLine: "rgba(0,0,0,0.2)"
     }
@@ -299,7 +301,6 @@ document.addEventListener('DOMContentLoaded', () => {
     loader = document.getElementById('loader');
     holdEffectsContainer = document.getElementById('hold-effects-container');
     progressBar = document.getElementById('game-progress-bar');
-    // comboDisplay removed entirely
     
     // Init Stars Array
     starsElements = [
@@ -409,6 +410,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
         score = 0; combo = 0; maxCombo = 0; consecutiveMisses = 0;
+        lastComboUpdateTime = 0;
         activeTiles = []; mapTiles = [];
         
         // OPTIMIZED: Reset Pools and Combo State
@@ -554,7 +556,8 @@ document.addEventListener('DOMContentLoaded', () => {
                                 endTime: (time + dur) * 1000,
                                 lane: lane,
                                 type: type,
-                                hit: false, holding: false, completed: false, failed: false, holdTicks: 0,
+                                hit: false, holding: false, completed: false, failed: false, released: false, // Added 'released'
+                                holdTicks: 0,
                                 hitAnimStart: 0, lastValidHoldTime: 0
                             });
 
@@ -606,6 +609,18 @@ document.addEventListener('DOMContentLoaded', () => {
         animationFrameId = requestAnimationFrame(gameLoop);
     }
 
+    // NEW HELPER: Get Dynamic Beam Color based on Combo
+    function getCurrentBeamColor() {
+        if (combo >= 800) return PALETTES.LEGENDARY.glow;
+        if (combo >= 400) return PALETTES.COSMIC.glow;
+        if (combo >= 200) return PALETTES.GOLD.glow;
+        if (combo >= 100) return PALETTES.ELECTRIC.glow;
+        
+        // Default Color (Theme Dependent)
+        const isLight = document.body.getAttribute('data-theme') === 'light';
+        return isLight ? CONFIG.colorsLight.long[1] : CONFIG.colorsDark.long[1];
+    }
+
     function update(songTime) {
         const hitTimeWindow = currentSpeed;
         const hitY = canvas.height * CONFIG.hitPosition;
@@ -631,8 +646,12 @@ document.addEventListener('DOMContentLoaded', () => {
                         tile.hit = true;
                         tile.lastValidHoldTime = Date.now();
                         holdingTiles[tile.lane] = tile;
-                        toggleHoldEffect(tile.lane, true, themeColors.long[1]);
+                        
+                        // 🔥 USE DYNAMIC COLOR
+                        toggleHoldEffect(tile.lane, true, getCurrentBeamColor());
+                        
                         score += CONFIG.scorePerfect;
+                        lastComboUpdateTime = Date.now(); // Update activity
                         showRating(getText('perfect'), "rating-perfect");
                         spawnSparks(tile.lane, hitY, '#ff00ff', 'perfect');
                         lastHitTime = Date.now();
@@ -652,17 +671,19 @@ document.addEventListener('DOMContentLoaded', () => {
             let yEnd = yStart;
             if (tile.type === 'long') yEnd = (1 - (tile.endTime - songTime) / currentSpeed) * hitY;
 
-            if (tile.type === 'long' && tile.hit && !tile.completed && !tile.failed) {
+            if (tile.type === 'long' && tile.hit && !tile.completed && !tile.failed && !tile.released) {
                 const isKeyPressed = keyState[tile.lane];
                 if (isKeyPressed) tile.lastValidHoldTime = Date.now();
 
-                if (isKeyPressed || (Date.now() - tile.lastValidHoldTime) < 100) {
+                // Increased grace period slightly to 150ms for better feel
+                if (isKeyPressed || (Date.now() - tile.lastValidHoldTime) < 150) {
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             score += Math.round(CONFIG.scoreHoldTick * mult);
                             combo += 5;
+                            lastComboUpdateTime = Date.now(); // Update activity
                             if (combo > maxCombo) maxCombo = combo;
                             updateScoreUI(true); // Is hit (triggers container effects)
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
@@ -676,23 +697,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         const mult = getComboMultiplier();
                         score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
                         combo++; 
+                        lastComboUpdateTime = Date.now(); // Update activity
                         if (combo > maxCombo) maxCombo = combo;
                         updateScoreUI(true);
                     }
                 } else {
-                    // Failed hold
+                    // FIX: Failed hold (released too early)
+                    // NOW: Just stop scoring, do NOT miss, do NOT break combo, do NOT remove
                     if (songTime < tile.endTime) {
                         tile.holding = false;
-                        tile.failed = true;
-                        tile.color = themeColors.dead;
+                        tile.released = true; // Mark as released (visual dimming)
+                        // Note continues to fall but no score is added
                     }
                 }
             }
 
             // Miss detection
             const limitY = canvas.height + 50;
+            // IMPORTANT: Check !tile.hit to prevent counting released long notes as misses
             if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY)) {
-                if (!tile.hit && !tile.completed && !tile.failed) missNote(tile, true);
+                if (!tile.hit && !tile.completed && !tile.failed) {
+                     missNote(tile, true);
+                }
                 activeTiles.splice(i, 1);
             }
         }
@@ -816,7 +842,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 const headH = CONFIG.noteHeight;
                 const actualYHeadTop = yHead - headH;
                 const tailH = actualYHeadTop - yTail;
-                let colorSet = tile.failed ? colors.dead : p.longColor;
+                
+                // Handle Color Logic (Failed vs Released vs Active)
+                let colorSet = p.longColor;
+                if (tile.failed) colorSet = colors.dead;
+                else if (tile.released) colorSet = colors.released; // Use released color
 
                 // Long Note Tail
                 if (tailH > 1) {
@@ -824,33 +854,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
+                    
+                    // Fade out tail if released
+                    if (tile.released) ctx.globalAlpha = 0.5;
+                    
                     ctx.fillStyle = grad;
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
                     
-                    ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
+                    ctx.fillStyle = (combo >= 200 && !tile.failed && !tile.released) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
+                    
+                    ctx.globalAlpha = 1.0;
                 }
 
                 // Long Note Head
-                let headColors = (combo >= 200 && !tile.failed) ? p.tapColor : colorSet;
+                let headColors = (combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
                 let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                if (!isMobile) {
+                if (!isMobile && !tile.released) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
                 } else {
                     ctx.shadowBlur = 0;
                 }
+                
+                if (tile.released) ctx.globalAlpha = 0.7; // Dim head if released
 
                 ctx.beginPath();
                 if (ctx.roundRect) ctx.roundRect(x, actualYHeadTop, w, headH, noteRadius);
                 else ctx.fillRect(x, actualYHeadTop, w, headH);
                 ctx.fill();
 
-                ctx.strokeStyle = tile.failed ? colors.dead[0] : p.border; 
+                ctx.strokeStyle = tile.failed ? colors.dead[0] : (tile.released ? colors.released[0] : p.border); 
                 ctx.lineWidth = 3; ctx.stroke();
+                
+                ctx.globalAlpha = 1.0;
             }
         });
 
@@ -884,13 +924,71 @@ document.addEventListener('DOMContentLoaded', () => {
         // --- DRAW RATINGS (CANVAS TEXT) ---
         drawRatings();
 
-        // --- DRAW COMBO (CANVAS) ---
+        // --- DRAW COMBO & MULTIPLIER (CANVAS) ---
         drawComboDisplay();
+        drawMultiplier(p.border); // Pass current palette color
+    }
+
+// NEW: Draw Multiplier UNDER the score (Centered)
+    function drawMultiplier(color) {
+        const mult = getComboMultiplier();
+        if (mult <= 1.0) return;
+
+        // FADE LOGIC: Same as Combo
+        const timeSinceUpdate = Date.now() - lastComboUpdateTime;
+        let alpha = 1.0;
+        if (timeSinceUpdate > 2000) {
+             alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000);
+        }
+        if (alpha <= 0) return;
+
+        ctx.save();
+        ctx.globalAlpha = alpha;
+        
+        // --- 📐 ПОЗИЦІОНУВАННЯ (ПІД РАХУНКОМ) ---
+        
+        // X: Рівно по центру
+        const cx = canvas.width / 2;
+        
+        // Y: Вниз від верху екрану
+        // Mobile Header ~85px, тому ставимо 145px
+        // PC Header ~20px, тому ставимо 90px
+        const cy = isMobile ? 145 : 90; 
+
+        ctx.translate(cx, cy);
+        ctx.scale(comboScale, comboScale);
+
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        // Робимо шрифт трохи меншим, щоб він влазив гарно під рахунок
+        const fontSize = isMobile ? 24 : 28; 
+        const text = `${mult.toFixed(1)}x`;
+
+        // Shadow
+        ctx.font = `italic 900 ${fontSize}px 'Comic Sans MS'`;
+        ctx.fillStyle = "rgba(0,0,0,0.5)";
+        ctx.fillText(text, 2, 2);
+
+        // Main Text
+        ctx.fillStyle = color;
+        ctx.fillText(text, 0, 0);
+
+        ctx.restore();
+        ctx.globalAlpha = 1.0;
     }
 
     // NEW: Canvas-based Combo Display (Replaces DOM)
     function drawComboDisplay() {
         if (combo < 3) return; // Hide if low combo
+
+        // FADE LOGIC
+        const timeSinceUpdate = Date.now() - lastComboUpdateTime;
+        let alpha = 1.0;
+        if (timeSinceUpdate > 2000) {
+             alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000); // Fade out over 1s
+        }
+        if (alpha <= 0) return;
 
         // Configuration based on tier
         let gradColors = ['#fff', '#ccc'];
@@ -916,6 +1014,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         ctx.save();
+        ctx.globalAlpha = alpha;
         
         // Position: 30% from top (Higher than before)
         const cx = canvas.width / 2;
@@ -951,6 +1050,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.fillText(combo, 0, 10);
 
         ctx.restore();
+        ctx.globalAlpha = 1.0;
     }
 
     // OPTIMIZED: Render text ratings on canvas
@@ -1051,18 +1151,20 @@ document.addEventListener('DOMContentLoaded', () => {
         laneBeamAlpha[lane] = 1.0;
         if (holdingTiles[lane]) return;
 
-        const activeHold = activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed);
+        const activeHold = activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed && !t.released);
         if (activeHold) {
             holdingTiles[lane] = activeHold;
             activeHold.lastValidHoldTime = Date.now();
-            const colors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
-            toggleHoldEffect(lane, true, colors.long[1]);
+            
+            // 🔥 USE DYNAMIC COLOR HERE
+            toggleHoldEffect(lane, true, getCurrentBeamColor());
+            
             return;
         }
 
         const songTime = (audioCtx.currentTime - startTime) * 1000;
         const target = activeTiles.find(t => {
-            if (t.hit || t.completed || t.failed) return false;
+            if (t.hit || t.completed || t.failed || t.released) return false;
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
@@ -1074,8 +1176,10 @@ document.addEventListener('DOMContentLoaded', () => {
             target.hit = true;
             consecutiveMisses = 0;
             lastHitTime = Date.now();
+            lastComboUpdateTime = Date.now(); // Update activity
+            
             const colors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
-            let color = target.type === 'long' ? colors.long[1] : colors.tap[1];
+            // Removed static color selection
 
             if (target.type === 'tap') target.hitAnimStart = Date.now();
             const mult = getComboMultiplier();
@@ -1093,7 +1197,10 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.type === 'long') {
                 holdingTiles[lane] = target;
                 target.lastValidHoldTime = Date.now();
-                toggleHoldEffect(lane, true, color);
+                
+                // 🔥 USE DYNAMIC COLOR HERE
+                toggleHoldEffect(lane, true, getCurrentBeamColor());
+                
                 score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
             } else {
@@ -1116,6 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function missNote(tile, isSpawnedMiss) {
         consecutiveMisses++;
         combo = 0;
+        lastComboUpdateTime = 0; // Reset fade timer immediately
         updateScoreUI(); // Updates effects
         showRating(getText('miss'), "rating-miss");
         if (gameContainer) {
