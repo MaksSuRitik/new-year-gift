@@ -1500,7 +1500,7 @@ canvas#rhythmCanvas {
 }
 
 /* ==========================================
-   🔥 FINAL MOBILE FIXES (FULL & OPTIMIZED)
+   🔥 FINAL MOBILE FIXES (ULTRA LIGHT PERFORMANCE)
    ========================================== */
 
 @media (max-width: 768px) {
@@ -1517,7 +1517,7 @@ canvas#rhythmCanvas {
       animation: none !important;
   }
 
-  /* 3. ФІКС ТЕКСТУ КОМБО (Центрування) */
+  /* 3. ФІКС ТЕКСТУ КОМБО */
   #combo-display.combo-legendary {
       transform: none !important; 
       left: 0 !important;
@@ -1530,45 +1530,70 @@ canvas#rhythmCanvas {
       background: none !important;
       color: #fff !important;
       -webkit-text-fill-color: #fff !important;
-      text-shadow: 0 0 15px #00e5ff, 0 0 30px #00e5ff !important;
+      /* Зменшили тінь тексту для продуктивності */
+      text-shadow: 0 0 10px #00e5ff !important;
       opacity: 1 !important;
   }
 
-  /* 4. 🔥 LEGENDARY 800+ (GPU ОПТИМІЗАЦІЯ - ТЕ ЩО БУЛО ВІДСУТНЄ) */
-  #game-container.container-legendary {
-      border: 3px solid #FFFFFF !important;
-      box-shadow: none !important; /* Прибираємо важку тінь з блоку */
-      animation: none !important;  /* Вимикаємо CSS анімацію блоку */
-      z-index: 20;
-      position: relative;
-  }
-
-  /* Легка анімація через псевдо-елемент (не лагає) */
-  #game-container.container-legendary::after {
-      content: "";
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none;
-      box-shadow: inset 0 0 50px #00e5ff, 0 0 20px #00e5ff;
-      animation: gpu-pulse-opacity 1s infinite alternate;
-      will-change: opacity;
-      z-index: 21; 
-  }
-
-  /* 5. ФІКС ПРОМАХУ */
-  #game-container.shake-screen {
-      animation: shake 0.5s !important;
-      border: 5px solid #ff0000 !important;
-      box-shadow: inset 0 0 50px #ff0000 !important;
-      transition: none !important;
-  }
-
-  /* 6. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
+  /* 4. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА (Це прибирає загальні лаги) */
   #game-container {
-      transform: translateZ(0);
+      transform: translateZ(0); /* Вмикає GPU */
       will-change: border-color, box-shadow; 
       backface-visibility: hidden;
       perspective: 1000px;
+  }
+
+  /* =========================================
+     5. ЛЕГКІ АНІМАЦІЇ (БЕЗ ВАЖКИХ ТІНЕЙ)
+     ========================================= */
+
+  /* Анімація для 800+ (Повернули просту, але зменшили радіус тіні) */
+  @keyframes mobile-legendary-pulse {
+      0% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
+      50% { border-color: #00e5ff; box-shadow: inset 0 0 25px #00e5ff; } /* Макс 25px, не 50px! */
+      100% { border-color: #FFFFFF; box-shadow: inset 0 0 10px #00e5ff; }
+  }
+
+  #game-container.container-legendary {
+      border: 3px solid #FFFFFF !important;
+      animation: mobile-legendary-pulse 1s infinite alternate !important;
+      z-index: 20;
+      /* Прибираємо псевдо-елемент, бо він викликав лаг при появі */
+      &::after { display: none !important; }
+  }
+
+  /* Анімація для 400+ (Cosmic) */
+  @keyframes mobile-cosmic-pulse {
+      0% { border-color: #00e5ff; box-shadow: inset 0 0 5px #d500f9; }
+      50% { border-color: #d500f9; box-shadow: inset 0 0 15px #00e5ff; }
+      100% { border-color: #00e5ff; box-shadow: inset 0 0 5px #d500f9; }
+  }
+
+  #game-container.container-ripple-cosmic {
+      border: 2px solid #00e5ff !important;
+      animation: mobile-cosmic-pulse 1.5s infinite alternate !important;
+      z-index: 15;
+  }
+
+  /* Анімація для 200+ (Gold) */
+  @keyframes mobile-gold-pulse {
+      0% { border-color: rgba(255, 215, 0, 0.6); box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.3); }
+      50% { border-color: rgba(255, 215, 0, 1); box-shadow: inset 0 0 15px rgba(255, 215, 0, 0.6); }
+      100% { border-color: rgba(255, 215, 0, 0.6); box-shadow: inset 0 0 5px rgba(255, 215, 0, 0.3); }
+  }
+
+  #game-container.container-ripple-gold {
+      border: 2px solid #FFD700 !important;
+      animation: mobile-gold-pulse 2s infinite alternate !important;
+      z-index: 15;
+  }
+
+  /* 6. ФІКС ПРОМАХУ */
+  #game-container.shake-screen {
+      animation: shake 0.5s !important;
+      border: 5px solid #ff0000 !important;
+      box-shadow: inset 0 0 30px #ff0000 !important;
+      transition: none !important;
   }
 
   /* 7. UI Адаптація */
@@ -1584,13 +1609,7 @@ canvas#rhythmCanvas {
   .controls-layer { top: 15px !important; right: 15px !important; }
 
   /* Пропускаємо кліки */
-  #hold-effects-container, .hit-line, .lane-hints, .click-effect, #legendary-border-overlay, #game-container.container-legendary::after {
+  #hold-effects-container, .hit-line, .lane-hints, .click-effect, #legendary-border-overlay {
       pointer-events: none !important;
   }
-}
-
-/* Анімація для GPU (додай це після закриття @media, або воно вже є в файлі) */
-@keyframes gpu-pulse-opacity {
-    from { opacity: 0.6; }
-    to { opacity: 1; }
 }
