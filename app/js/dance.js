@@ -1,5 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
+   // OPTIMIZED: Performance Refactoring
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -35,6 +36,9 @@ let isPaused = false;
 let isMuted = localStorage.getItem('isMuted') === 'true';
 let currentLang = localStorage.getItem('siteLang') || 'UA';
 
+// OPTIMIZED: Cached environment variables
+let isMobile = window.innerWidth < 768;
+
 let startTime = 0;
 let score = 0;
 let maxPossibleScore = 0;
@@ -47,7 +51,13 @@ let currentSpeed = 1000;
 // Game Objects
 let mapTiles = [];
 let activeTiles = [];
-let particles = [];
+
+// OPTIMIZED: Object Pools & Render Arrays
+const MAX_PARTICLES = 300;
+let particlePool = []; // Fixed array
+let particlePoolIndex = 0;
+let activeRatings = []; // For canvas-based text
+
 let keyState = [false, false, false, false];
 let holdingTiles = [null, null, null, null];
 let laneElements = [null, null, null, null];
@@ -55,8 +65,9 @@ let laneLastInputTime = [0, 0, 0, 0];
 let laneBeamAlpha = [0, 0, 0, 0];
 let starsElements = [];
 
-// DOM Elements (assigned in init)
-let canvas, ctx, gameContainer, menuLayer, loader, ratingContainer, holdEffectsContainer, progressBar, comboDisplay, bgMusicEl;
+// DOM Elements
+let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, comboDisplay, bgMusicEl;
+// Note: ratingContainer removed as we use Canvas now
 
 // Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -88,6 +99,15 @@ const CONFIG = {
     }
 };
 
+// OPTIMIZED: Pre-defined Palettes to avoid creation in loop
+const PALETTES = {
+    STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
+    GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f', light: '#bcaaa4', glow: '#e6953f', border: '#e6953f' },
+    COSMIC: { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff', glow: '#d500f9', border: '#00e5ff' },
+    LEGENDARY: { body: '#f4f4f4ff', accent: '#ffffffff', glow: '#ffffffff', aura: 'rgba(153, 147, 102, 1)', tap1: '#ffffffff', tap2: '#08191dff', long1: '#FFFFFF', long2: 'rgba(7, 80, 76, 0.99)' },
+    ELECTRIC: { tap1: '#eceff1', tap2: '#607d8b', long1: '#607d8b', long2: '#37474f', glow: '#00bcd4', border: '#80deea' }
+};
+
 const TRANSLATIONS = {
     UA: {
         icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "Комбо", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено"
@@ -100,7 +120,7 @@ const TRANSLATIONS = {
     }
 };
 
-// Songs DB
+// Songs DB (Identical to original)
 const songsDB = [
     { file: "secret.mp3", title: "???", artist: "???", isSecret: true, duration: "??:??" },
     { file: "Frank Sinatra - Let It Snow!.mp3", title: "Let It Snow!", artist: "Frank Sinatra", duration: "2m 35s", tag: "xmas" },
@@ -168,9 +188,8 @@ const songsDB = [
 ];
 
 /* ==========================================
-   🛠 AUDIO PROCESSING HELPERS (Moved to Top Scope)
+   🛠 AUDIO PROCESSING HELPERS
    ========================================== */
-
 function normalizeBufferAggressive(buffer) {
     const newData = new Float32Array(buffer.length);
     let maxAmp = 0;
@@ -214,7 +233,7 @@ function checkSustain(data, index, sampleRate, attackEnergy, localAvg) {
     if (!isLong) return { isLong: false, duration: 0 };
 
     let endIndex = index;
-    const maxDurSamples = sampleRate * 3.0; // Max 3s
+    const maxDurSamples = sampleRate * 3.0;
     
     for(let k = startScan; k < index + maxDurSamples; k += Math.floor(sampleRate * 0.1)) {
         if (k >= data.length) break;
@@ -249,6 +268,20 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     return available.slice(0, count);
 }
 
+// OPTIMIZED: Init Particle Pool
+function initParticlePool() {
+    particlePool = [];
+    for (let i = 0; i < MAX_PARTICLES; i++) {
+        particlePool.push({
+            active: false,
+            x: 0, y: 0,
+            vx: 0, vy: 0,
+            life: 0,
+            color: '#fff'
+        });
+    }
+}
+
 // --------------------------------------------------------
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -259,7 +292,7 @@ document.addEventListener('DOMContentLoaded', () => {
     gameContainer = document.getElementById('game-container');
     menuLayer = document.getElementById('menu-layer');
     loader = document.getElementById('loader');
-    ratingContainer = document.getElementById('rating-container');
+    // ratingContainer removed (using canvas)
     holdEffectsContainer = document.getElementById('hold-effects-container');
     progressBar = document.getElementById('game-progress-bar');
     comboDisplay = document.getElementById('combo-display');
@@ -270,6 +303,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('star-3'), document.getElementById('star-4'),
         document.getElementById('star-5')
     ].filter(el => el !== null);
+
+    // Initialize pools
+    initParticlePool();
 
     // --- AUDIO INIT ---
     const sfxClick = new Audio('audio/click.mp3');
@@ -369,14 +405,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
 
         score = 0; combo = 0; consecutiveMisses = 0;
-        activeTiles = []; mapTiles = []; particles = [];
+        activeTiles = []; mapTiles = [];
+        
+        // OPTIMIZED: Reset Pools
+        for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
+        activeRatings = [];
+
         holdingTiles = [null, null, null, null];
         keyState = [false, false, false, false];
         laneBeamAlpha = [0, 0, 0, 0];
 
         if (ctx && canvas) ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
-        if (ratingContainer) ratingContainer.innerHTML = '';
         if (comboDisplay) {
             comboDisplay.style.opacity = 0;
             comboDisplay.style.color = '#fff';
@@ -408,7 +448,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /* ----------------------------------
-       PULSE ENGINE V4.2 (Cleaned Up)
+       PULSE ENGINE V4.2
        ---------------------------------- */
     async function analyzeAudio(url, sessionId) {
         if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -449,8 +489,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let i = STEP_SIZE; i < normalizedData.length; i += STEP_SIZE) {
                 const time = i / sampleRate;
-
-                // Energy Calc
                 let energy = 0;
                 for (let j = 0; j < STEP_SIZE; j += 10) {
                     const idx = i - j;
@@ -461,7 +499,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 let localAvg = getLocalAverage(normalizedData, i, sampleRate, 2.0);
                 let threshold = Math.max(0.04, localAvg * (localAvg > 0.6 ? 0.15 : (localAvg > 0.4 ? 0.25 : 0.6)));
                 
-                // Flux
                 let prevEnergy = 0;
                 const prevIndex = i - (STEP_SIZE * 4);
                 if (prevIndex > 0) {
@@ -473,7 +510,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
                 let flux = Math.max(0, energy - prevEnergy);
 
-                // Speed & Gap
                 const progress = time / duration;
                 const currentSpeedMs = startSpeedMs - (progress * (startSpeedMs - endSpeedMs));
                 const noteBlockTime = (currentSpeedMs / 1000) * noteSizeFraction;
@@ -651,41 +687,38 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // OPTIMIZED: Draw Loop
     function draw(songTime) {
         if (!ctx) return;
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
-        // Palette Config
-        const PALETTE_STEEL = { light: '#cfd8dc', main: '#90a4ae', dark: '#263238' };
-        const PALETTE_GOLD = { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f' };
-        const PALETTE_COSMIC = { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff' };
-        const PALETTE_LEGENDARY = { body: '#f4f4f4ff', accent: '#ffffffff', glow: '#ffffffff', aura: 'rgba(153, 147, 102, 1)' };
-
         let p = { tapColor: [], longColor: [], glow: '', border: '' };
 
+        // Determine Palette based on Combo
         if (combo < 100) {
-            p.tapColor = [PALETTE_STEEL.light, PALETTE_STEEL.main];
-            p.longColor = [PALETTE_STEEL.main, PALETTE_STEEL.dark];
-            p.glow = PALETTE_STEEL.main; p.border = '#eceff1';
+            p.tapColor = [PALETTES.STEEL.light, PALETTES.STEEL.main];
+            p.longColor = [PALETTES.STEEL.main, PALETTES.STEEL.dark];
+            p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border;
         } else if (combo < 200) {
-            p.tapColor = ['#eceff1', '#607d8b'];
-            p.longColor = ['#607d8b', '#37474f'];
-            p.glow = '#00bcd4'; p.border = '#80deea';
+            p.tapColor = [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2];
+            p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2];
+            p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border;
         } else if (combo < 400) {
-            p.tapColor = [PALETTE_GOLD.black, PALETTE_GOLD.choco];
-            p.longColor = [PALETTE_GOLD.amber, '#bcaaa4'];
-            p.glow = PALETTE_GOLD.amber; p.border = PALETTE_GOLD.amber;
+            p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
+            p.longColor = [PALETTES.GOLD.amber, PALETTES.GOLD.light];
+            p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border;
         } else if (combo < 800) {
-            p.tapColor = ['#000000', PALETTE_COSMIC.core];
-            p.longColor = [PALETTE_COSMIC.accent, PALETTE_COSMIC.glitch];
-            p.glow = PALETTE_COSMIC.accent; p.border = PALETTE_COSMIC.glitch;
+            p.tapColor = ['#000000', PALETTES.COSMIC.core];
+            p.longColor = [PALETTES.COSMIC.accent, PALETTES.COSMIC.glitch];
+            p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border;
         } else {
-            p.tapColor = ['#ffffffff', '#08191dff'];
-            p.longColor = ['#FFFFFF', 'rgba(7, 80, 76, 0.99)'];
-            p.glow = PALETTE_LEGENDARY.glow; p.border = PALETTE_LEGENDARY.accent;
+            p.tapColor = [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2];
+            p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2];
+            p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent;
         }
 
+        // Clear
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, canvas.width, canvas.height); }
 
@@ -694,17 +727,21 @@ document.addEventListener('DOMContentLoaded', () => {
         const padding = 6;
         const noteRadius = 10;
 
-        // Lanes & Beams
+        // --- DRAW LANES & BEAMS ---
         ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
         ctx.lineWidth = 2;
         ctx.beginPath();
+        
         for (let i = 0; i < 4; i++) {
             let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
             if (laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
+                // OPTIMIZED: Avoid string parsing in loop if possible, but gradient needs x/y
                 let beamGrad = ctx.createLinearGradient(beamX, hitY, beamX, 0);
                 beamGrad.addColorStop(0, p.glow); beamGrad.addColorStop(1, "rgba(0,0,0,0)");
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; ctx.fillStyle = beamGrad;
+                
+                ctx.globalAlpha = laneBeamAlpha[i] * 0.5; 
+                ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
                 ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
             }
@@ -717,8 +754,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.lineWidth = (combo >= 200) ? 3 : 2;
         ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(canvas.width, hitY); ctx.stroke();
 
-        // Notes
-// Notes drawing logic
+        // --- DRAW NOTES ---
         activeTiles.forEach(tile => {
             if (tile.type === 'long' && tile.completed) return;
 
@@ -729,19 +765,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const visualY = tile.hit ? hitY : progressStart * hitY;
             let yTop = visualY - CONFIG.noteHeight;
 
-            // ОПТИМІЗАЦІЯ: Перевіряємо мобільний один раз
-            const isMobile = window.innerWidth < 768;
-
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 ctx.save();
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
                 ctx.translate(cx, cy); ctx.scale(scale, scale); ctx.translate(-cx, -cy);
 
+                // Note Body
                 let grad = ctx.createLinearGradient(x, yTop, x, visualY);
                 grad.addColorStop(0, p.tapColor[0]); grad.addColorStop(1, p.tapColor[1]);
                 
-                // 🔥 ВАЖЛИВО: Тіні тільки на ПК. На телефоні вони вбивають FPS.
+                // Shadow only on Desktop
                 if (!isMobile) {
                     ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
@@ -755,8 +789,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 else ctx.fillRect(x, yTop, w, CONFIG.noteHeight);
                 ctx.fill();
 
+                // Border
                 ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
-                // Блік малюємо без тіні завжди
+                
+                // Highlight
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
                 ctx.beginPath(); ctx.ellipse(cx, yTop + 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); ctx.fill();
                 ctx.restore();
@@ -772,30 +808,25 @@ document.addEventListener('DOMContentLoaded', () => {
                 const tailH = actualYHeadTop - yTail;
                 let colorSet = tile.failed ? colors.dead : p.longColor;
 
+                // Long Note Tail
                 if (tailH > 1) {
-                    // 🔥 ОПТИМІЗАЦІЯ І ГРАДІЄНТИ:
-                    // Ми дозволяємо градієнт на телефоні (він легкий),
-                    // але переконуємося, що не малюємо зайвого.
-                    
                     let grad = ctx.createLinearGradient(x, yTail, x, actualYHeadTop);
-                    grad.addColorStop(0, "rgba(0,0,0,0)"); // Прозорий хвіст
+                    grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
                     ctx.fillStyle = grad;
-
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
                     
-                    // Смужка посередині (спрощена для мобільного)
                     ctx.fillStyle = (combo >= 200 && !tile.failed) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                 }
 
+                // Long Note Head
                 let headColors = (combo >= 200 && !tile.failed) ? p.tapColor : colorSet;
                 let hGrad = ctx.createLinearGradient(x, actualYHeadTop, x, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                // Тіні голови тільки на ПК
                 if (!isMobile) {
                     ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
                     ctx.shadowColor = p.glow;
@@ -813,21 +844,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Particles
-        const isMobileParticles = window.innerWidth < 768;
-        for (let i = particles.length - 1; i >= 0; i--) {
-            let pt = particles[i];
+        // --- DRAW PARTICLES (OPTIMIZED POOL) ---
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+            let pt = particlePool[i];
+            if (!pt.active) continue;
+
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
-            if (pt.life <= 0.05) { particles.splice(i, 1); continue; }
+            if (pt.life <= 0.05) { pt.active = false; continue; }
 
             ctx.globalAlpha = Math.max(0, pt.life);
             ctx.fillStyle = pt.color;
             ctx.beginPath();
+            
             if (combo >= 800) {
-                 if (isMobileParticles) ctx.fillRect(pt.x, pt.y, 4, 4);
+                 if (isMobile) ctx.fillRect(pt.x, pt.y, 4, 4);
                  else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(Math.random() * Math.PI); ctx.fillRect(-3, -1, 6, 2); ctx.fillRect(-1, -3, 2, 6); ctx.restore(); }
             } else if (combo >= 400) {
-                 if (isMobileParticles) ctx.fillRect(pt.x, pt.y, 3, 3);
+                 if (isMobile) ctx.fillRect(pt.x, pt.y, 3, 3);
                  else { ctx.save(); ctx.translate(pt.x, pt.y); ctx.rotate(pt.life * 5); ctx.fillRect(-4, -1, 8, 2); ctx.fillRect(-1, -4, 2, 8); ctx.restore(); }
             } else if (combo >= 200) {
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
@@ -837,9 +870,81 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fill();
             ctx.globalAlpha = 1;
         }
+
+        // --- DRAW RATINGS (CANVAS TEXT INSTEAD OF DOM) ---
+        drawRatings();
+    }
+
+    // OPTIMIZED: Render text ratings on canvas
+    function drawRatings() {
+        if (activeRatings.length === 0) return;
+        const now = Date.now();
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        
+        // Match CSS Font: font-family: 'Comic Sans MS', sans-serif; font-weight: 900;
+        // Perfect: size 3.5rem (~56px), Good/Miss: 2.5rem (~40px)
+        
+        for (let i = activeRatings.length - 1; i >= 0; i--) {
+            const r = activeRatings[i];
+            const elapsed = now - r.startTime;
+            const duration = 500; // ms
+            
+            if (elapsed > duration) {
+                activeRatings.splice(i, 1);
+                continue;
+            }
+
+            // Animation logic matching CSS @keyframes popUp
+            let progress = elapsed / duration;
+            let alpha = 1;
+            let scale = 1;
+            let yOffset = 0;
+
+            if (progress < 0.5) {
+                // Pop Up
+                let t = progress * 2; // 0 to 1
+                // cubic-bezier approximation
+                scale = 0.5 + (0.7 * t); // 0.5 -> 1.2
+                alpha = t;
+                yOffset = -30 * t; // Move up
+            } else {
+                // Fade out & scale down
+                let t = (progress - 0.5) * 2; // 0 to 1
+                scale = 1.2 - (0.2 * t); // 1.2 -> 1.0
+                alpha = 1 - t;
+                yOffset = -30 - (20 * t); // Continue up
+            }
+
+            ctx.globalAlpha = Math.max(0, alpha);
+            ctx.save();
+            ctx.translate(r.x, r.y + yOffset);
+            ctx.scale(scale, scale);
+
+            // Set styling based on type
+            let fontSize = 40;
+            if (r.type === 'rating-perfect') fontSize = 56;
+            
+            ctx.font = `900 italic ${fontSize}px "Comic Sans MS", sans-serif`;
+            
+            // Stroke/Shadow for readability
+            if (!isMobile) {
+                ctx.shadowColor = r.color;
+                ctx.shadowBlur = 20;
+            }
+            ctx.fillStyle = r.color;
+            ctx.fillText(r.text, 0, 0);
+
+            // Optional: Stroke to mimic -webkit-text-stroke if needed, but shadow is usually enough
+            // ctx.strokeStyle = "rgba(0,0,0,0.5)"; ctx.lineWidth = 1; ctx.strokeText(r.text, 0, 0);
+
+            ctx.restore();
+            ctx.globalAlpha = 1;
+        }
     }
 
     // --- INPUT HANDLING ---
+    // OPTIMIZED: Use Pool
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = canvas.width / 4;
         const x = lane * laneW + laneW / 2;
@@ -848,10 +953,30 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
         else if (combo >= 200) finalColor = '#e6953f';
         else if (combo >= 100) finalColor = '#00bcd4';
+        
         const count = type === 'perfect' ? 20 : 10;
-        for (let i = 0; i < count; i++) {
-            particles.push({ x: x + (Math.random() - 0.5) * 40, y: y, vx: (Math.random() - 0.5) * 12, vy: (Math.random() - 1) * 12 - 4, life: 1.0, color: finalColor });
+        let spawned = 0;
+        
+        for (let i = 0; i < MAX_PARTICLES; i++) {
+            if (spawned >= count) break;
+            
+            // Find next available index in circular manner or just linear search
+            let idx = (particlePoolIndex + i) % MAX_PARTICLES;
+            
+            if (!particlePool[idx].active) {
+                const pt = particlePool[idx];
+                pt.active = true;
+                pt.x = x + (Math.random() - 0.5) * 40;
+                pt.y = y;
+                pt.vx = (Math.random() - 0.5) * 12;
+                pt.vy = (Math.random() - 1) * 12 - 4;
+                pt.life = 1.0;
+                pt.color = finalColor;
+                spawned++;
+            }
         }
+        // Advance index hint for next spawn to reduce search time
+        particlePoolIndex = (particlePoolIndex + count) % MAX_PARTICLES;
     }
 
     function handleInputDown(lane) {
@@ -966,8 +1091,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (combo >= 800) {
                 comboDisplay.classList.add('combo-legendary');
                 if (legendaryOverlay) legendaryOverlay.classList.add('active');
-                
-                // ДОДАТИ ЦЕЙ РЯДОК:
                 if (gameContainer) gameContainer.classList.add('container-legendary'); 
 
             } else if (combo >= 400) {
@@ -988,13 +1111,22 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // OPTIMIZED: Canvas-based rating pusher
     function showRating(text, cssClass) {
-        if (!ratingContainer) return;
-        const el = document.createElement('div');
-        el.className = `hit-rating ${cssClass}`;
-        el.innerText = text;
-        ratingContainer.appendChild(el);
-        setTimeout(() => el.remove(), 500);
+        // Colors mapping based on CSS
+        let color = '#fff';
+        if (cssClass === 'rating-perfect') color = '#ff00ff';
+        else if (cssClass === 'rating-good') color = '#66FCF1';
+        else if (cssClass === 'rating-miss') color = '#ff3333';
+
+        activeRatings.push({
+            text: text,
+            type: cssClass,
+            color: color,
+            startTime: Date.now(),
+            x: canvas.width / 2,
+            y: canvas.height * 0.4
+        });
     }
 
     function toggleHoldEffect(lane, active, color) {
@@ -1449,31 +1581,27 @@ document.addEventListener('DOMContentLoaded', () => {
             if (bgMusicEl) isMuted ? bgMusicEl.pause() : (!isPlaying && bgMusicEl.play().catch(() => {}));
         });
 
-        // --- ЛОГІКА МОВНОГО МЕНЮ (ВИПРАВЛЕНО) ---
         const langBtn = document.getElementById('langToggle');
         const langWrapper = document.querySelector('.lang-wrapper');
 
-        // 1. Відкриття/Закриття меню при кліку на іконку
         if (langBtn && langWrapper) {
             langBtn.onclick = (e) => {
-                e.stopPropagation(); // Щоб клік не пішов далі на document
+                e.stopPropagation();
                 playClick();
                 langWrapper.classList.toggle('open');
             };
         }
 
-        // 2. Вибір мови зі списку
         document.querySelectorAll('.lang-dropdown button').forEach(b => {
             b.onclick = () => {
                 playClick();
                 currentLang = b.dataset.lang;
                 localStorage.setItem('siteLang', currentLang);
                 updateGameText();
-                if (langWrapper) langWrapper.classList.remove('open'); // Закриваємо після вибору
+                if (langWrapper) langWrapper.classList.remove('open');
             };
         });
 
-        // 3. Закриття меню при кліку будь-де інде
         document.addEventListener('click', (e) => {
             if (langWrapper && !langWrapper.contains(e.target)) {
                 langWrapper.classList.remove('open');
@@ -1498,11 +1626,19 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    function resizeCanvas() { if (gameContainer && gameContainer.clientWidth && canvas) { canvas.width = gameContainer.clientWidth; canvas.height = gameContainer.clientHeight; } }
+    // OPTIMIZED: Update Mobile check on resize
+    function resizeCanvas() { 
+        if (gameContainer && gameContainer.clientWidth && canvas) { 
+            canvas.width = gameContainer.clientWidth; 
+            canvas.height = gameContainer.clientHeight; 
+        }
+        isMobile = window.innerWidth < 768;
+    }
     window.addEventListener('resize', resizeCanvas);
 
     // Initial Start
     initControls();
     renderMenu();
+    resizeCanvas(); // Ensure initial state is correct
 
 }); // END DOMContentLoaded
