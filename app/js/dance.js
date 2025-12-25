@@ -1,6 +1,6 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // OPTIMIZED: High Combo Performance Fix
+   // RENDERER: Native Canvas 2D (Performance Optimized)
    ========================================== */
 
 // --- FIREBASE IMPORTS (ES MODULES) ---
@@ -1004,7 +1004,7 @@ document.addEventListener('DOMContentLoaded', () => {
         drawMultiplier(p.border); 
     }
 
-    function drawMultiplier(color) {
+function drawMultiplier(color) {
         const mult = getComboMultiplier();
         if (mult <= 1.0) return;
 
@@ -1019,7 +1019,12 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.globalAlpha = alpha;
         
         const cx = canvas.width / 2;
-        const cy = isMobile ? 145 : 90; 
+        
+        // --- ВИПРАВЛЕННЯ ТУТ ---
+        // Було: const cy = isMobile ? 145 : 90; 
+        // Стало: Опускаємо для ПК (160), щоб не перекривало рахунок
+        const cy = isMobile ? 145 : 160; 
+        // -----------------------
 
         ctx.translate(cx, cy);
         ctx.scale(comboScale, comboScale);
@@ -1740,7 +1745,7 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Canvas Input
+        // Canvas Input (Preserved on original Canvas Element)
         if (canvas) {
             const handleTouch = (e, isDown) => {
                 e.preventDefault();
@@ -1790,7 +1795,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.body.setAttribute('data-theme', next);
             localStorage.setItem('siteTheme', next);
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
-            // Re-init gradients for theme change
+            // Re-init gradients for theme change if using cache
             if(ctx) initGradients();
         });
         setupBtn('soundToggle', (btn) => {
@@ -1860,6 +1865,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Start
     initControls();
     renderMenu();
-    resizeCanvas(); 
+    // Delay resize slightly to ensure DOM is ready
+    setTimeout(resizeCanvas, 100);
 
 }); // END DOMContentLoaded
