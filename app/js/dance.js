@@ -608,6 +608,32 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error("Global Sync Error:", e);
         }
     }
+    // ==========================================
+// 🎨 GRADIENT INITIALIZATION (MISSING FIX)
+// ==========================================
+function initGradients() {
+    if (!ctx) return;
+
+    // Визначаємо пари кольорів для кожної теми, як у draw()
+    const styles = [
+        { name: 'steel', c1: PALETTES.STEEL.light, c2: PALETTES.STEEL.main },
+        { name: 'electric', c1: PALETTES.ELECTRIC.tap1, c2: PALETTES.ELECTRIC.tap2 },
+        { name: 'gold', c1: PALETTES.GOLD.black, c2: PALETTES.GOLD.choco },
+        { name: 'cosmic', c1: '#000000', c2: PALETTES.COSMIC.core },
+        { name: 'legendary', c1: PALETTES.LEGENDARY.tap1, c2: PALETTES.LEGENDARY.tap2 }
+    ];
+
+    styles.forEach(style => {
+        // Створюємо градієнт для ноти (висота noteHeight)
+        const h = CONFIG.noteHeight;
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, style.c1);
+        grad.addColorStop(1, style.c2);
+        
+        // Зберігаємо в кеш, щоб гра не гальмувала
+        GRADIENT_CACHE.tap[style.name] = grad;
+    });
+}
 
     // ==========================================
     // 🎮 GAME LOGIC & LOOP
