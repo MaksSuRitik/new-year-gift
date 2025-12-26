@@ -62,7 +62,7 @@ const CONFIG = {
 
 const PALETTES = {
     STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
-    GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f', light: '#bcaaa4', glow: '#e6953f', border: '#e6953f' },
+    GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6ca3fff', light: '#bcaaa4', glow: '#e6ca3fff', border: '#e6ca3fff' },
     COSMIC: { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff', glow: '#d500f9', border: '#00e5ff' },
     LEGENDARY: { body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', long1: '#26c691ff', long2: 'rgba(7, 80, 76, 0.99)' },
     ELECTRIC: { tap1: '#eceff1', tap2: '#607d8b', long1: '#607d8b', long2: '#37474f', glow: '#00bcd4', border: '#80deea' }
