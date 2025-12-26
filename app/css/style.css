@@ -1330,7 +1330,7 @@ body[data-theme=light] #no-songs-msg {
 }
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION
-   // SCSS OPTIMIZED: Visuals & Performance
+   // SCSS FIXED: Game Isolation & UI Restoration
    ========================================== */
 * {
   -webkit-box-sizing: border-box;
@@ -1354,7 +1354,6 @@ body {
   /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
   -ms-touch-action: none;
       touch-action: none;
-  /* OPTIMIZED: Prevent text selection flicker */
   -webkit-user-select: none;
   -moz-user-select: none;
    -ms-user-select: none;
@@ -1406,7 +1405,7 @@ body {
   height: 100%;
   z-index: 0;
   overflow: hidden;
-  /* OPTIMIZED: Promote to GPU layer */
+  /* GPU шар для контейнера блобів - це ОК, бо він один */
   -webkit-transform: translateZ(0);
           transform: translateZ(0);
 }
@@ -1573,6 +1572,7 @@ body {
   -webkit-text-fill-color: transparent;
   -webkit-animation: shimmer 3s linear infinite;
           animation: shimmer 3s linear infinite;
+  will-change: background-position;
 }
 
 @-webkit-keyframes shimmer {
@@ -1649,8 +1649,6 @@ body {
   height: 500px;
   -webkit-transition: all 0.6s var(--ease-smooth);
   transition: all 0.6s var(--ease-smooth);
-  /* OPTIMIZED: Hint for browser */
-  will-change: transform, opacity;
 }
 .panel .panel-content {
   width: 100%;
@@ -1819,6 +1817,8 @@ body {
           box-shadow: var(--glass-shadow);
   position: relative;
   z-index: 50;
+  -webkit-transform: translateZ(0);
+          transform: translateZ(0);
 }
 .center-console .console-text {
   text-align: center;
@@ -2536,6 +2536,7 @@ body {
   -webkit-transform: translateZ(0);
           transform: translateZ(0);
   will-change: border-color, box-shadow;
+  contain: strict;
   -ms-touch-action: none;
       touch-action: none;
 }
@@ -2547,6 +2548,8 @@ canvas#rhythmCanvas {
   display: block;
   position: relative;
   z-index: 10;
+  -ms-touch-action: none;
+      touch-action: none;
 }
 
 /* Меню вибору пісень - центруємо по екрану, а не по контейнеру */
@@ -2601,6 +2604,8 @@ canvas#rhythmCanvas {
   height: 100%;
   pointer-events: none;
   z-index: 25;
+  /* Тут теж ізоляція, бо це важкі ефекти */
+  contain: strict;
 }
 
 .long-note-hold-effect {
@@ -2680,6 +2685,7 @@ canvas#rhythmCanvas {
           justify-content: center;
   z-index: 200;
   color: var(--highlight);
+  contain: strict;
 }
 
 .spinner {
@@ -2755,6 +2761,7 @@ canvas#rhythmCanvas {
   transition: width 0.1s linear;
   -webkit-box-shadow: 0 0 10px var(--highlight);
           box-shadow: 0 0 10px var(--highlight);
+  will-change: width;
 }
 
 .star-marker {
@@ -3252,6 +3259,7 @@ canvas#rhythmCanvas {
   background: rgba(0, 0, 0, 0.6) !important;
   -webkit-animation: rainbow-border 2s linear infinite;
           animation: rainbow-border 2s linear infinite;
+  will-change: border-color;
 }
 
 /* Заблокована пісня */
@@ -3384,6 +3392,7 @@ canvas#rhythmCanvas {
   z-index: 15;
   -webkit-animation: ripple-gold 2s infinite ease-in-out !important;
           animation: ripple-gold 2s infinite ease-in-out !important;
+  will-change: border-color, box-shadow;
 }
 
 .container-ripple-cosmic {
@@ -3391,6 +3400,7 @@ canvas#rhythmCanvas {
   z-index: 15;
   -webkit-animation: ripple-cosmic 1.5s infinite ease-in-out !important;
           animation: ripple-cosmic 1.5s infinite ease-in-out !important;
+  will-change: border-color, box-shadow;
 }
 
 .container-legendary {
@@ -3398,6 +3408,7 @@ canvas#rhythmCanvas {
   z-index: 20;
   -webkit-animation: flow-legendary 1s infinite ease-in-out !important;
           animation: flow-legendary 1s infinite ease-in-out !important;
+  will-change: border-color, box-shadow;
 }
 
 /* ==========================================
@@ -3495,6 +3506,7 @@ canvas#rhythmCanvas {
   border: 2px solid transparent;
   -webkit-animation: xmas-border 3s linear infinite;
           animation: xmas-border 3s linear infinite;
+  will-change: border-color;
 }
 
 .song-card.song-xmas h3::before {
@@ -3541,6 +3553,7 @@ canvas#rhythmCanvas {
   background: rgba(40, 30, 10, 0.6); /* Легкий золотий відтінок фону */
   -webkit-animation: gold-shimmer-border 2s ease-in-out infinite;
           animation: gold-shimmer-border 2s ease-in-out infinite;
+  will-change: border-color;
 }
 
 /* --- Стиль для тривалості пісні (Час) --- */
@@ -3660,6 +3673,7 @@ canvas#rhythmCanvas {
             backface-visibility: hidden;
     -webkit-perspective: 1000px;
             perspective: 1000px;
+    contain: strict;
   }
   /* =========================================
        4. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)

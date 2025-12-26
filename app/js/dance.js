@@ -1,9 +1,10 @@
 /* ==========================================
    🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // RENDERER: Canvas 2D (DPI Optimized)
+   // RENDERER: Canvas 2D (GPU/Memory Optimized)
+   // ENGINEER: Gemini (Principal Game Eng)
    ========================================== */
 
-// --- FIREBASE IMPORTS (ES MODULES) ---
+// --- FIREBASE IMPORTS ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc
@@ -19,72 +20,15 @@ const firebaseConfig = {
     appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
 };
 
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-// --- GLOBAL VARIABLES & STATE ---
-let audioCtx = null;
-let sourceNode = null;
-let masterGain = null;
-let audioBuffer = null;
-let animationFrameId = null;
-let currentSessionId = 0;
+// ==========================================
+// ⚙️ CONSTANTS & CONFIGURATION
+// ==========================================
 
-let isPlaying = false;
-let isPaused = false;
-let isMuted = localStorage.getItem('isMuted') === 'true';
-let currentLang = localStorage.getItem('siteLang') || 'UA';
-
-// OPTIMIZED: Cached environment variables
-let isMobile = window.innerWidth < 768;
-let gameWidth = 0;
-let gameHeight = 0;
-
-let startTime = 0;
-let score = 0;
-let maxPossibleScore = 0;
-let combo = 0;
-let maxCombo = 0;
-let lastComboUpdateTime = 0;
-let consecutiveMisses = 0;
-let currentSongIndex = 0;
-let lastHitTime = 0;
-let currentSpeed = 1000;
-
-// COMBO ANIMATION STATE
-let comboScale = 1.0;
-let currentComboTier = 'none';
-
-// Game Objects
-let mapTiles = [];
-let activeTiles = [];
-
-// OPTIMIZED: Object Pools & Render Arrays
-const MAX_PARTICLES = 300;
-let particlePool = [];
-let particlePoolIndex = 0;
-let activeRatings = [];
-
-// PERFORMANCE: Gradient Cache
-const GRADIENT_CACHE = {
-    tap: {}, 
-    longHead: {}
-};
-
-let keyState = [false, false, false, false];
-let holdingTiles = [null, null, null, null];
-let laneElements = [null, null, null, null];
-let laneLastInputTime = [0, 0, 0, 0];
-let laneBeamAlpha = [0, 0, 0, 0];
-let starsElements = [];
-
-// DOM Elements
-let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl;
-let scoreEl; 
-
-// Constants
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
+
 const CONFIG = {
     speedStart: 1000,
     speedEnd: 500,
@@ -97,6 +41,7 @@ const CONFIG = {
     scorePerfect: 50,
     scoreGood: 20,
     scoreHoldTick: 5,
+    // Colors maintained exactly for pixel-perfect match
     colorsDark: {
         tap: ['#00d2ff', '#3a7bd5'],
         long: ['#ff0099', '#493240'],
@@ -124,15 +69,9 @@ const PALETTES = {
 };
 
 const TRANSLATIONS = {
-    UA: {
-        icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "КОМБО", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено"
-    },
-    RU: {
-        icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "КОМБО", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот...", leaderboard: "Таблица Лидеров", enterName: "Введите ваше имя для рекорда:", req: "Пройдите 5 песен на 3 звезды!", namePls: "Введите имя", lbTitle: "Лидеры Секретного Уровня", lbRank: "Ранг", lbName: "Имя", lbScore: "Очки", lbNoRecords: "Рекордов еще нет!", lbLoading: "Загрузка...", lbError: "Ошибка загрузки", nameTaken: "Это имя уже занято! Выберите другое.", checking: "Проверка...", secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень", close: "Закрыть", changeName: "Сменить Имя", nameUpdated: "Имя обновлено!", enterNewName: "Введите новое имя:", migrationSuccess: "Ваш старый рекорд найден и привязан!", btnOk: "ОК", btnCancel: "Отмена", searchPlaceholder: "🔍 Поиск песни или автора...", noSongsFound: "🚫 Песен не найдено"
-    },
-    MEOW: {
-        icon: "🐱", instructions: "Meow meow meow S D J K meow", score: "Meow", combo: "Meow-bo", paused: "MEOW?", resume: "Meow!", quit: "Grrr", complete: "WeOWW", failed: "WeowWWWW", restart: "Meow-gain", menu: "Meow-nu", perfect: "WeowE", good: "MEOW", miss: "Weow", loading: "Meowing...", leaderboard: "Meow-Weowt", enterName: "Meow name:", req: "Meow Weow Weow Weow Weow!", namePls: "Meow?", lbTitle: "Meow Leaders", lbRank: "Meow #", lbName: "Meow Weow", lbScore: "Meows", lbNoRecords: "Weow Weow Weow!", lbLoading: "Meowing...", lbError: "Meow Weow", nameTaken: "MEOW! Meow! Meow weow!", checking: "Weow...", secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow", close: "Meow", changeName: "Meow Name", nameUpdated: "Meow meow!", enterNewName: "Meow new meow:", migrationSuccess: "Meow weow meow!", btnOk: "Meow!", btnCancel: "Grrr...", searchPlaceholder: "🔍 Meow search...", noSongsFound: "🚫 Meow weow grrr"
-    }
+    UA: { icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "КОМБО", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено" },
+    RU: { icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "КОМБО", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот...", leaderboard: "Таблица Лидеров", enterName: "Введите ваше имя для рекорда:", req: "Пройдите 5 песен на 3 звезды!", namePls: "Введите имя", lbTitle: "Лидеры Секретного Уровня", lbRank: "Ранг", lbName: "Имя", lbScore: "Очки", lbNoRecords: "Рекордов еще нет!", lbLoading: "Загрузка...", lbError: "Ошибка загрузки", nameTaken: "Это имя уже занято! Выберите другое.", checking: "Проверка...", secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень", close: "Закрыть", changeName: "Сменить Имя", nameUpdated: "Имя обновлено!", enterNewName: "Введите новое имя:", migrationSuccess: "Ваш старый рекорд найден и привязан!", btnOk: "ОК", btnCancel: "Отмена", searchPlaceholder: "🔍 Поиск песни или автора...", noSongsFound: "🚫 Песен не найдено" },
+    MEOW: { icon: "🐱", instructions: "Meow meow meow S D J K meow", score: "Meow", combo: "Meow-bo", paused: "MEOW?", resume: "Meow!", quit: "Grrr", complete: "WeOWW", failed: "WeowWWWW", restart: "Meow-gain", menu: "Meow-nu", perfect: "WeowE", good: "MEOW", miss: "Weow", loading: "Meowing...", leaderboard: "Meow-Weowt", enterName: "Meow name:", req: "Meow Weow Weow Weow Weow!", namePls: "Meow?", lbTitle: "Meow Leaders", lbRank: "Meow #", lbName: "Meow Weow", lbScore: "Meows", lbNoRecords: "Weow Weow Weow!", lbLoading: "Meowing...", lbError: "Meow Weow", nameTaken: "MEOW! Meow! Meow weow!", checking: "Weow...", secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow", close: "Meow", changeName: "Meow Name", nameUpdated: "Meow meow!", enterNewName: "Meow new meow:", migrationSuccess: "Meow weow meow!", btnOk: "Meow!", btnCancel: "Grrr...", searchPlaceholder: "🔍 Meow search...", noSongsFound: "🚫 Meow weow grrr" }
 };
 
 const songsDB = [
@@ -201,9 +140,95 @@ const songsDB = [
     { file: "Pyrokinesis Трупный Синод.mp3", title: "Трупный Синод", artist: "Pyrokinesis", duration: "3m 40s" }
 ];
 
-/* ==========================================
-   🛠 AUDIO PROCESSING HELPERS
-   ========================================== */
+// ==========================================
+// 🛠 GLOBAL STATE & PERFORMANCE CACHE
+// ==========================================
+
+const State = {
+    audioCtx: null,
+    sourceNode: null,
+    masterGain: null,
+    audioBuffer: null,
+    animationFrameId: null,
+    currentSessionId: 0,
+    isPlaying: false,
+    isPaused: false,
+    isMuted: localStorage.getItem('isMuted') === 'true',
+    currentLang: localStorage.getItem('siteLang') || 'UA',
+    isMobile: window.innerWidth < 768,
+    
+    // Game Logic
+    startTime: 0,
+    score: 0,
+    maxPossibleScore: 0,
+    combo: 0,
+    maxCombo: 0,
+    lastComboUpdateTime: 0,
+    consecutiveMisses: 0,
+    currentSongIndex: 0,
+    lastHitTime: 0,
+    currentSpeed: 1000,
+    
+    // Visuals
+    gameWidth: 0,
+    gameHeight: 0,
+    comboScale: 1.0,
+    currentComboTier: 'none',
+    activeRatings: [], // Array of objects
+    
+    // Input
+    keyState: [false, false, false, false],
+    holdingTiles: [null, null, null, null],
+    laneLastInputTime: [0, 0, 0, 0],
+    laneBeamAlpha: [0, 0, 0, 0],
+    
+    // Render Arrays
+    mapTiles: [],
+    activeTiles: [],
+    
+    // Performance: Random Jitter Table (Deterministic Noise)
+    shakeTable: new Float32Array(256)
+};
+
+// PRE-COMPUTE JITTER TABLE (Replaces Math.random() in draw loop)
+for(let i = 0; i < State.shakeTable.length; i++) {
+    State.shakeTable[i] = (Math.random() - 0.5);
+}
+function getDeterministicShake(offset = 0, magnitude = 1) {
+    const idx = (Date.now() + offset) & 255; // Fast modulo 256
+    return State.shakeTable[idx] * magnitude;
+}
+
+// OBJECT POOLING: PARTICLES
+const MAX_PARTICLES = 300;
+const particlePool = new Array(MAX_PARTICLES).fill(null).map(() => ({
+    active: false,
+    x: 0, y: 0,
+    vx: 0, vy: 0,
+    life: 0,
+    color: '#fff',
+    angle: 0,
+    spin: 0
+}));
+let particlePoolIndex = 0;
+
+// CACHING: GRADIENTS & PATHS
+const GRADIENT_CACHE = {
+    tap: {},
+    longHead: {},
+    longTail: {} // Cache tail gradients? (Depends on length, maybe dynamic)
+};
+
+// DOM ELEMENTS
+let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl, scoreEl;
+let starsElements = [];
+let laneElements = [null, null, null, null];
+
+// ==========================================
+// 🛠 AUDIO PROCESSING CORE
+// ==========================================
+// (Preserved exactly to maintain chart generation logic)
+
 function normalizeBufferAggressive(buffer) {
     const newData = new Float32Array(buffer.length);
     let maxAmp = 0;
@@ -282,27 +307,13 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
     return available.slice(0, count);
 }
 
-// OPTIMIZED: Init Particle Pool
-function initParticlePool() {
-    particlePool = [];
-    for (let i = 0; i < MAX_PARTICLES; i++) {
-        particlePool.push({
-            active: false,
-            x: 0, y: 0,
-            vx: 0, vy: 0,
-            life: 0,
-            color: '#fff',
-            angle: 0, // For rotation
-            spin: 0   // Spin speed
-        });
-    }
-}
-
-// --------------------------------------------------------
+// ==========================================
+// 🚀 INITIALIZATION & EVENTS
+// ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- DOM REFERENCES ---
+    // DOM References
     canvas = document.getElementById('rhythmCanvas');
     ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null;
     gameContainer = document.getElementById('game-container');
@@ -312,17 +323,13 @@ document.addEventListener('DOMContentLoaded', () => {
     progressBar = document.getElementById('game-progress-bar');
     scoreEl = document.getElementById('score-display');
     
-    // Init Stars Array
     starsElements = [
         document.getElementById('star-1'), document.getElementById('star-2'),
         document.getElementById('star-3'), document.getElementById('star-4'),
         document.getElementById('star-5')
     ].filter(el => el !== null);
 
-    // Initialize pools
-    initParticlePool();
-
-    // --- AUDIO INIT ---
+    // Audio SFX
     const sfxClick = new Audio('audio/click.mp3');
     const sfxHover = new Audio('audio/hover.mp3');
 
@@ -335,45 +342,45 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(bgMusicEl);
     }
 
-    // --- SYNC SETTINGS ---
+    // Sync Settings
     const savedTheme = localStorage.getItem('siteTheme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     const themeBtn = document.getElementById('themeToggle');
     if (themeBtn) themeBtn.innerText = savedTheme === 'dark' ? '🌙' : '☀️';
 
-    document.body.setAttribute('data-lang', currentLang);
+    document.body.setAttribute('data-lang', State.currentLang);
     const langBtn = document.getElementById('langToggle');
-    if (langBtn) langBtn.innerText = TRANSLATIONS[currentLang].icon || currentLang;
+    if (langBtn) langBtn.innerText = TRANSLATIONS[State.currentLang].icon || State.currentLang;
 
     const soundBtn = document.getElementById('soundToggle');
-    if (soundBtn) soundBtn.innerText = isMuted ? '🔇' : '🔊';
+    if (soundBtn) soundBtn.innerText = State.isMuted ? '🔇' : '🔊';
 
-    if (!isMuted && bgMusicEl) {
+    if (!State.isMuted && bgMusicEl) {
         const savedTime = localStorage.getItem('bgMusicTime');
         if (savedTime) bgMusicEl.currentTime = parseFloat(savedTime);
-        bgMusicEl.play().catch(() => { console.log("Waiting for interaction..."); });
+        bgMusicEl.play().catch(() => {});
     }
 
     window.addEventListener('beforeunload', () => {
         if (bgMusicEl && !bgMusicEl.paused) localStorage.setItem('bgMusicTime', bgMusicEl.currentTime);
     });
 
-    function playClick() { if (!isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(() => { }); } }
-    function playHover() { if (!isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(() => { }); } }
+    function playClick() { if (!State.isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(() => { }); } }
+    function playHover() { if (!State.isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(() => { }); } }
 
-    /* --- UTILS --- */
-    function getText(key) { return TRANSLATIONS[currentLang][key] || TRANSLATIONS['UA'][key]; }
+    /* --- HELPERS --- */
+    function getText(key) { return TRANSLATIONS[State.currentLang][key] || TRANSLATIONS['UA'][key]; }
 
     function updateLangDisplay() {
         const lBtn = document.getElementById('langToggle');
         if (lBtn) {
-            const icon = TRANSLATIONS[currentLang].icon || currentLang;
+            const icon = TRANSLATIONS[State.currentLang].icon || State.currentLang;
             lBtn.innerText = icon;
         }
     }
 
     function updateGameText() {
-        const t = TRANSLATIONS[currentLang];
+        const t = TRANSLATIONS[State.currentLang];
         const searchInput = document.getElementById('song-search-input');
         if (searchInput) searchInput.placeholder = t.searchPlaceholder;
         const noSongsMsg = document.querySelector('#no-songs-msg h3');
@@ -411,12 +418,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     initPlayerIdentity();
 
-    // --- OPTIMIZED: CACHE GRADIENTS ---
+    // --- OPTIMIZATION: CACHE GRADIENTS ---
     function initGradients() {
-        // Clear cache
+        if (!ctx) return;
+        
+        // Clear old
         for(let key in GRADIENT_CACHE.tap) delete GRADIENT_CACHE.tap[key];
         
-        // Helper to create and cache
         const createTapGrad = (colors, key) => {
             const g = ctx.createLinearGradient(0, 0, 0, CONFIG.noteHeight);
             g.addColorStop(0, colors[0]);
@@ -435,29 +443,33 @@ document.addEventListener('DOMContentLoaded', () => {
         palettes.forEach(p => createTapGrad(p.cols, p.name));
     }
 
-    // --- GAME LOOP & LOGIC ---
+    // ==========================================
+    // 🎮 GAME LOGIC & LOOP
+    // ==========================================
+
     function resetGameState() {
-        currentSessionId++;
-        if (animationFrameId) { cancelAnimationFrame(animationFrameId); animationFrameId = null; }
-        if (sourceNode) { try { sourceNode.stop(); } catch (e) { } sourceNode = null; }
-        isPlaying = false; isPaused = false;
-        if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+        State.currentSessionId++;
+        if (State.animationFrameId) { cancelAnimationFrame(State.animationFrameId); State.animationFrameId = null; }
+        if (State.sourceNode) { try { State.sourceNode.stop(); } catch (e) { } State.sourceNode = null; }
+        State.isPlaying = false; State.isPaused = false;
+        if (State.audioCtx && State.audioCtx.state === 'suspended') State.audioCtx.resume();
 
-        score = 0; combo = 0; maxCombo = 0; consecutiveMisses = 0;
-        lastComboUpdateTime = 0;
-        activeTiles = []; mapTiles = [];
+        State.score = 0; State.combo = 0; State.maxCombo = 0; State.consecutiveMisses = 0;
+        State.lastComboUpdateTime = 0;
+        State.activeTiles = []; State.mapTiles = [];
         
+        // Reset particles (Object Pool Reuse)
         for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
-        activeRatings = [];
+        State.activeRatings = [];
         
-        comboScale = 1.0;
-        currentComboTier = 'none';
+        State.comboScale = 1.0;
+        State.currentComboTier = 'none';
 
-        holdingTiles = [null, null, null, null];
-        keyState = [false, false, false, false];
-        laneBeamAlpha = [0, 0, 0, 0];
+        State.holdingTiles = [null, null, null, null];
+        State.keyState = [false, false, false, false];
+        State.laneBeamAlpha = [0, 0, 0, 0];
 
-        if (ctx && canvas) ctx.clearRect(0, 0, gameWidth, gameHeight);
+        if (ctx && canvas) ctx.clearRect(0, 0, State.gameWidth, State.gameHeight);
         if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
         if (gameContainer) {
@@ -493,28 +505,26 @@ document.addEventListener('DOMContentLoaded', () => {
         localStorage.setItem(`neon_rhythm_${songTitle}`, JSON.stringify({ score: finalScore, stars: finalStars }));
     }
 
-    /* ----------------------------------
-       PULSE ENGINE V4.2
-       ---------------------------------- */
+    // --- PULSE ENGINE (Chart Generation) ---
     async function analyzeAudio(url, sessionId) {
-        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        if (!masterGain) {
-            masterGain = audioCtx.createGain();
-            masterGain.gain.value = isMuted ? 0 : 1;
-            masterGain.connect(audioCtx.destination);
+        if (!State.audioCtx) State.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (!State.masterGain) {
+            State.masterGain = State.audioCtx.createGain();
+            State.masterGain.gain.value = State.isMuted ? 0 : 1;
+            State.masterGain.connect(State.audioCtx.destination);
         }
-        if (audioCtx.state === 'suspended') await audioCtx.resume();
+        if (State.audioCtx.state === 'suspended') await State.audioCtx.resume();
 
         try {
             const response = await fetch(url);
             if (!response.ok) throw new Error("File not found");
             const arrayBuffer = await response.arrayBuffer();
-            if (sessionId !== currentSessionId) return null;
+            if (sessionId !== State.currentSessionId) return null;
             
-            const decodedAudio = await audioCtx.decodeAudioData(arrayBuffer);
-            if (sessionId !== currentSessionId) return null;
+            const decodedAudio = await State.audioCtx.decodeAudioData(arrayBuffer);
+            if (sessionId !== State.currentSessionId) return null;
 
-            let isSecret = songsDB[currentSongIndex].isSecret;
+            let isSecret = songsDB[State.currentSongIndex].isSecret;
             let startSpeedMs = isSecret ? CONFIG.speedStartSecret : CONFIG.speedStart;
             let endSpeedMs = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
 
@@ -530,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let lastLane = -1;
             let maxPossibleScoreTemp = 0;
 
-            const trackHeight = (gameHeight > 0) ? (gameHeight * CONFIG.hitPosition) : 600;
+            const trackHeight = (State.gameHeight > 0) ? (State.gameHeight * CONFIG.hitPosition) : 600;
             const noteSizeFraction = CONFIG.noteHeight / trackHeight;
 
             for (let i = STEP_SIZE; i < normalizedData.length; i += STEP_SIZE) {
@@ -604,33 +614,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            maxPossibleScore = maxPossibleScoreTemp;
-            audioBuffer = decodedAudio;
+            State.maxPossibleScore = maxPossibleScoreTemp;
+            State.audioBuffer = decodedAudio;
             return tiles;
 
         } catch (error) {
             console.error("GEN ERROR:", error);
-            if (sessionId === currentSessionId) { alert("Generation Error: " + error.message); quitGame(); }
+            if (sessionId === State.currentSessionId) { alert("Generation Error: " + error.message); quitGame(); }
             return null;
         }
     }
 
+    // --- GAME LOOP ---
     function gameLoop() {
-        if (!isPlaying || isPaused) return;
+        if (!State.isPlaying || State.isPaused) return;
 
-        const songTime = (audioCtx.currentTime - startTime) * 1000;
-        const durationMs = audioBuffer.duration * 1000;
+        const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
+        const durationMs = State.audioBuffer.duration * 1000;
         const progress = Math.min(1, songTime / durationMs);
 
-        const isSecret = songsDB[currentSongIndex].isSecret;
+        const isSecret = songsDB[State.currentSongIndex].isSecret;
         const startSpd = isSecret ? CONFIG.speedStartSecret : CONFIG.speedStart;
         const endSpd = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
-        currentSpeed = startSpd - (progress * (startSpd - endSpd));
+        State.currentSpeed = startSpd - (progress * (startSpd - endSpd));
 
         updateProgressBar(songTime, durationMs);
 
-        // Update Combo Scale Animation
-        comboScale += (1.0 - comboScale) * 0.15;
+        // Optimization: Linear interpolation for smooth scaling without heavy physics engine
+        State.comboScale += (1.0 - State.comboScale) * 0.15;
 
         if (songTime > durationMs + 1000) {
             endGame(true);
@@ -639,49 +650,51 @@ document.addEventListener('DOMContentLoaded', () => {
 
         update(songTime);
         draw(songTime);
-        animationFrameId = requestAnimationFrame(gameLoop);
+        State.animationFrameId = requestAnimationFrame(gameLoop);
     }
 
     function getCurrentBeamColor() {
-        if (combo >= 800) return PALETTES.LEGENDARY.glow;
-        if (combo >= 400) return PALETTES.COSMIC.glow;
-        if (combo >= 200) return PALETTES.GOLD.glow;
-        if (combo >= 100) return PALETTES.ELECTRIC.glow;
+        if (State.combo >= 800) return PALETTES.LEGENDARY.glow;
+        if (State.combo >= 400) return PALETTES.COSMIC.glow;
+        if (State.combo >= 200) return PALETTES.GOLD.glow;
+        if (State.combo >= 100) return PALETTES.ELECTRIC.glow;
         const isLight = document.body.getAttribute('data-theme') === 'light';
         return isLight ? CONFIG.colorsLight.long[1] : CONFIG.colorsDark.long[1];
     }
 
     function update(songTime) {
-        const hitTimeWindow = currentSpeed;
-        const hitY = gameHeight * CONFIG.hitPosition;
+        const hitTimeWindow = State.currentSpeed;
+        const hitY = State.gameHeight * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
+        const now = Date.now();
 
         // Spawn
-        mapTiles.forEach(tile => {
+        for(let i = 0; i < State.mapTiles.length; i++) {
+            const tile = State.mapTiles[i];
             if (!tile.spawned && tile.time - hitTimeWindow <= songTime) {
-                activeTiles.push(tile);
+                State.activeTiles.push(tile);
                 tile.spawned = true;
             }
-        });
+        }
 
         // Update active
-        for (let i = activeTiles.length - 1; i >= 0; i--) {
-            const tile = activeTiles[i];
+        for (let i = State.activeTiles.length - 1; i >= 0; i--) {
+            const tile = State.activeTiles[i];
 
             // Auto-Catch Long Note Start
             if (!tile.hit && !tile.completed && !tile.failed && tile.type === 'long') {
-                if (keyState[tile.lane]) {
+                if (State.keyState[tile.lane]) {
                     const diff = tile.time - songTime;
                     if (Math.abs(diff) < 50) {
                         tile.hit = true;
-                        tile.lastValidHoldTime = Date.now();
-                        holdingTiles[tile.lane] = tile;
+                        tile.lastValidHoldTime = now;
+                        State.holdingTiles[tile.lane] = tile;
                         toggleHoldEffect(tile.lane, true, getCurrentBeamColor());
-                        score += CONFIG.scorePerfect;
-                        lastComboUpdateTime = Date.now();
+                        State.score += CONFIG.scorePerfect;
+                        State.lastComboUpdateTime = now;
                         showRating(getText('perfect'), "rating-perfect");
                         spawnSparks(tile.lane, hitY, '#ff00ff', 'perfect');
-                        lastHitTime = Date.now();
+                        State.lastHitTime = now;
                         updateScoreUI();
                     }
                 }
@@ -689,41 +702,41 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Remove hit taps
             if (tile.type === 'tap' && tile.hit) {
-                if (Date.now() - tile.hitAnimStart > 100) activeTiles.splice(i, 1);
+                if (now - tile.hitAnimStart > 100) State.activeTiles.splice(i, 1);
                 continue;
             }
 
             // Long Note Hold Logic
-            const yStart = (1 - (tile.time - songTime) / currentSpeed) * hitY;
+            const yStart = (1 - (tile.time - songTime) / State.currentSpeed) * hitY;
             let yEnd = yStart;
-            if (tile.type === 'long') yEnd = (1 - (tile.endTime - songTime) / currentSpeed) * hitY;
+            if (tile.type === 'long') yEnd = (1 - (tile.endTime - songTime) / State.currentSpeed) * hitY;
 
             if (tile.type === 'long' && tile.hit && !tile.completed && !tile.failed && !tile.released) {
-                const isKeyPressed = keyState[tile.lane];
-                if (isKeyPressed) tile.lastValidHoldTime = Date.now();
+                const isKeyPressed = State.keyState[tile.lane];
+                if (isKeyPressed) tile.lastValidHoldTime = now;
 
-                if (isKeyPressed || (Date.now() - tile.lastValidHoldTime) < 150) {
+                if (isKeyPressed || (now - tile.lastValidHoldTime) < 150) {
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
-                            score += Math.round(CONFIG.scoreHoldTick * mult);
-                            combo += 5;
-                            lastComboUpdateTime = Date.now();
-                            if (combo > maxCombo) maxCombo = combo;
+                            State.score += Math.round(CONFIG.scoreHoldTick * mult);
+                            State.combo += 5;
+                            State.lastComboUpdateTime = now;
+                            if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
                             spawnSparks(tile.lane, hitY, themeColors.long[1], 'good');
                         }
                         tile.holding = true;
-                        lastHitTime = Date.now();
+                        State.lastHitTime = now;
                     } else {
                         tile.completed = true;
                         tile.holding = false;
                         const mult = getComboMultiplier();
-                        score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
-                        combo++; 
-                        lastComboUpdateTime = Date.now();
-                        if (combo > maxCombo) maxCombo = combo;
+                        State.score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
+                        State.combo++; 
+                        State.lastComboUpdateTime = now;
+                        if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                         updateScoreUI(true);
                     }
                 } else {
@@ -734,38 +747,37 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
 
-            const limitY = gameHeight + 50;
+            const limitY = State.gameHeight + 50;
             if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY)) {
                 if (!tile.hit && !tile.completed && !tile.failed) {
                      missNote(tile, true);
                 }
-                activeTiles.splice(i, 1);
+                State.activeTiles.splice(i, 1);
             }
         }
     }
 
-    // OPTIMIZED: Draw Loop
+    // --- DRAW LOOP (OPTIMIZED) ---
     function draw(songTime) {
         if (!ctx) return;
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
+        // Optimization: Pre-determine style props to avoid lookups in loops
         let p = { tapColor: [], longColor: [], glow: '', border: '', name: 'steel' };
-
-        // Determine Palette based on Combo
-        if (combo < 100) {
+        if (State.combo < 100) {
             p.tapColor = [PALETTES.STEEL.light, PALETTES.STEEL.main];
             p.longColor = [PALETTES.STEEL.main, PALETTES.STEEL.dark];
             p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border; p.name = 'steel';
-        } else if (combo < 200) {
+        } else if (State.combo < 200) {
             p.tapColor = [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2];
             p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2];
             p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border; p.name = 'electric';
-        } else if (combo < 400) {
+        } else if (State.combo < 400) {
             p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
             p.longColor = [PALETTES.GOLD.amber, PALETTES.GOLD.light];
             p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border; p.name = 'gold';
-        } else if (combo < 800) {
+        } else if (State.combo < 800) {
             p.tapColor = ['#000000', PALETTES.COSMIC.core];
             p.longColor = [PALETTES.COSMIC.accent, PALETTES.COSMIC.glitch];
             p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border; p.name = 'cosmic';
@@ -775,72 +787,72 @@ document.addEventListener('DOMContentLoaded', () => {
             p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent; p.name = 'legendary';
         }
 
-        // Clear using logical coordinates
-        ctx.clearRect(0, 0, gameWidth, gameHeight);
-        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, gameWidth, gameHeight); }
+        // 1. Clear Canvas
+        ctx.clearRect(0, 0, State.gameWidth, State.gameHeight);
+        if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, State.gameWidth, State.gameHeight); }
 
-        const laneW = gameWidth / 4;
-        const hitY = gameHeight * CONFIG.hitPosition;
+        const laneW = State.gameWidth / 4;
+        const hitY = State.gameHeight * CONFIG.hitPosition;
         const padding = 6;
         const noteRadius = 10;
         
-        const enableHeavyEffects = !isMobile && activeTiles.length < 50;
+        const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
-        // --- DRAW LANES & BEAMS ---
-        ctx.strokeStyle = (combo >= 200) ? '#333' : colors.laneLine;
+        // 2. Lanes & Beams
+        ctx.strokeStyle = (State.combo >= 200) ? '#333' : colors.laneLine;
         ctx.lineWidth = 2;
         ctx.beginPath();
         
         for (let i = 0; i < 4; i++) {
-            let shakeX = holdingTiles[i] ? (Math.random() - 0.5) * 4 : 0;
-            if (laneBeamAlpha[i] > 0) {
+            // Optimization: Use deterministic shake instead of Math.random
+            let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
+            if (State.laneBeamAlpha[i] > 0) {
                 const beamX = (i * laneW) + shakeX;
                 ctx.fillStyle = p.glow;
-                ctx.globalAlpha = laneBeamAlpha[i] * 0.3; 
+                ctx.globalAlpha = State.laneBeamAlpha[i] * 0.3; 
                 ctx.fillRect(beamX, 0, laneW, hitY);
-                ctx.globalAlpha = 1.0; laneBeamAlpha[i] -= 0.08;
+                ctx.globalAlpha = 1.0; State.laneBeamAlpha[i] -= 0.08;
             }
-            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, gameHeight); }
+            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, State.gameHeight); }
         }
         ctx.stroke();
 
-        // Hit Line
-        ctx.strokeStyle = (combo >= 200) ? p.border : p.glow;
-        ctx.lineWidth = (combo >= 200) ? 3 : 2;
-        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(gameWidth, hitY); ctx.stroke();
+        // 3. Hit Line
+        ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
+        ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
+        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(State.gameWidth, hitY); ctx.stroke();
 
-        // --- DRAW NOTES ---
+        // 4. Notes
         const tapGradient = GRADIENT_CACHE.tap[p.name];
 
-        activeTiles.forEach(tile => {
-            if (tile.type === 'long' && tile.completed) return;
+        for (let i = 0; i < State.activeTiles.length; i++) {
+            const tile = State.activeTiles[i];
+            if (tile.type === 'long' && tile.completed) continue;
 
-            let tileShake = (tile.type === 'long' && tile.holding) ? (Math.random() - 0.5) * 3 : 0;
+            let tileShake = (tile.type === 'long' && tile.holding) ? getDeterministicShake(i * 50, 3) : 0;
             const x = tile.lane * laneW + padding + tileShake;
             const w = laneW - (padding * 2);
-            const progressStart = 1 - (tile.time - songTime) / currentSpeed;
+            const progressStart = 1 - (tile.time - songTime) / State.currentSpeed;
             const visualY = tile.hit ? hitY : progressStart * hitY;
             let yTop = visualY - CONFIG.noteHeight;
 
             if (tile.type === 'tap') {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 
-                // Translate context to use cached gradient at 0,0
                 ctx.save();
+                // Translate context to use cached gradient at 0,0
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
                 ctx.translate(cx, cy); 
                 ctx.scale(scale, scale); 
                 ctx.translate(-w/2, -CONFIG.noteHeight/2); 
 
-                // Shadow check
                 if (enableHeavyEffects) {
-                    ctx.shadowBlur = (tile.hit) ? 35 : (combo >= 200 ? 20 : 10);
+                    ctx.shadowBlur = (tile.hit) ? 35 : (State.combo >= 200 ? 20 : 10);
                     ctx.shadowColor = p.glow;
                 } else {
                     ctx.shadowBlur = 0; 
                 }
                 
-                // Use Cached Gradient
                 ctx.fillStyle = tapGradient || p.tapColor[0];
                 
                 ctx.beginPath();
@@ -848,10 +860,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 else ctx.fillRect(0, 0, w, CONFIG.noteHeight);
                 ctx.fill();
 
-                // Border
-                ctx.strokeStyle = p.border; ctx.lineWidth = (combo >= 200) ? 3 : 2; ctx.stroke();
+                ctx.strokeStyle = p.border; ctx.lineWidth = (State.combo >= 200) ? 3 : 2; ctx.stroke();
                 
-                // Highlight
                 ctx.shadowBlur = 0; ctx.fillStyle = "rgba(255,255,255,0.2)";
                 ctx.beginPath(); 
                 ctx.ellipse(w/2, 10, w / 2 - 5, 4, 0, 0, Math.PI * 2); 
@@ -859,7 +869,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.restore();
 
             } else if (tile.type === 'long') {
-                const progressEnd = 1 - (tile.endTime - songTime) / currentSpeed;
+                const progressEnd = 1 - (tile.endTime - songTime) / State.currentSpeed;
                 let yTail = Math.min(progressEnd * hitY, hitY);
                 let yHead = (tile.hit && tile.holding) ? hitY : visualY;
                 if (yTail > yHead) yTail = yHead;
@@ -872,7 +882,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (tile.failed) colorSet = colors.dead;
                 else if (tile.released) colorSet = colors.released;
 
-                // Long Note Tail
+                // Tail
                 if (tailH > 1) {
                     let grad = ctx.createLinearGradient(0, yTail, 0, actualYHeadTop);
                     grad.addColorStop(0, "rgba(0,0,0,0)");
@@ -884,14 +894,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     ctx.fillStyle = grad;
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
                     
-                    ctx.fillStyle = (combo >= 200 && !tile.failed && !tile.released) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
+                    ctx.fillStyle = (State.combo >= 200 && !tile.failed && !tile.released) ? "rgba(255,255,255,0.5)" : "rgba(255,255,255,0.3)";
                     ctx.fillRect(x + w / 2 - 1, yTail, 2, tailH);
                     
                     ctx.globalAlpha = 1.0;
                 }
 
-                // Long Note Head
-                let headColors = (combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
+                // Head
+                let headColors = (State.combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
                 let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
@@ -915,9 +925,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 ctx.globalAlpha = 1.0;
             }
-        });
+        }
 
-        // --- DRAW PARTICLES (OPTIMIZED) ---
+        // 5. Particles
         ctx.shadowBlur = 0; 
         
         for (let i = 0; i < MAX_PARTICLES; i++) {
@@ -925,7 +935,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!pt.active) continue;
 
             pt.x += pt.vx; pt.y += pt.vy; pt.vy += 0.5; pt.life -= 0.03;
-            if (combo >= 400) pt.angle += pt.spin; 
+            if (State.combo >= 400) pt.angle += pt.spin; 
             
             if (pt.life <= 0.05) { pt.active = false; continue; }
 
@@ -933,13 +943,14 @@ document.addEventListener('DOMContentLoaded', () => {
             ctx.fillStyle = pt.color;
             ctx.beginPath();
             
-            if (combo >= 800 || combo >= 400) {
-                 const size = combo >= 800 ? 6 : 8; 
+            if (State.combo >= 800 || State.combo >= 400) {
+                 const size = State.combo >= 800 ? 6 : 8; 
                  const thickness = 2; 
                  
                  const c = Math.cos(pt.angle);
                  const s = Math.sin(pt.angle);
                  
+                 // Manual Matrix Rotation for speed
                  const drawRotatedRect = (w, h) => {
                      const hw = w/2; const hh = h/2;
                      const p1x = (-hw)*c - (-hh)*s + pt.x; const p1y = (-hw)*s + (-hh)*c + pt.y;
@@ -952,19 +963,17 @@ document.addEventListener('DOMContentLoaded', () => {
                  drawRotatedRect(size, thickness); 
                  drawRotatedRect(thickness, size); 
                  
-            } else if (combo >= 200) {
+            } else if (State.combo >= 200) {
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
             } else {
-                ctx.arc(pt.x, pt.y, Math.random() * 3 + 1, 0, Math.PI * 2);
+                ctx.arc(pt.x, pt.y, (i % 3) + 1, 0, Math.PI * 2); // Deterministic size based on index
             }
             ctx.fill();
         }
         ctx.globalAlpha = 1;
 
-        // --- DRAW RATINGS (CANVAS TEXT) ---
+        // 6. UI
         drawRatings();
-
-        // --- DRAW COMBO & MULTIPLIER (CANVAS) ---
         drawComboDisplay();
         drawMultiplier(p.border); 
     }
@@ -973,7 +982,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const mult = getComboMultiplier();
         if (mult <= 1.0) return;
 
-        const timeSinceUpdate = Date.now() - lastComboUpdateTime;
+        const timeSinceUpdate = Date.now() - State.lastComboUpdateTime;
         let alpha = 1.0;
         if (timeSinceUpdate > 2000) {
              alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000);
@@ -983,15 +992,15 @@ document.addEventListener('DOMContentLoaded', () => {
         ctx.save();
         ctx.globalAlpha = alpha;
         
-        const cx = gameWidth / 2;
-        const cy = isMobile ? 145 : 160; 
+        const cx = State.gameWidth / 2;
+        const cy = State.isMobile ? 145 : 160; 
 
         ctx.translate(cx, cy);
-        ctx.scale(comboScale, comboScale);
+        ctx.scale(State.comboScale, State.comboScale);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
-        const fontSize = isMobile ? 24 : 28; 
+        const fontSize = State.isMobile ? 24 : 28; 
         const text = `${mult.toFixed(1)}x`;
 
         ctx.font = `italic 900 ${fontSize}px 'Comic Sans MS'`;
@@ -1006,9 +1015,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function drawComboDisplay() {
-        if (combo < 3) return; 
+        if (State.combo < 3) return; 
 
-        const timeSinceUpdate = Date.now() - lastComboUpdateTime;
+        const timeSinceUpdate = Date.now() - State.lastComboUpdateTime;
         let alpha = 1.0;
         if (timeSinceUpdate > 2000) {
              alpha = Math.max(0, 1 - (timeSinceUpdate - 2000) / 1000); 
@@ -1019,32 +1028,31 @@ document.addEventListener('DOMContentLoaded', () => {
         let fontSize = 60;
         let labelColor = '#fff';
 
-        if (combo >= 800) {
+        if (State.combo >= 800) {
             gradColors = ['#ffffff', '#7b1fa2']; 
             fontSize = 70; labelColor = '#e1bee7';
-        } else if (combo >= 400) {
+        } else if (State.combo >= 400) {
             gradColors = ['#00e5ff', '#d500f9']; 
             fontSize = 68; labelColor = '#00e5ff';
-        } else if (combo >= 200) {
+        } else if (State.combo >= 200) {
             gradColors = ['#FFD700', '#FDB931']; 
             fontSize = 66; labelColor = '#FFF8E1';
-        } else if (combo >= 100) {
+        } else if (State.combo >= 100) {
             gradColors = ['#00bcd4', '#b2ebf2']; 
             fontSize = 64; labelColor = '#00bcd4';
         }
 
         ctx.save();
         ctx.globalAlpha = alpha;
-        const cx = gameWidth / 2;
-        const cy = gameHeight * 0.3; 
+        const cx = State.gameWidth / 2;
+        const cy = State.gameHeight * 0.3; 
         
         ctx.translate(cx, cy);
-        ctx.scale(comboScale, comboScale);
+        ctx.scale(State.comboScale, State.comboScale);
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
 
         ctx.font = "italic 900 24px 'Comic Sans MS'";
-        ctx.fillStyle = labelColor;
         ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(getText('combo'), 2, -40 + 2);
         ctx.fillStyle = labelColor; ctx.fillText(getText('combo'), 0, -40);
 
@@ -1054,26 +1062,26 @@ document.addEventListener('DOMContentLoaded', () => {
         gradient.addColorStop(0, gradColors[0]);
         gradient.addColorStop(1, gradColors[1]);
 
-        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(combo, 4, 14);
-        ctx.fillStyle = gradient; ctx.fillText(combo, 0, 10);
+        ctx.fillStyle = "rgba(0,0,0,0.5)"; ctx.fillText(State.combo, 4, 14);
+        ctx.fillStyle = gradient; ctx.fillText(State.combo, 0, 10);
 
         ctx.restore();
         ctx.globalAlpha = 1.0;
     }
 
     function drawRatings() {
-        if (activeRatings.length === 0) return;
+        if (State.activeRatings.length === 0) return;
         const now = Date.now();
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
         
-        for (let i = activeRatings.length - 1; i >= 0; i--) {
-            const r = activeRatings[i];
+        for (let i = State.activeRatings.length - 1; i >= 0; i--) {
+            const r = State.activeRatings[i];
             const elapsed = now - r.startTime;
             const duration = 500; 
             
             if (elapsed > duration) {
-                activeRatings.splice(i, 1);
+                State.activeRatings.splice(i, 1);
                 continue;
             }
 
@@ -1104,7 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
             
             ctx.font = `900 italic ${fontSize}px "Comic Sans MS", sans-serif`;
             
-            if (!isMobile) {
+            if (!State.isMobile) {
                 ctx.shadowColor = r.color;
                 ctx.shadowBlur = 10; 
             }
@@ -1118,13 +1126,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- INPUT HANDLING ---
     function spawnSparks(lane, y, color, type = 'good') {
-        const laneW = gameWidth / 4;
+        const laneW = State.gameWidth / 4;
         const x = lane * laneW + laneW / 2;
         let finalColor = '#cfd8dc';
-        if (combo >= 800) finalColor = Math.random() > 0.4 ? '#ffffffff' : '#101006ff';
-        else if (combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
-        else if (combo >= 200) finalColor = '#e6953f';
-        else if (combo >= 100) finalColor = '#00bcd4';
+        if (State.combo >= 800) finalColor = Math.random() > 0.4 ? '#ffffffff' : '#101006ff';
+        else if (State.combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
+        else if (State.combo >= 200) finalColor = '#e6953f';
+        else if (State.combo >= 100) finalColor = '#00bcd4';
         
         const count = type === 'perfect' ? 20 : 10;
         let spawned = 0;
@@ -1151,25 +1159,25 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleInputDown(lane) {
-        if (!isPlaying || isPaused) return;
+        if (!State.isPlaying || State.isPaused) return;
         const now = Date.now();
-        if (now - laneLastInputTime[lane] < 70) return;
-        laneLastInputTime[lane] = now;
-        keyState[lane] = true;
+        if (now - State.laneLastInputTime[lane] < 70) return;
+        State.laneLastInputTime[lane] = now;
+        State.keyState[lane] = true;
         if (laneElements[lane]) laneElements[lane].classList.add('active');
-        laneBeamAlpha[lane] = 1.0;
-        if (holdingTiles[lane]) return;
+        State.laneBeamAlpha[lane] = 1.0;
+        if (State.holdingTiles[lane]) return;
 
-        const activeHold = activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed && !t.released);
+        const activeHold = State.activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed && !t.released);
         if (activeHold) {
-            holdingTiles[lane] = activeHold;
-            activeHold.lastValidHoldTime = Date.now();
+            State.holdingTiles[lane] = activeHold;
+            activeHold.lastValidHoldTime = now;
             toggleHoldEffect(lane, true, getCurrentBeamColor());
             return;
         }
 
-        const songTime = (audioCtx.currentTime - startTime) * 1000;
-        const target = activeTiles.find(t => {
+        const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
+        const target = State.activeTiles.find(t => {
             if (t.hit || t.completed || t.failed || t.released) return false;
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
@@ -1180,32 +1188,32 @@ document.addEventListener('DOMContentLoaded', () => {
         if (target) {
             const diff = Math.abs(target.time - songTime);
             target.hit = true;
-            consecutiveMisses = 0;
-            lastHitTime = Date.now();
-            lastComboUpdateTime = Date.now();
+            State.consecutiveMisses = 0;
+            State.lastHitTime = now;
+            State.lastComboUpdateTime = now;
             
-            if (target.type === 'tap') target.hitAnimStart = Date.now();
+            if (target.type === 'tap') target.hitAnimStart = now;
             const mult = getComboMultiplier();
 
             if (diff < 70) {
-                score += Math.round(CONFIG.scorePerfect * mult);
+                State.score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
-                spawnSparks(lane, gameHeight * CONFIG.hitPosition, '#ff00ff', 'perfect');
+                spawnSparks(lane, State.gameHeight * CONFIG.hitPosition, '#ff00ff', 'perfect');
             } else {
-                score += Math.round(CONFIG.scoreGood * mult);
+                State.score += Math.round(CONFIG.scoreGood * mult);
                 showRating(getText('good'), "rating-good");
-                spawnSparks(lane, gameHeight * CONFIG.hitPosition, '#00ffff', 'good');
+                spawnSparks(lane, State.gameHeight * CONFIG.hitPosition, '#00ffff', 'good');
             }
 
             if (target.type === 'long') {
-                holdingTiles[lane] = target;
-                target.lastValidHoldTime = Date.now();
+                State.holdingTiles[lane] = target;
+                target.lastValidHoldTime = now;
                 toggleHoldEffect(lane, true, getCurrentBeamColor());
-                score += Math.round(CONFIG.scorePerfect * mult);
+                State.score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
             } else {
-                combo++;
-                if(combo > maxCombo) maxCombo = combo;
+                State.combo++;
+                if(State.combo > State.maxCombo) State.maxCombo = State.combo;
             }
             updateScoreUI(true);
         } else {
@@ -1214,44 +1222,44 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handleInputUp(lane) {
-        keyState[lane] = false;
+        State.keyState[lane] = false;
         if (laneElements[lane]) laneElements[lane].classList.remove('active');
         toggleHoldEffect(lane, false);
-        if (holdingTiles[lane]) holdingTiles[lane] = null;
+        if (State.holdingTiles[lane]) State.holdingTiles[lane] = null;
     }
 
     function missNote(tile, isSpawnedMiss) {
-        consecutiveMisses++;
-        combo = 0;
-        lastComboUpdateTime = 0; 
+        State.consecutiveMisses++;
+        State.combo = 0;
+        State.lastComboUpdateTime = 0; 
         updateScoreUI(); 
         showRating(getText('miss'), "rating-miss");
         if (gameContainer) {
             gameContainer.classList.add('shake-screen');
             setTimeout(() => gameContainer.classList.remove('shake-screen'), 300);
         }
-        if (consecutiveMisses >= CONFIG.missLimit) endGame(false);
+        if (State.consecutiveMisses >= CONFIG.missLimit) endGame(false);
     }
 
     // --- UI UPDATES ---
     function getComboMultiplier() {
-        if (combo >= 400) return 5.0;
-        if (combo >= 200) return 3.0;
-        if (combo >= 100) return 2.0;
-        if (combo >= 50) return 1.5;
+        if (State.combo >= 400) return 5.0;
+        if (State.combo >= 200) return 3.0;
+        if (State.combo >= 100) return 2.0;
+        if (State.combo >= 50) return 1.5;
         return 1.0;
     }
 
     // OPTIMIZED: Throttle score and DOM updates
     let lastRenderedScore = -1;
     function updateScoreUI(isHit = false) {
-        if (scoreEl && score !== lastRenderedScore) {
-            scoreEl.innerText = score;
-            lastRenderedScore = score;
+        if (scoreEl && State.score !== lastRenderedScore) {
+            scoreEl.innerText = State.score;
+            lastRenderedScore = State.score;
         }
 
-        if (isHit && combo > 0) {
-            comboScale = 1.3; 
+        if (isHit && State.combo > 0) {
+            State.comboScale = 1.3; 
         }
 
         updateContainerEffects();
@@ -1259,13 +1267,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateContainerEffects() {
         let newTier = 'none';
-        if (combo >= 800) newTier = 'legendary';
-        else if (combo >= 400) newTier = 'cosmic';
-        else if (combo >= 200) newTier = 'gold';
-        else if (combo >= 100) newTier = 'electric';
+        if (State.combo >= 800) newTier = 'legendary';
+        else if (State.combo >= 400) newTier = 'cosmic';
+        else if (State.combo >= 200) newTier = 'gold';
+        else if (State.combo >= 100) newTier = 'electric';
 
-        if (newTier !== currentComboTier) {
-            currentComboTier = newTier;
+        if (newTier !== State.currentComboTier) {
+            State.currentComboTier = newTier;
             
             if (gameContainer) {
                 gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
@@ -1288,13 +1296,13 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (cssClass === 'rating-good') color = '#66FCF1';
         else if (cssClass === 'rating-miss') color = '#ff3333';
 
-        activeRatings.push({
+        State.activeRatings.push({
             text: text,
             type: cssClass,
             color: color,
             startTime: Date.now(),
-            x: gameWidth / 2,
-            y: gameHeight * 0.4
+            x: State.gameWidth / 2,
+            y: State.gameHeight * 0.4
         });
     }
 
@@ -1322,9 +1330,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const ratio = Math.min(1, current / total);
         progressBar.style.width = `${ratio * 100}%`;
         
-        // Optimize: Only check stars when needed (simple check is fine)
+        // Simple check
         starsElements.forEach(s => s?.classList.remove('active'));
-        const isSecret = songsDB[currentSongIndex].isSecret;
+        const isSecret = songsDB[State.currentSongIndex].isSecret;
         const t = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
         t.forEach((limit, i) => {
              if (ratio > limit && starsElements[i]) starsElements[i].classList.add('active');
@@ -1361,8 +1369,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        const mySession = currentSessionId;
-        currentSongIndex = idx;
+        const mySession = State.currentSessionId;
+        State.currentSongIndex = idx;
         if (menuLayer) menuLayer.classList.add('hidden');
         if (gameContainer) gameContainer.classList.remove('hidden');
         if (loader) loader.classList.remove('hidden');
@@ -1370,43 +1378,43 @@ document.addEventListener('DOMContentLoaded', () => {
         updateGameText();
 
         analyzeAudio(`audio/tracks/${song.file}`, mySession).then(generatedTiles => {
-            if (mySession !== currentSessionId) return;
-            if (generatedTiles) { mapTiles = generatedTiles; if (loader) loader.classList.add('hidden'); playMusic(); }
+            if (mySession !== State.currentSessionId) return;
+            if (generatedTiles) { State.mapTiles = generatedTiles; if (loader) loader.classList.add('hidden'); playMusic(); }
         });
     }
 
     function playMusic() {
-        if (sourceNode) sourceNode.stop();
-        sourceNode = audioCtx.createBufferSource();
-        sourceNode.buffer = audioBuffer;
-        sourceNode.connect(masterGain);
+        if (State.sourceNode) State.sourceNode.stop();
+        State.sourceNode = State.audioCtx.createBufferSource();
+        State.sourceNode.buffer = State.audioBuffer;
+        State.sourceNode.connect(State.masterGain);
         const startDelay = 2;
-        startTime = audioCtx.currentTime + startDelay;
-        sourceNode.start(startTime);
-        isPlaying = true; isPaused = false;
-        animationFrameId = requestAnimationFrame(gameLoop);
+        State.startTime = State.audioCtx.currentTime + startDelay;
+        State.sourceNode.start(State.startTime);
+        State.isPlaying = true; State.isPaused = false;
+        State.animationFrameId = requestAnimationFrame(gameLoop);
     }
 
     async function endGame(victory) {
-        isPlaying = false;
-        if (sourceNode) sourceNode.stop();
-        if (animationFrameId) cancelAnimationFrame(animationFrameId);
-        if (bgMusicEl && !isMuted) bgMusicEl.play().catch(() => {});
+        State.isPlaying = false;
+        if (State.sourceNode) State.sourceNode.stop();
+        if (State.animationFrameId) cancelAnimationFrame(State.animationFrameId);
+        if (bgMusicEl && !State.isMuted) bgMusicEl.play().catch(() => {});
 
         const title = document.getElementById('end-title');
         if (title) {
             title.innerText = victory ? getText('complete') : getText('failed');
             title.style.color = victory ? "#66FCF1" : "#FF0055";
         }
-        document.getElementById('final-score').innerText = score;
+        document.getElementById('final-score').innerText = State.score;
 
         let starsCount = 0;
-        const isSecret = songsDB[currentSongIndex].isSecret;
+        const isSecret = songsDB[State.currentSongIndex].isSecret;
         if (victory) {
             starsCount = isSecret ? 5 : 3;
         } else {
-            const currentTime = audioCtx ? (audioCtx.currentTime - startTime) : 0;
-            const progress = currentTime / (audioBuffer ? audioBuffer.duration : 1);
+            const currentTime = State.audioCtx ? (State.audioCtx.currentTime - State.startTime) : 0;
+            const progress = currentTime / (State.audioBuffer ? State.audioBuffer.duration : 1);
             if (isSecret) starsCount = progress > 0.8 ? 4 : (progress > 0.6 ? 3 : (progress > 0.4 ? 2 : (progress > 0.2 ? 1 : 0)));
             else starsCount = progress > 0.66 ? 2 : (progress > 0.33 ? 1 : 0);
         }
@@ -1421,17 +1429,17 @@ document.addEventListener('DOMContentLoaded', () => {
                     const querySnapshot = await getDocs(q);
                     if (!querySnapshot.empty) {
                         const userDoc = querySnapshot.docs[0];
-                        if (score > userDoc.data().score) {
-                            await updateDoc(doc(db, "secret_leaderboard", userDoc.id), { score: score, date: new Date(), name: playerName });
+                        if (State.score > userDoc.data().score) {
+                            await updateDoc(doc(db, "secret_leaderboard", userDoc.id), { score: State.score, date: new Date(), name: playerName });
                         }
                     } else {
-                        await addDoc(dbRef, { userId: userId, name: playerName, score: score, date: new Date() });
+                        await addDoc(dbRef, { userId: userId, name: playerName, score: State.score, date: new Date() });
                     }
                 } catch (e) { console.error(e); }
             }
         }
 
-        if (score > 0) saveGameData(songsDB[currentSongIndex].title, score, starsCount);
+        if (State.score > 0) saveGameData(songsDB[State.currentSongIndex].title, State.score, starsCount);
 
         let starsStr = "";
         const total = isSecret ? 5 : 3;
@@ -1443,7 +1451,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function quitGame() {
-        if (bgMusicEl && !isMuted) bgMusicEl.play().catch(() => {});
+        if (bgMusicEl && !State.isMuted) bgMusicEl.play().catch(() => {});
         resetGameState();
         if (gameContainer) gameContainer.classList.add('hidden');
         if (menuLayer) menuLayer.classList.remove('hidden');
@@ -1452,7 +1460,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (searchInput) { searchInput.value = ''; document.getElementById('no-songs-msg')?.classList.add('hidden'); }
     }
 
-    // --- MENUS & MODALS ---
+    // --- MENUS ---
     function renderMenu() {
         const list = document.getElementById('song-list');
         if (!list) return;
@@ -1646,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => { el.style.animation = 'toastFadeOut 0.5s forwards'; setTimeout(() => el.remove(), 500); }, 2500);
     }
 
-    // --- INIT INPUTS ---
+    // --- CONTROLS ---
     function initControls() {
         const lanesContainer = document.getElementById('lanes-bg');
         if (lanesContainer) for (let i = 0; i < 4; i++) laneElements[i] = lanesContainer.children[i];
@@ -1654,7 +1662,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const ignore = ['.hit-line', '.lane-hints', '#hold-effects-container', '#legendary-border-overlay'];
         ignore.forEach(sel => { const el = document.querySelector(sel); if(el) el.style.pointerEvents = 'none'; });
 
-        // Search
         const searchInput = document.getElementById('song-search-input');
         if (searchInput) {
             searchInput.onclick = (e) => e.stopPropagation();
@@ -1689,7 +1696,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Canvas Input
         if (canvas) {
             const handleTouch = (e, isDown) => {
                 e.preventDefault();
@@ -1713,7 +1719,6 @@ document.addEventListener('DOMContentLoaded', () => {
             });
         }
 
-        // Keys
         window.addEventListener('keydown', e => {
             if (e.code === 'Space') {
                 if (document.activeElement.id === 'song-search-input') return;
@@ -1729,7 +1734,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (lane !== -1) handleInputUp(lane);
         });
 
-        // UI Buttons
         const setupBtn = (id, fn) => {
             const btn = document.getElementById(id);
             if (btn) { btn.onclick = (e) => { e.stopPropagation(); playClick(); fn(btn); }; btn.onmouseenter = playHover; }
@@ -1742,11 +1746,11 @@ document.addEventListener('DOMContentLoaded', () => {
             if(ctx) initGradients();
         });
         setupBtn('soundToggle', (btn) => {
-            isMuted = !isMuted;
-            localStorage.setItem('isMuted', isMuted);
-            if (masterGain) masterGain.gain.value = isMuted ? 0 : 1;
-            btn.innerText = isMuted ? '🔇' : '🔊';
-            if (bgMusicEl) isMuted ? bgMusicEl.pause() : (!isPlaying && bgMusicEl.play().catch(() => {}));
+            State.isMuted = !State.isMuted;
+            localStorage.setItem('isMuted', State.isMuted);
+            if (State.masterGain) State.masterGain.gain.value = State.isMuted ? 0 : 1;
+            btn.innerText = State.isMuted ? '🔇' : '🔊';
+            if (bgMusicEl) State.isMuted ? bgMusicEl.pause() : (!State.isPlaying && bgMusicEl.play().catch(() => {}));
         });
 
         const langBtn = document.getElementById('langToggle');
@@ -1763,8 +1767,8 @@ document.addEventListener('DOMContentLoaded', () => {
         document.querySelectorAll('.lang-dropdown button').forEach(b => {
             b.onclick = () => {
                 playClick();
-                currentLang = b.dataset.lang;
-                localStorage.setItem('siteLang', currentLang);
+                State.currentLang = b.dataset.lang;
+                localStorage.setItem('siteLang', State.currentLang);
                 updateGameText();
                 if (langWrapper) langWrapper.classList.remove('open');
             };
@@ -1776,39 +1780,38 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Nav
         const setupNav = (id, fn) => { const btn = document.getElementById(id); if (btn) btn.onclick = () => { playClick(); fn(); }; };
-        setupNav('global-back-btn', () => isPlaying ? quitGame() : window.location.href = 'index.html');
+        setupNav('global-back-btn', () => State.isPlaying ? quitGame() : window.location.href = 'index.html');
         setupNav('btn-quit', quitGame);
         setupNav('btn-menu-end', quitGame);
         setupNav('btn-pause', togglePauseGame);
         setupNav('btn-resume', togglePauseGame);
-        setupNav('btn-restart', () => { document.getElementById('result-screen').classList.add('hidden'); resetGameState(); setTimeout(() => startGame(currentSongIndex), 50); });
+        setupNav('btn-restart', () => { document.getElementById('result-screen').classList.add('hidden'); resetGameState(); setTimeout(() => startGame(State.currentSongIndex), 50); });
 
         function togglePauseGame() {
-            if (!isPlaying) return;
-            isPaused = !isPaused;
+            if (!State.isPlaying) return;
+            State.isPaused = !State.isPaused;
             const m = document.getElementById('pause-modal');
-            if (isPaused) { audioCtx.suspend(); m?.classList.remove('hidden'); }
-            else { audioCtx.resume(); m?.classList.add('hidden'); gameLoop(); }
+            if (State.isPaused) { State.audioCtx.suspend(); m?.classList.remove('hidden'); }
+            else { State.audioCtx.resume(); m?.classList.add('hidden'); gameLoop(); }
         }
     }
 
     function resizeCanvas() { 
         if (gameContainer && gameContainer.clientWidth && canvas) { 
             const dpr = Math.min(window.devicePixelRatio || 1, 1.5); 
-            gameWidth = gameContainer.clientWidth;
-            gameHeight = gameContainer.clientHeight;
+            State.gameWidth = gameContainer.clientWidth;
+            State.gameHeight = gameContainer.clientHeight;
             
-            canvas.width = gameWidth * dpr;
-            canvas.height = gameHeight * dpr;
+            canvas.width = State.gameWidth * dpr;
+            canvas.height = State.gameHeight * dpr;
             
             ctx.setTransform(1, 0, 0, 1, 0, 0); 
             ctx.scale(dpr, dpr); 
             
             initGradients();
         }
-        isMobile = window.innerWidth < 768;
+        State.isMobile = window.innerWidth < 768;
     }
     window.addEventListener('resize', resizeCanvas);
 
@@ -1817,4 +1820,4 @@ document.addEventListener('DOMContentLoaded', () => {
     renderMenu();
     setTimeout(resizeCanvas, 100);
 
-}); // END DOMContentLoaded
+});
