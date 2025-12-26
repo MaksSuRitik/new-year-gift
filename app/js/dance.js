@@ -128,7 +128,7 @@ const songsDB = [
     { file: "Pandora Trust Me.mp3", title: "Trust Me", artist: "Pandora", duration: "3m 25s" },
     { file: "MaksKorgWake Up.mp3", title: "Wake Up", artist: "Макс Корж", duration: "5m 15s" },
     { file: "Tatsuya Kitani Where Our Blue Is.mp3", title: "Where Our Blue Is", artist: "Tatsuya Kitani", duration: "3m 20s" },
-    { file: "Juice Wrld Won't Let Go.mp3", title: "Won't Let Go", artist: "Juice WRLD", duration: "3m 20s" },
+    { file: "JuiceWrldWontLetGo.mp3", title: "Won't Let Go", artist: "Juice WRLD", duration: "3m 20s" },
     { file: "Millennium Parade Work.mp3", title: "WORK", artist: "millennium parade x Sheena Ringo", duration: "3m 48s" },
     { file: "Kanalia Writing On The Wall.mp3", title: "Writing on the Wall", artist: "Will Stetson", duration: "3m 40s" },
     { file: "SaraunhLyWutiwant.mp3", title: "wutiwant", artist: "saraunh0ly", duration: "2m 10s" },
