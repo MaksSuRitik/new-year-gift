@@ -3283,132 +3283,91 @@ canvas#rhythmCanvas {
   font-size: 2rem;
 }
 
-/* --- 1. АНІМАЦІЇ --- */
-/* ОПТИМІЗОВАНІ АНІМАЦІЇ (Менше навантаження на GPU) */
-/* Використовуємо will-change для підказки браузеру */
-@-webkit-keyframes ripple-gold {
+/* --- ОПТИМІЗОВАНІ АНІМАЦІЇ (GPU ONLY) --- */
+/* Замість зміни box-shadow, ми змінюємо тільки opacity */
+@-webkit-keyframes pulse-opacity {
   0% {
-    border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+    opacity: 0.5;
   }
   50% {
-    -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
-            box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
+    opacity: 1;
   }
   100% {
-    border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+    opacity: 0.5;
   }
 }
-@keyframes ripple-gold {
+@keyframes pulse-opacity {
   0% {
-    border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+    opacity: 0.5;
   }
   50% {
-    -webkit-box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
-            box-shadow: inset 0 0 25px rgba(255, 215, 0, 0.8);
+    opacity: 1;
   }
   100% {
-    border-color: rgba(255, 215, 0, 0.8);
-    -webkit-box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
-            box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.5);
+    opacity: 0.5;
   }
 }
-@-webkit-keyframes ripple-cosmic {
-  0% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 15px #d500f9;
-            box-shadow: inset 0 0 15px #d500f9;
-  }
-  50% {
-    border-color: #d500f9;
-    -webkit-box-shadow: inset 0 0 35px #00e5ff;
-            box-shadow: inset 0 0 35px #00e5ff;
-  }
-  100% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 15px #d500f9;
-            box-shadow: inset 0 0 15px #d500f9;
-  }
-}
-@keyframes ripple-cosmic {
-  0% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 15px #d500f9;
-            box-shadow: inset 0 0 15px #d500f9;
-  }
-  50% {
-    border-color: #d500f9;
-    -webkit-box-shadow: inset 0 0 35px #00e5ff;
-            box-shadow: inset 0 0 35px #00e5ff;
-  }
-  100% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 15px #d500f9;
-            box-shadow: inset 0 0 15px #d500f9;
-  }
-}
-@-webkit-keyframes flow-legendary {
-  0% {
-    border-color: #FFFFFF;
-    -webkit-box-shadow: inset 0 0 20px #00e5ff;
-            box-shadow: inset 0 0 20px #00e5ff;
-  }
-  50% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 50px #00e5ff;
-            box-shadow: inset 0 0 50px #00e5ff;
-  }
-  100% {
-    border-color: #FFFFFF;
-    -webkit-box-shadow: inset 0 0 20px #00e5ff;
-            box-shadow: inset 0 0 20px #00e5ff;
-  }
-}
-@keyframes flow-legendary {
-  0% {
-    border-color: #FFFFFF;
-    -webkit-box-shadow: inset 0 0 20px #00e5ff;
-            box-shadow: inset 0 0 20px #00e5ff;
-  }
-  50% {
-    border-color: #00e5ff;
-    -webkit-box-shadow: inset 0 0 50px #00e5ff;
-            box-shadow: inset 0 0 50px #00e5ff;
-  }
-  100% {
-    border-color: #FFFFFF;
-    -webkit-box-shadow: inset 0 0 20px #00e5ff;
-            box-shadow: inset 0 0 20px #00e5ff;
-  }
-}
-/* --- 2. КЛАСИ ДЛЯ КОНТЕЙНЕРА --- */
-.container-ripple-gold {
-  border: 2px solid #FFD700 !important;
-  z-index: 15;
-  -webkit-animation: ripple-gold 2s infinite ease-in-out !important;
-          animation: ripple-gold 2s infinite ease-in-out !important;
-  will-change: border-color, box-shadow;
+/* Базовий клас для контейнера (без анімацій) */
+#game-container {
+  /* ... твої існуючі стилі ... */
+  position: relative;
+  z-index: 0;
 }
 
+/* Псевдо-елемент, який буде світитися */
+#game-container::after {
+  content: "";
+  position: absolute;
+  top: -3px;
+  left: -3px;
+  right: -3px;
+  bottom: -3px;
+  border-radius: inherit;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  -webkit-transition: opacity 0.5s;
+  transition: opacity 0.5s;
+  will-change: opacity;
+}
+
+/* --- КОНКРЕТНІ ЕФЕКТИ --- */
+/* 🟡 GOLD */
+.container-ripple-gold {
+  border: 2px solid rgba(255, 215, 0, 0.8) !important;
+}
+
+.container-ripple-gold::after {
+  /* Статична тінь, яку ми просто покажемо/сховаємо */
+  background: transparent;
+  -webkit-box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 25px rgba(255, 215, 0, 0.5);
+          box-shadow: 0 0 25px rgba(255, 215, 0, 0.8), inset 0 0 25px rgba(255, 215, 0, 0.5);
+  -webkit-animation: pulse-opacity 2s infinite ease-in-out;
+          animation: pulse-opacity 2s infinite ease-in-out;
+}
+
+/* 🟣 COSMIC */
 .container-ripple-cosmic {
   border: 3px solid #00e5ff !important;
-  z-index: 15;
-  -webkit-animation: ripple-cosmic 1.5s infinite ease-in-out !important;
-          animation: ripple-cosmic 1.5s infinite ease-in-out !important;
-  will-change: border-color, box-shadow;
 }
 
+.container-ripple-cosmic::after {
+  -webkit-box-shadow: 0 0 35px #d500f9, inset 0 0 35px #00e5ff;
+          box-shadow: 0 0 35px #d500f9, inset 0 0 35px #00e5ff;
+  -webkit-animation: pulse-opacity 1.5s infinite ease-in-out;
+          animation: pulse-opacity 1.5s infinite ease-in-out;
+}
+
+/* ⚪ LEGENDARY */
 .container-legendary {
-  border: 4px solid #FFFFFF !important;
-  z-index: 20;
-  -webkit-animation: flow-legendary 1s infinite ease-in-out !important;
-          animation: flow-legendary 1s infinite ease-in-out !important;
-  will-change: border-color, box-shadow;
+  border: 4px solid #7FFFD4 !important;
+}
+
+.container-legendary::after {
+  -webkit-box-shadow: 0 0 50px #00626d, inset 0 0 50px #047c89;
+          box-shadow: 0 0 50px #00626d, inset 0 0 50px #047c89;
+  -webkit-animation: pulse-opacity 1s infinite ease-in-out;
+          animation: pulse-opacity 1s infinite ease-in-out;
 }
 
 /* ==========================================
@@ -3767,40 +3726,40 @@ canvas#rhythmCanvas {
   /* 🔵 LEGENDARY (800+) - Спрощена пульсація */
   @-webkit-keyframes mobile-legendary-pulse {
     0% {
-      border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 5px #00e5ff;
-              box-shadow: inset 0 0 5px #00e5ff;
+      border-color: #7FFFD4;
+      -webkit-box-shadow: inset 0 0 5px #02646f;
+              box-shadow: inset 0 0 5px #02646f;
     }
     50% {
-      border-color: #00e5ff;
-      -webkit-box-shadow: inset 0 0 15px #00e5ff;
-              box-shadow: inset 0 0 15px #00e5ff;
+      border-color: #02646f;
+      -webkit-box-shadow: inset 0 0 15px #02646f;
+              box-shadow: inset 0 0 15px #02646f;
     }
     100% {
-      border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 5px #00e5ff;
-              box-shadow: inset 0 0 5px #00e5ff;
+      border-color: #7FFFD4;
+      -webkit-box-shadow: inset 0 0 5px #02646f;
+              box-shadow: inset 0 0 5px #02646f;
     }
   }
   @keyframes mobile-legendary-pulse {
     0% {
-      border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 5px #00e5ff;
-              box-shadow: inset 0 0 5px #00e5ff;
+      border-color: #7FFFD4;
+      -webkit-box-shadow: inset 0 0 5px #02646f;
+              box-shadow: inset 0 0 5px #02646f;
     }
     50% {
-      border-color: #00e5ff;
-      -webkit-box-shadow: inset 0 0 15px #00e5ff;
-              box-shadow: inset 0 0 15px #00e5ff;
+      border-color: #02646f;
+      -webkit-box-shadow: inset 0 0 15px #02646f;
+              box-shadow: inset 0 0 15px #02646f;
     }
     100% {
-      border-color: #FFFFFF;
-      -webkit-box-shadow: inset 0 0 5px #00e5ff;
-              box-shadow: inset 0 0 5px #00e5ff;
+      border-color: #7FFFD4;
+      -webkit-box-shadow: inset 0 0 5px #02646f;
+              box-shadow: inset 0 0 5px #02646f;
     }
   }
   #game-container.container-legendary {
-    border: 3px solid #FFFFFF !important;
+    border: 3px solid #7FFFD4 !important;
     -webkit-animation: mobile-legendary-pulse 1s infinite alternate !important;
             animation: mobile-legendary-pulse 1s infinite alternate !important;
     z-index: 20;

@@ -64,7 +64,7 @@ const PALETTES = {
     STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
     GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6953f', light: '#bcaaa4', glow: '#e6953f', border: '#e6953f' },
     COSMIC: { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff', glow: '#d500f9', border: '#00e5ff' },
-    LEGENDARY: { body: '#f4f4f4ff', accent: '#ffffffff', glow: '#ffffffff', aura: 'rgba(153, 147, 102, 1)', tap1: '#ffffffff', tap2: '#08191dff', long1: '#FFFFFF', long2: 'rgba(7, 80, 76, 0.99)' },
+    LEGENDARY: { body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', long1: '#26c691ff', long2: 'rgba(7, 80, 76, 0.99)' },
     ELECTRIC: { tap1: '#eceff1', tap2: '#607d8b', long1: '#607d8b', long2: '#37474f', glow: '#00bcd4', border: '#80deea' }
 };
 
@@ -187,7 +187,10 @@ const State = {
     activeTiles: [],
     
     // Performance: Random Jitter Table (Deterministic Noise)
-    shakeTable: new Float32Array(256)
+    shakeTable: new Float32Array(256),
+
+    // NEW: pre-rendered glow sprite (single image used for taps/heads)
+    glowSprite: null
 };
 
 // PRE-COMPUTE JITTER TABLE (Replaces Math.random() in draw loop)
@@ -441,6 +444,9 @@ document.addEventListener('DOMContentLoaded', () => {
         ];
 
         palettes.forEach(p => createTapGrad(p.cols, p.name));
+
+        // NEW: create glow sprite when ctx is available
+        if (!State.glowSprite) createGlowSprite(128);
     }
 
     // ==========================================
@@ -468,9 +474,8 @@ document.addEventListener('DOMContentLoaded', () => {
         State.holdingTiles = [null, null, null, null];
         State.keyState = [false, false, false, false];
         State.laneBeamAlpha = [0, 0, 0, 0];
-
-        if (ctx && canvas) ctx.clearRect(0, 0, State.gameWidth, State.gameHeight);
-        if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
+        // remove DOM hold-effects clearing (we no longer use #hold-effects-container)
+        // if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
         if (gameContainer) {
             gameContainer.className = ''; 
@@ -721,7 +726,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 5;
+                            State.combo += 100;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -798,24 +803,51 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
-        // 2. Lanes & Beams
-        ctx.strokeStyle = (State.combo >= 200) ? '#333' : colors.laneLine;
+        // 2. Lanes & Beams (REPLACED)
         ctx.lineWidth = 2;
-        ctx.beginPath();
-        
+        // draw beams per lane using pre-rendered sprite or linear gradient
         for (let i = 0; i < 4; i++) {
-            // Optimization: Use deterministic shake instead of Math.random
             let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
-            if (State.laneBeamAlpha[i] > 0) {
-                const beamX = (i * laneW) + shakeX;
-                ctx.fillStyle = p.glow;
-                ctx.globalAlpha = State.laneBeamAlpha[i] * 0.3; 
+            const beamX = (i * laneW) + shakeX;
+            // Draw hold beam: active while holding or while alpha > tiny
+            const laneAlpha = State.laneBeamAlpha[i] || 0;
+            if (State.holdingTiles[i] || laneAlpha > 0.01) {
+                // If holding - keep alpha max
+                if (State.holdingTiles[i]) State.laneBeamAlpha[i] = 1.0;
+                // draw beam: use gradient fill (fast) and optional glow sprite overlay
+                const alpha = Math.min(1, State.laneBeamAlpha[i]);
+                // gradient from bottom (bright) to transparent top
+                const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
+                // prefer per-lane color if set, otherwise use current palette glow
+                const beamColor = (State.laneGlowColor && State.laneGlowColor[i]) ? State.laneGlowColor[i] : p.glow;
+                beamGrad.addColorStop(0, beamColor);
+                beamGrad.addColorStop(1, "rgba(0,0,0,0)");
+                ctx.save();
+                ctx.globalAlpha = alpha * 0.6;
+                ctx.globalCompositeOperation = 'lighter';
+                ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
-                ctx.globalAlpha = 1.0; State.laneBeamAlpha[i] -= 0.08;
+                // optional soft center glow using glowSprite tint via composite
+                if (State.glowSprite) {
+                    // draw centered sprite spanning lane width horizontally and hitY vertically
+                    const glowW = laneW * 1.6;
+                    const glowH = hitY * 0.9;
+                    ctx.globalAlpha = alpha * 0.55;
+                    ctx.drawImage(State.glowSprite, beamX + (laneW - glowW) / 2, Math.max(0, hitY - glowH), glowW, glowH);
+                }
+                ctx.restore();
+                // decay alpha if not holding
+                if (!State.holdingTiles[i]) State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.06);
             }
-            if (i > 0) { ctx.moveTo(i * laneW + shakeX, 0); ctx.lineTo(i * laneW + shakeX, State.gameHeight); }
+            // lane divider lines
+            ctx.strokeStyle = (State.combo >= 200) ? '#333' : colors.laneLine;
+            if (i > 0) {
+                ctx.beginPath();
+                ctx.moveTo(i * laneW + shakeX, 0);
+                ctx.lineTo(i * laneW + shakeX, State.gameHeight);
+                ctx.stroke();
+            }
         }
-        ctx.stroke();
 
         // 3. Hit Line
         ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
@@ -846,13 +878,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 ctx.scale(scale, scale); 
                 ctx.translate(-w/2, -CONFIG.noteHeight/2); 
 
-                if (enableHeavyEffects) {
-                    ctx.shadowBlur = (tile.hit) ? 35 : (State.combo >= 200 ? 20 : 10);
-                    ctx.shadowColor = p.glow;
-                } else {
-                    ctx.shadowBlur = 0; 
+                if (enableHeavyEffects && State.glowSprite) {
+                    // draw glow centered behind the note
+                    const glowSize = w * 2.5;
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.globalAlpha = tile.hit ? 1 : 0.6;
+                    // drawImage uses current transformed coordinate space
+                    ctx.drawImage(State.glowSprite, -glowSize/2 + w/2, -glowSize/2 + CONFIG.noteHeight/2, glowSize, glowSize);
+                    // restore composite and alpha before actual fill
+                    ctx.globalAlpha = 1.0;
+                    ctx.globalCompositeOperation = 'source-over';
                 }
-                
+
                 ctx.fillStyle = tapGradient || p.tapColor[0];
                 
                 ctx.beginPath();
@@ -906,11 +943,16 @@ document.addEventListener('DOMContentLoaded', () => {
                 hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
                 ctx.fillStyle = hGrad;
                 
-                if (enableHeavyEffects && !tile.released) {
-                    ctx.shadowBlur = tile.hit && tile.holding ? 30 : 0;
-                    ctx.shadowColor = p.glow;
-                } else {
-                    ctx.shadowBlur = 0;
+                if (enableHeavyEffects && !tile.released && State.glowSprite) {
+                    const headCenterX = x + w/2;
+                    const headCenterY = actualYHeadTop + headH/2;
+                    const glowW = w * 2.2;
+                    const glowH = headH * 2.2;
+                    ctx.save();
+                    ctx.globalCompositeOperation = 'screen';
+                    ctx.globalAlpha = (tile.hit && tile.holding) ? 0.95 : 0.5;
+                    ctx.drawImage(State.glowSprite, headCenterX - glowW/2, headCenterY - glowH/2, glowW, glowH);
+                    ctx.restore();
                 }
                 
                 if (tile.released) ctx.globalAlpha = 0.7;
@@ -1029,8 +1071,8 @@ document.addEventListener('DOMContentLoaded', () => {
         let labelColor = '#fff';
 
         if (State.combo >= 800) {
-            gradColors = ['#ffffff', '#7b1fa2']; 
-            fontSize = 70; labelColor = '#e1bee7';
+            gradColors = ['#43dca9ff', '#1f7da2ff']; 
+            fontSize = 70; labelColor = '#e1bee7a4';
         } else if (State.combo >= 400) {
             gradColors = ['#00e5ff', '#d500f9']; 
             fontSize = 68; labelColor = '#00e5ff';
@@ -1129,8 +1171,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const laneW = State.gameWidth / 4;
         const x = lane * laneW + laneW / 2;
         let finalColor = '#cfd8dc';
-        if (State.combo >= 800) finalColor = Math.random() > 0.4 ? '#ffffffff' : '#101006ff';
-        else if (State.combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#00e5ff';
+        if (State.combo >= 800) finalColor = Math.random() > 0.4 ? '#2cf5b2ff' : '#101006ff';
+        else if (State.combo >= 400) finalColor = Math.random() > 0.5 ? '#d500f9' : '#0a6974ff';
         else if (State.combo >= 200) finalColor = '#e6953f';
         else if (State.combo >= 100) finalColor = '#00bcd4';
         
@@ -1306,22 +1348,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // REPLACE toggleHoldEffect: now only updates canvas-driven state (no DOM ops)
     function toggleHoldEffect(lane, active, color) {
-        if (!holdEffectsContainer) return;
-        let effect = document.getElementById(`hold-effect-${lane}`);
-        if (!effect) {
-            effect = document.createElement('div');
-            effect.id = `hold-effect-${lane}`;
-            effect.className = 'long-note-hold-effect';
-            effect.style.left = (lane * 25) + '%';
-            holdEffectsContainer.appendChild(effect);
-        }
-        
+        // Ensure lane within range
+        if (lane < 0 || lane > 3) return;
         if (active) {
-            if (effect.style.display !== 'block') effect.style.display = 'block';
-            effect.style.background = `linear-gradient(to top, ${color}, transparent)`;
+            State.laneBeamAlpha[lane] = 1.0;
+            // store optional per-lane color if provided (used in beam rendering)
+            State.laneGlowColor = State.laneGlowColor || [null, null, null, null];
+            if (color) State.laneGlowColor[lane] = color;
         } else {
-            if (effect.style.display !== 'none') effect.style.display = 'none';
+            // fade will be handled by draw loop
         }
     }
 
@@ -1338,6 +1375,22 @@ document.addEventListener('DOMContentLoaded', () => {
              if (ratio > limit && starsElements[i]) starsElements[i].classList.add('active');
         });
     }
+
+    // NEW: generate small radial glow sprite once (used by notes & beams)
+    function createGlowSprite(size = 128) {
+	if (!document) return;
+	const c = document.createElement('canvas');
+	c.width = size; c.height = size;
+	const gctx = c.getContext('2d');
+	const cx = size / 2, cy = size / 2, r = size / 2;
+	const grad = gctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+	grad.addColorStop(0, "rgba(255,255,255,0.95)");
+	grad.addColorStop(0.4, "rgba(255,255,255,0.25)");
+	grad.addColorStop(1, "rgba(255,255,255,0)");
+	gctx.fillStyle = grad;
+	gctx.fillRect(0, 0, size, size);
+	State.glowSprite = c;
+}
 
     // --- GAME FLOW ---
     async function startGame(idx) {
