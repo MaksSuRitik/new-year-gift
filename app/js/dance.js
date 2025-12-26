@@ -135,7 +135,7 @@ const songsDB = [
     { file: "ValentinStrikalo.mp3", title: "Кайен", artist: "Валентин Стрыкало", duration: "3m 10s" },
     { file: "Konfuz - Кайф Ты Поймала.mp3", title: "Кайф ты поймала", artist: "Konfuz", duration: "2m 50s" },
     { file: "Zhanulka Лазить По Стенам.mp3", title: "лазить по стенам", artist: "Zhanulka", duration: "2m 30s" },
-    { file: "mzlff,STEDD.mp3", title: "однополярности", artist: "mzlff, STED.D", duration: "3m 05s" },
+    { file: "mzlff,STEDD.mp3", title: "однополярності", artist: "mzlff, STED.D", duration: "3m 05s" },
     { file: "Skriptonit_-_Tancuj_so_mnoj_v_temnote.mp3", title: "Танцуй со мной в темноте", artist: "Скриптонит", duration: "3m 55s" },
     { file: "Pyrokinesis Трупный Синод.mp3", title: "Трупный Синод", artist: "Pyrokinesis", duration: "3m 40s" }
 ];
@@ -658,15 +658,6 @@ document.addEventListener('DOMContentLoaded', () => {
         State.animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    function getCurrentBeamColor() {
-        if (State.combo >= 800) return PALETTES.LEGENDARY.glow;
-        if (State.combo >= 400) return PALETTES.COSMIC.glow;
-        if (State.combo >= 200) return PALETTES.GOLD.glow;
-        if (State.combo >= 100) return PALETTES.ELECTRIC.glow;
-        const isLight = document.body.getAttribute('data-theme') === 'light';
-        return isLight ? CONFIG.colorsLight.long[1] : CONFIG.colorsDark.long[1];
-    }
-
     function update(songTime) {
         const hitTimeWindow = State.currentSpeed;
         const hitY = State.gameHeight * CONFIG.hitPosition;
@@ -694,7 +685,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         tile.hit = true;
                         tile.lastValidHoldTime = now;
                         State.holdingTiles[tile.lane] = tile;
-                        toggleHoldEffect(tile.lane, true, getCurrentBeamColor());
+                        toggleHoldEffect(tile.lane, true);
                         State.score += CONFIG.scorePerfect;
                         State.lastComboUpdateTime = now;
                         showRating(getText('perfect'), "rating-perfect");
@@ -726,7 +717,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 7;
+                            State.combo += 5;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -803,43 +794,39 @@ document.addEventListener('DOMContentLoaded', () => {
         
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
-        // 2. Lanes & Beams (REPLACED)
+        // 2. Lanes & Beams (UPDATED & FIXED)
         ctx.lineWidth = 2;
-        // draw beams per lane using pre-rendered sprite or linear gradient
         for (let i = 0; i < 4; i++) {
             let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
             const beamX = (i * laneW) + shakeX;
-            // Draw hold beam: active while holding or while alpha > tiny
-            const laneAlpha = State.laneBeamAlpha[i] || 0;
-            if (State.holdingTiles[i] || laneAlpha > 0.01) {
-                // If holding - keep alpha max
-                if (State.holdingTiles[i]) State.laneBeamAlpha[i] = 1.0;
-                // draw beam: use gradient fill (fast) and optional glow sprite overlay
-                const alpha = Math.min(1, State.laneBeamAlpha[i]);
-                // gradient from bottom (bright) to transparent top
+            if (State.holdingTiles[i]) State.laneBeamAlpha[i] = 1.0;
+            const laneAlpha = State.laneBeamAlpha[i];
+
+            if (laneAlpha > 0.01) {
+                const alpha = Math.min(1, laneAlpha);
                 const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
-                // prefer per-lane color if set, otherwise use current palette glow
-                const beamColor = (State.laneGlowColor && State.laneGlowColor[i]) ? State.laneGlowColor[i] : p.glow;
-                beamGrad.addColorStop(0, beamColor);
+                beamGrad.addColorStop(0, p.glow);
                 beamGrad.addColorStop(1, "rgba(0,0,0,0)");
+
                 ctx.save();
-                ctx.globalAlpha = alpha * 0.6;
-                ctx.globalCompositeOperation = 'lighter';
+                ctx.globalCompositeOperation = 'screen';
+                ctx.globalAlpha = alpha * 0.35;
                 ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
-                // optional soft center glow using glowSprite tint via composite
+
                 if (State.glowSprite) {
-                    // draw centered sprite spanning lane width horizontally and hitY vertically
                     const glowW = laneW * 1.6;
                     const glowH = hitY * 0.9;
-                    ctx.globalAlpha = alpha * 0.55;
+                    ctx.globalAlpha = alpha * 0.4;
                     ctx.drawImage(State.glowSprite, beamX + (laneW - glowW) / 2, Math.max(0, hitY - glowH), glowW, glowH);
                 }
                 ctx.restore();
-                // decay alpha if not holding
-                if (!State.holdingTiles[i]) State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.06);
+
+                if (!State.holdingTiles[i]) {
+                    State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.06);
+                }
             }
-            // lane divider lines
+
             ctx.strokeStyle = (State.combo >= 200) ? '#333' : colors.laneLine;
             if (i > 0) {
                 ctx.beginPath();
@@ -1214,7 +1201,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeHold) {
             State.holdingTiles[lane] = activeHold;
             activeHold.lastValidHoldTime = now;
-            toggleHoldEffect(lane, true, getCurrentBeamColor());
+            toggleHoldEffect(lane, true);
             return;
         }
 
@@ -1250,7 +1237,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (target.type === 'long') {
                 State.holdingTiles[lane] = target;
                 target.lastValidHoldTime = now;
-                toggleHoldEffect(lane, true, getCurrentBeamColor());
+                toggleHoldEffect(lane, true);
                 State.score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
             } else {
@@ -1285,9 +1272,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- UI UPDATES ---
     function getComboMultiplier() {
+        if (State.combo >= 800) return 10.0;
         if (State.combo >= 400) return 5.0;
         if (State.combo >= 200) return 3.0;
-        if (State.combo >= 100) return 2.0;
+        if (State.combo >=  100) return 2.0;
         if (State.combo >= 50) return 1.5;
         return 1.0;
     }
@@ -1308,27 +1296,19 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateContainerEffects() {
-        let newTier = 'none';
-        if (State.combo >= 800) newTier = 'legendary';
-        else if (State.combo >= 400) newTier = 'cosmic';
-        else if (State.combo >= 200) newTier = 'gold';
-        else if (State.combo >= 100) newTier = 'electric';
+        // Ми просто фіксуємо тір як 'none', щоб логіка гри працювала,
+        // але візуальні ефекти рамки більше ніколи не застосовувалися.
+        State.currentComboTier = 'none';
 
-        if (newTier !== State.currentComboTier) {
-            State.currentComboTier = newTier;
-            
-            if (gameContainer) {
-                gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
-                if (newTier === 'gold') gameContainer.classList.add('container-ripple-gold');
-                if (newTier === 'cosmic') gameContainer.classList.add('container-ripple-cosmic');
-                if (newTier === 'legendary') gameContainer.classList.add('container-legendary');
-            }
+        // Якщо раптом якісь класи залишилися з минулого — прибираємо їх для гарантії
+        if (gameContainer) {
+            gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
+        }
 
-            const legendaryOverlay = document.getElementById('legendary-border-overlay');
-            if (legendaryOverlay) {
-                if (newTier === 'legendary') legendaryOverlay.classList.add('active');
-                else legendaryOverlay.classList.remove('active');
-            }
+        // Прибираємо оверлей для легендарного режиму
+        const legendaryOverlay = document.getElementById('legendary-border-overlay');
+        if (legendaryOverlay) {
+            legendaryOverlay.classList.remove('active');
         }
     }
 
@@ -1348,17 +1328,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // REPLACE toggleHoldEffect: now only updates canvas-driven state (no DOM ops)
-    function toggleHoldEffect(lane, active, color) {
-        // Ensure lane within range
+    // Simplified toggleHoldEffect: no color caching, draw() uses p.glow automatically
+    function toggleHoldEffect(lane, active) {
         if (lane < 0 || lane > 3) return;
         if (active) {
             State.laneBeamAlpha[lane] = 1.0;
-            // store optional per-lane color if provided (used in beam rendering)
-            State.laneGlowColor = State.laneGlowColor || [null, null, null, null];
-            if (color) State.laneGlowColor[lane] = color;
         } else {
-            // fade will be handled by draw loop
+            // fade handled by draw loop
         }
     }
 
