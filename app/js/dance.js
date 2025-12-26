@@ -7,7 +7,7 @@
 // --- FIREBASE IMPORTS ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc
+    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
 // --- FIREBASE CONFIG ---
@@ -68,10 +68,140 @@ const PALETTES = {
     ELECTRIC: { tap1: '#eceff1', tap2: '#607d8b', long1: '#607d8b', long2: '#37474f', glow: '#00bcd4', border: '#80deea' }
 };
 
+// TRANSLATIONS: added leaderboard-specific keys
 const TRANSLATIONS = {
-    UA: { icon: "UA", instructions: "Гра здійснюється за допомогою клавіш S D J K", score: "Рахунок", combo: "КОМБО", paused: "ПАУЗА", resume: "Продовжити", quit: "Вийти", complete: "ПРОЙДЕНО", failed: "ПОРАЗКА", restart: "Ще раз", menu: "Меню", perfect: "ІДЕАЛЬНО", good: "ДОБРЕ", miss: "ПРОМАХ", loading: "Створення нот...", leaderboard: "Таблиця Лідерів", enterName: "Введіть ваше ім'я для рекорду:", req: "Пройдіть 5 пісень на 3 зірки!", namePls: "Введіть ім'я", lbTitle: "Лідери Секретного Рівня", lbRank: "Ранг", lbName: "Ім'я", lbScore: "Очки", lbNoRecords: "Рекордів ще немає!", lbLoading: "Завантаження...", lbError: "Помилка завантаження", nameTaken: "Це ім'я вже зайнято! Оберіть інше.", checking: "Перевірка...", secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень", close: "Закрити", changeName: "Змінити Ім'я", nameUpdated: "Ім'я оновлено!", enterNewName: "Введіть нове ім'я:", migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!", btnOk: "ОК", btnCancel: "Скасувати", searchPlaceholder: "🔍 Пошук пісні або автора...", noSongsFound: "🚫 Жодних пісень не знайдено" },
-    RU: { icon: "RU", instructions: "Игра осуществляется с помощью клавиш S D J K", score: "Счет", combo: "КОМБО", paused: "ПАУЗА", resume: "Продолжить", quit: "Выйти", complete: "ПРОЙДЕНО", failed: "ПОРАЖЕНИЕ", restart: "Еще раз", menu: "Меню", perfect: "ИДЕАЛЬНО", good: "ХОРОШО", miss: "МИМО", loading: "Создание нот...", leaderboard: "Таблица Лидеров", enterName: "Введите ваше имя для рекорда:", req: "Пройдите 5 песен на 3 звезды!", namePls: "Введите имя", lbTitle: "Лидеры Секретного Уровня", lbRank: "Ранг", lbName: "Имя", lbScore: "Очки", lbNoRecords: "Рекордов еще нет!", lbLoading: "Загрузка...", lbError: "Ошибка загрузки", nameTaken: "Это имя уже занято! Выберите другое.", checking: "Проверка...", secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень", close: "Закрыть", changeName: "Сменить Имя", nameUpdated: "Имя обновлено!", enterNewName: "Введите новое имя:", migrationSuccess: "Ваш старый рекорд найден и привязан!", btnOk: "ОК", btnCancel: "Отмена", searchPlaceholder: "🔍 Поиск песни или автора...", noSongsFound: "🚫 Песен не найдено" },
-    MEOW: { icon: "🐱", instructions: "Meow meow meow S D J K meow", score: "Meow", combo: "Meow-bo", paused: "MEOW?", resume: "Meow!", quit: "Grrr", complete: "WeOWW", failed: "WeowWWWW", restart: "Meow-gain", menu: "Meow-nu", perfect: "WeowE", good: "MEOW", miss: "Weow", loading: "Meowing...", leaderboard: "Meow-Weowt", enterName: "Meow name:", req: "Meow Weow Weow Weow Weow!", namePls: "Meow?", lbTitle: "Meow Leaders", lbRank: "Meow #", lbName: "Meow Weow", lbScore: "Meows", lbNoRecords: "Weow Weow Weow!", lbLoading: "Meowing...", lbError: "Meow Weow", nameTaken: "MEOW! Meow! Meow weow!", checking: "Weow...", secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow", close: "Meow", changeName: "Meow Name", nameUpdated: "Meow meow!", enterNewName: "Meow new meow:", migrationSuccess: "Meow weow meow!", btnOk: "Meow!", btnCancel: "Grrr...", searchPlaceholder: "🔍 Meow search...", noSongsFound: "🚫 Meow weow grrr" }
+    UA: {
+        icon: "UA",
+        instructions: "Гра здійснюється за допомогою клавіш S D J K",
+        score: "Рахунок",
+        combo: "КОМБО",
+        paused: "ПАУЗА",
+        resume: "Продовжити",
+        quit: "Вийти",
+        complete: "ПРОЙДЕНО",
+        failed: "ПОРАЗКА",
+        restart: "Ще раз",
+        menu: "Меню",
+        perfect: "ІДЕАЛЬНО",
+        good: "ДОБРЕ",
+        miss: "ПРОМАХ",
+        loading: "Створення нот...",
+        leaderboard: "Таблиця Лідерів",
+        leaderboardGlobal: "Загальний рейтинг",
+        leaderboardSecret: "Секретний рейтинг",
+        lbGlobal: "Загальний",
+        lbSecret: "Секретний",
+        lbLevels: "Рівні",
+        lbTotalScore: "Всього очок",
+        namePls: "Введіть ім'я",
+        lbTitle: "Лідери Секретного Рівня",
+        lbRank: "Ранг",
+        lbName: "Ім'я",
+        lbScore: "Очки",
+        lbNoRecords: "Рекордів ще немає!",
+        lbLoading: "Завантаження...",
+        lbError: "Помилка завантаження",
+        nameTaken: "Це ім'я вже зайнято! Оберіть інше.",
+        checking: "Перевірка...",
+        secretLockMsg: "Отримайте 3 зірки у 5 рівнях для того щоб відкрити секретний рівень",
+        close: "Закрити",
+        changeName: "Змінити Ім'я",
+        nameUpdated: "Ім'я оновлено!",
+        enterNewName: "Введіть нове ім'я:",
+        migrationSuccess: "Ваш старий рекорд знайдено і прив'язано!",
+        btnOk: "ОК",
+        btnCancel: "Скасувати",
+        searchPlaceholder: "🔍 Пошук пісні або автора...",
+        noSongsFound: "🚫 Жодних пісень не знайдено"
+    },
+    RU: {
+        icon: "RU",
+        instructions: "Игра осуществляется с помощью клавиш S D J K",
+        score: "Счет",
+        combo: "КОМБО",
+        paused: "ПАУЗА",
+        resume: "Продолжить",
+        quit: "Выйти",
+        complete: "ПРОЙДЕНО",
+        failed: "ПОРАЖЕНИЕ",
+        restart: "Еще раз",
+        menu: "Меню",
+        perfect: "ИДЕАЛЬНО",
+        good: "ХОРОШО",
+        miss: "МИМО",
+        loading: "Создание нот...",
+        leaderboard: "Таблица Лидеров",
+        leaderboardGlobal: "Общий рейтинг",
+        leaderboardSecret: "Секретный рейтинг",
+        lbGlobal: "Общий",
+        lbSecret: "Секретный",
+        lbLevels: "Уровни",
+        lbTotalScore: "Всего очков",
+        namePls: "Введите имя",
+        lbTitle: "Лидеры Секретного Уровня",
+        lbRank: "Ранг",
+        lbName: "Имя",
+        lbScore: "Очки",
+        lbNoRecords: "Рекордов еще нет!",
+        lbLoading: "Загрузка...",
+        lbError: "Ошибка загрузки",
+        nameTaken: "Это имя уже занято! Выберите другое.",
+        checking: "Проверка...",
+        secretLockMsg: "Получите 3 звезды в 5 уровнях для того чтобы открыть секретный уровень",
+        close: "Закрыть",
+        changeName: "Сменить Имя",
+        nameUpdated: "Имя обновлено!",
+        enterNewName: "Введите новое имя:",
+        migrationSuccess: "Ваш старый рекорд найден и привязан!",
+        btnOk: "ОК",
+        btnCancel: "Отмена",
+        searchPlaceholder: "🔍 Поиск песни или автора...",
+        noSongsFound: "🚫 Песен не найдено"
+    },
+    MEOW: {
+        icon: "🐱",
+        instructions: "Meow meow meow S D J K meow",
+        score: "Meow",
+        combo: "Meow-bo",
+        paused: "MEOW?",
+        resume: "Meow!",
+        quit: "Grrr",
+        complete: "WeOWW",
+        failed: "WeowWWWW",
+        restart: "Meow-gain",
+        menu: "Meow-nu",
+        perfect: "WeowE",
+        good: "MEOW",
+        miss: "Weow",
+        loading: "Meowing...",
+        leaderboard: "Meow-Weowt",
+        leaderboardGlobal: "Meeeow",
+        leaderboardSecret: "Shhh-Meow",
+        lbGlobal: "Meeeow",
+        lbSecret: "Shhh-Meow",
+        lbLevels: "M-Lvls",
+        lbTotalScore: "Sum-Meow",
+        namePls: "Meow?",
+        lbTitle: "Meow Leaders",
+        lbRank: "Meow #",
+        lbName: "Meow Weow",
+        lbScore: "Meows",
+        lbNoRecords: "Weow Weow Weow!",
+        lbLoading: "Meowing...",
+        lbError: "Meow Weow",
+        nameTaken: "MEOW! Meow! Meow weow!",
+        checking: "Weow...",
+        secretLockMsg: "Meow meow 3 meows meow 5 lmeows meow meow meow meow",
+        close: "Meow",
+        changeName: "Meow Name",
+        nameUpdated: "Meow meow!",
+        enterNewName: "Meow new meow:",
+        migrationSuccess: "Meow weow meow!",
+        btnOk: "Meow!",
+        btnCancel: "Grrr...",
+        searchPlaceholder: "🔍 Meow search...",
+        noSongsFound: "🚫 Meow weow grrr"
+    }
 };
 
 const songsDB = [
@@ -384,6 +514,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function updateGameText() {
         const t = TRANSLATIONS[State.currentLang];
+        
+        // 1. Оновлення головного меню та гри
         const searchInput = document.getElementById('song-search-input');
         if (searchInput) searchInput.placeholder = t.searchPlaceholder;
         const noSongsMsg = document.querySelector('#no-songs-msg h3');
@@ -396,57 +528,85 @@ document.addEventListener('DOMContentLoaded', () => {
         const btnRestart = document.getElementById('btn-restart'); if (btnRestart) btnRestart.innerText = t.restart;
         const btnMenu = document.getElementById('btn-menu-end'); if (btnMenu) btnMenu.innerText = t.menu;
         const loadText = document.querySelector('#loader h3'); if (loadText) loadText.innerText = t.loading;
-        updateLangDisplay();
-    }
+        
+        // Кнопка в меню
+        const lbBtn = document.querySelector('.btn-leaderboard');
+        if (lbBtn) lbBtn.innerText = `🏆 ${getText('leaderboard')}`;
 
-    // --- PLAYER IDENTITY ---
-    async function initPlayerIdentity() {
-        let userId = localStorage.getItem('playerId');
-        const currentName = localStorage.getItem('playerName');
-        if (!userId) {
-            userId = crypto.randomUUID();
-            localStorage.setItem('playerId', userId);
-            if (currentName) {
-                try {
-                    const dbRef = collection(db, "secret_leaderboard");
-                    const q = query(dbRef, where("name", "==", currentName));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const oldDoc = querySnapshot.docs[0];
-                        await updateDoc(doc(db, "secret_leaderboard", oldDoc.id), { userId: userId });
-                    }
-                } catch (e) { console.error("Migration failed:", e); }
+        updateLangDisplay();
+
+        // 2. 🔥 ФІКС ДЛЯ ТАБЛИЦІ ЛІДЕРІВ (Живе оновлення)
+        const lbModal = document.getElementById('lb-modal');
+        if (lbModal) {
+            // Оновлюємо заголовок вікна
+            const titleEl = lbModal.querySelector('.lb-title');
+            if (titleEl) titleEl.innerText = `🏆 ${getText('leaderboard')}`;
+
+            // Оновлюємо кнопки вкладок
+            const tabGlobal = lbModal.querySelector('[data-tab="global"]');
+            const tabSecret = lbModal.querySelector('[data-tab="secret"]');
+            if (tabGlobal) tabGlobal.innerText = getText('lbGlobal');
+            if (tabSecret) tabSecret.innerText = getText('lbSecret');
+
+            // Оновлюємо контент (перезавантажуємо поточну вкладку, щоб оновились заголовки таблиці TH)
+            if (typeof loadLeaderboardData === 'function' && typeof currentLbTab !== 'undefined') {
+                loadLeaderboardData(currentLbTab, lbModal);
             }
         }
     }
+
+    // --- PLAYER IDENTITY (prompt name on first site visit) ---
+    async function initPlayerIdentity() {
+        let userId = localStorage.getItem('playerId');
+        if (!userId) {
+            userId = crypto.randomUUID();
+            localStorage.setItem('playerId', userId);
+        }
+
+        // Prompt name on first site visit (modal, above menu)
+        let playerName = localStorage.getItem('playerName');
+        if (!playerName) {
+            const name = await getNameFromUser(false);
+            if (name) {
+                localStorage.setItem('playerName', name);
+                playerName = name;
+            }
+        }
+
+        // Ensure global stats exist / synced
+        try { await syncGlobalProgress(); } catch (e) { console.error("syncGlobalProgress:", e); }
+    }
     initPlayerIdentity();
 
-    // --- OPTIMIZATION: CACHE GRADIENTS ---
-    function initGradients() {
-        if (!ctx) return;
-        
-        // Clear old
-        for(let key in GRADIENT_CACHE.tap) delete GRADIENT_CACHE.tap[key];
-        
-        const createTapGrad = (colors, key) => {
-            const g = ctx.createLinearGradient(0, 0, 0, CONFIG.noteHeight);
-            g.addColorStop(0, colors[0]);
-            g.addColorStop(1, colors[1]);
-            GRADIENT_CACHE.tap[key] = g;
-        };
+    // --- GLOBAL PROGRESS SYNC ---
+    async function syncGlobalProgress() {
+        const userId = localStorage.getItem('playerId');
+        const playerName = localStorage.getItem('playerName');
+        if (!userId || !playerName) return;
 
-        const palettes = [
-            {name: 'steel', cols: [PALETTES.STEEL.light, PALETTES.STEEL.main]},
-            {name: 'electric', cols: [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2]},
-            {name: 'gold', cols: [PALETTES.GOLD.black, PALETTES.GOLD.choco]},
-            {name: 'cosmic', cols: ['#000000', PALETTES.COSMIC.core]},
-            {name: 'legendary', cols: [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2]}
-        ];
+        let totalScore = 0;
+        let levelsCompleted = 0;
 
-        palettes.forEach(p => createTapGrad(p.cols, p.name));
+        songsDB.forEach(song => {
+            if (song.isSecret) return; // DO NOT count secret
+            const data = getSavedData(song.title);
+            if (data && data.stars > 0) {
+                levelsCompleted++;
+                totalScore += (data.score || 0);
+            }
+        });
 
-        // NEW: create glow sprite when ctx is available
-        if (!State.glowSprite) createGlowSprite(128);
+        try {
+            await setDoc(doc(db, "global_leaderboard", userId), {
+                userId,
+                name: playerName,
+                levelsCompleted,
+                totalScore,
+                updatedAt: serverTimestamp()
+            }, { merge: true });
+        } catch (e) {
+            console.error("Global Sync Error:", e);
+        }
     }
 
     // ==========================================
@@ -1371,13 +1531,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- GAME FLOW ---
     async function startGame(idx) {
         const song = songsDB[idx];
-        if (song.isSecret) {
-            let playerName = localStorage.getItem('playerName');
-            if (!playerName) {
-                playerName = await getNameFromUser();
-                if (!playerName) return;
-            }
-        }
+        // NOTE: name prompt removed here; name is asked during initPlayerIdentity()
 
         if (bgMusicEl) bgMusicEl.pause();
         resetGameState();
@@ -1469,6 +1623,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         if (State.score > 0) saveGameData(songsDB[State.currentSongIndex].title, State.score, starsCount);
+        // Update global leaderboard for non-secret songs
+        if (!songsDB[State.currentSongIndex].isSecret) {
+            try { await syncGlobalProgress(); } catch (e) { console.error(e); }
+        }
 
         let starsStr = "";
         const total = isSecret ? 5 : 3;
@@ -1621,66 +1779,155 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    // --- Leaderboard: Fixed Size & Animations ---
+    let currentLbTab = 'global';
+
     async function showLeaderboard() {
-        let modal = document.getElementById('lb-modal');
-        if (modal) modal.remove();
-        
-        modal = document.createElement('div');
+        // Видаляємо старе вікно, якщо є
+        const existing = document.getElementById('lb-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
         modal.id = 'lb-modal';
         modal.className = 'leaderboard-modal';
+        
+        // Генеруємо HTML з фіксованою структурою
         modal.innerHTML = `
-            <div class="leaderboard-content">
-                <span class="lb-close-btn">&times;</span>
-                <h2 id="lb-title">${getText('lbTitle')}</h2>
-                <table class="lb-table">
-                    <thead><tr><th>${getText('lbRank')}</th><th>${getText('lbName')}</th><th>${getText('lbScore')}</th></tr></thead>
-                    <tbody id="lb-body"><tr><td colspan="3">${getText('lbLoading')}</td></tr></tbody>
-                </table>
+            <div class="lb-header-row">
+                <div class="lb-title">🏆 ${getText('leaderboard')}</div>
+                <button class="lb-close-btn">&times;</button>
+            </div>
+            
+            <div class="lb-tabs">
+              <button class="lb-tab-btn active" data-tab="global">${getText('lbGlobal')}</button>
+              <button class="lb-tab-btn" data-tab="secret">${getText('lbSecret')}</button>
+            </div>
+            
+            <div class="lb-content-wrapper">
+                <div class="lb-scroll-area" id="lb-scroll-area">
+                    <table class="lb-table">
+                        <thead id="lb-header"></thead>
+                        <tbody id="lb-body"></tbody>
+                    </table>
+                </div>
             </div>`;
+            
         document.body.appendChild(modal);
-        modal.querySelector('.lb-close-btn').onclick = () => { modal.remove(); };
+
+        // Події
+        modal.querySelector('.lb-close-btn').onclick = () => {
+            modal.style.opacity = '0';
+            modal.style.transform = 'translate(-50%, -45%) scale(0.95)';
+            setTimeout(() => modal.remove(), 300);
+        };
+
+        const scrollArea = modal.querySelector('#lb-scroll-area');
+        const btns = modal.querySelectorAll('.lb-tab-btn');
+
+        btns.forEach(btn => {
+            btn.onclick = () => {
+                if (btn.classList.contains('active')) return;
+                
+                // Перемикання кнопок
+                btns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                
+                // Анімація зникнення контенту
+                scrollArea.classList.add('fading');
+                
+                // Чекаємо поки зникне (200мс), тоді вантажимо нові дані
+                setTimeout(() => {
+                    currentLbTab = btn.dataset.tab;
+                    loadLeaderboardData(currentLbTab, modal).then(() => {
+                        // Анімація появи
+                        scrollArea.classList.remove('fading');
+                    });
+                }, 200);
+            };
+        });
+
+        // Завантажуємо першу вкладку
+        await syncGlobalProgress().catch(e => console.error(e));
+        loadLeaderboardData('global', modal);
+    }
+
+    async function loadLeaderboardData(type, modalRef) {
+        const thead = modalRef.querySelector('#lb-header');
+        const tbody = modalRef.querySelector('#lb-body');
+        
+        // Очистка перед завантаженням (щоб не було видно старої таблиці під час фейду)
+        tbody.innerHTML = ''; 
+
+        // Заголовки (Локалізовані)
+        if (type === 'global') {
+            thead.innerHTML = `<tr>
+                <th width="15%">#</th>
+                <th width="45%">${getText('lbName')}</th>
+                <th width="20%">${getText('lbLevels')}</th>
+                <th width="20%">${getText('lbTotalScore')}</th>
+            </tr>`;
+        } else {
+            thead.innerHTML = `<tr>
+                <th width="15%">#</th>
+                <th width="55%">${getText('lbName')}</th>
+                <th width="30%">${getText('lbScore')}</th>
+            </tr>`;
+        }
+
+        // Лоудер
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">${getText('lbLoading')}</td></tr>`;
 
         try {
-            const q = query(collection(db, "secret_leaderboard"), orderBy("score", "desc"), limit(10));
-            const querySnapshot = await getDocs(q);
-            const tbody = document.getElementById('lb-body');
-            tbody.innerHTML = '';
-            if (querySnapshot.empty) tbody.innerHTML = `<tr><td colspan="3">${getText('lbNoRecords')}</td></tr>`;
-            else {
+            const col = type === 'global' ? "global_leaderboard" : "secret_leaderboard";
+            const orderField = type === 'global' ? "totalScore" : "score";
+            
+            const q = query(collection(db, col), orderBy(orderField, "desc"), limit(20)); // Більше записів, бо є скрол
+            const snap = await getDocs(q);
+            
+            tbody.innerHTML = ''; // Прибираємо лоудер
+
+            if (snap.empty) {
+                tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; opacity:0.6;">${getText('lbNoRecords')}</td></tr>`;
+            } else {
                 let rank = 1;
-                querySnapshot.forEach((doc) => {
-                    const data = doc.data();
+                snap.forEach(docSnap => {
+                    const data = docSnap.data();
                     const tr = document.createElement('tr');
-                    tr.innerHTML = `<td>#${rank++}</td><td>${data.name}</td><td>${data.score}</td>`;
+                    
+                    // Стилізація рангу (1, 2, 3 місця)
+                    let rankClass = '';
+                    let rankDisplay = `#${rank}`;
+                    if (rank === 1) { rankClass = 'rank-1'; rankDisplay = '🥇 1'; }
+                    else if (rank === 2) { rankClass = 'rank-2'; rankDisplay = '🥈 2'; }
+                    else if (rank === 3) { rankClass = 'rank-3'; rankDisplay = '🥉 3'; }
+
+                    if (type === 'global') {
+                        tr.innerHTML = `
+                            <td class="${rankClass}"><b>${rankDisplay}</b></td>
+                            <td>${escapeHtml(data.name)}</td>
+                            <td>${data.levelsCompleted || 0}</td>
+                            <td>${data.totalScore || 0}</td>
+                        `;
+                    } else {
+                        tr.innerHTML = `
+                            <td class="${rankClass}"><b>${rankDisplay}</b></td>
+                            <td>${escapeHtml(data.name)}</td>
+                            <td>${data.score || 0}</td>
+                        `;
+                    }
                     tbody.appendChild(tr);
+                    rank++;
                 });
             }
-        } catch (e) { document.getElementById('lb-body').innerHTML = `<tr><td colspan="3">${getText('lbError')}</td></tr>`; }
+        } catch (e) {
+            console.error(e);
+            tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ff4444;">${getText('lbError')}</td></tr>`;
+        }
     }
 
-    function showSecretLockModal() {
-        const modal = document.createElement('div');
-        modal.className = 'secret-lock-modal';
-        modal.innerHTML = `
-            <div class="secret-lock-content">
-                <span class="secret-lock-close">&times;</span>
-                <div class="secret-lock-icon">🔒</div>
-                <p>${getText('secretLockMsg')}</p>
-                <button class="secret-lock-btn">${getText('close')}</button>
-            </div>`;
-        document.body.appendChild(modal);
-        const close = () => modal.remove();
-        modal.querySelector('.secret-lock-close').onclick = close;
-        modal.querySelector('.secret-lock-btn').onclick = close;
-        modal.onclick = (e) => { if (e.target === modal) close(); };
-    }
-
-    function showNotification(text, type = 'success') {
-        const el = document.createElement('div');
-        el.className = 'game-notification';
-        el.innerHTML = `${type === 'error' ? '❌' : '✨'} ${text}`;
-        document.body.appendChild(el);
-        setTimeout(() => { el.style.animation = 'toastFadeOut 0.5s forwards'; setTimeout(() => el.remove(), 500); }, 2500);
+    function escapeHtml(text) {
+        if (!text) return 'Unknown';
+        return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
     // --- CONTROLS ---
