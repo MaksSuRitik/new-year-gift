@@ -1634,6 +1634,9 @@ function spawnRipple(lane) {
     else if (State.combo >= 100) power = 1.5;
 
     State.ripples.push({ x: x, power: power, age: 0, life: 1400, radius: 0 });
+    if (State.ripples.length > 5) {
+        State.ripples.shift(); // Видаляє найстарішу хвилю, якщо їх більше 30
+    }
 }
 
 function updateRipples(dt) {
