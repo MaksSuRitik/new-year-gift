@@ -359,6 +359,9 @@ const State = {
     mapTiles: [],
     activeTiles: [],
     
+    // Ripple physics (visual hit-line disturbances)
+    ripples: [],
+    
     // Performance: Random Jitter Table (Deterministic Noise)
     shakeTable: new Float32Array(256),
 
@@ -703,6 +706,8 @@ function initGradients() {
         State.holdingTiles = [null, null, null, null];
         State.keyState = [false, false, false, false];
         State.laneBeamAlpha = [0, 0, 0, 0];
+        State.ripples = [];
+        State.lastRippleUpdateMs = Date.now();
         // remove DOM hold-effects clearing (we no longer use #hold-effects-container)
         // if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
@@ -892,6 +897,9 @@ function initGradients() {
         const hitY = State.gameHeight * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
         const now = Date.now();
+        const dt = now - (State.lastRippleUpdateMs || now);
+        State.lastRippleUpdateMs = now;
+        updateRipples(dt);
 
         // Spawn
         for(let i = 0; i < State.mapTiles.length; i++) {
@@ -1065,10 +1073,26 @@ function initGradients() {
             }
         }
 
-        // 3. Hit Line
+        // 3. Hit Line (ripple/wave physics)
         ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
         ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
-        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(State.gameWidth, hitY); ctx.stroke();
+        // Draw multi-segment line sampling every 5px and summing active ripples
+        const step = 5;
+        const frequency = 0.04;
+        ctx.beginPath();
+        for (let sx = 0; sx <= State.gameWidth; sx += step) {
+            let yOffset = 0;
+            for (let ri = 0; ri < (State.ripples ? State.ripples.length : 0); ri++) {
+                const r = State.ripples[ri];
+                const dist = Math.abs(r.x - sx);
+                const decay = Math.max(0, 1 - (r.age / r.life));
+                const time = (r.age / 1000) * 6; // wave speed multiplier
+                yOffset += Math.sin(dist * frequency - time) * (r.power * 5) * decay;
+            }
+            const y = hitY + yOffset;
+            if (sx === 0) ctx.moveTo(sx, y); else ctx.lineTo(sx, y);
+        }
+        ctx.stroke();
 
         // 4. Notes
         const tapGradient = GRADIENT_CACHE.tap[p.name];
@@ -1473,6 +1497,8 @@ function initGradients() {
                 State.combo++;
                 if(State.combo > State.maxCombo) State.maxCombo = State.combo;
             }
+            // Spawn a visual ripple on successful hit (only on initial down)
+            try { spawnRipple(lane); } catch(e) { /* fail safe */ }
             updateScoreUI(true);
         } else {
             missNote({ lane: lane }, false);
@@ -1595,6 +1621,34 @@ function initGradients() {
 	gctx.fillStyle = grad;
 	gctx.fillRect(0, 0, size, size);
 	State.glowSprite = c;
+}
+
+// Ripple system: spawn and update
+function spawnRipple(lane) {
+    const laneW = State.gameWidth / 4;
+    const x = lane * laneW + laneW / 2;
+    let power = 1.0;
+    if (State.combo >= 800) power = 4.0;
+    else if (State.combo >= 400) power = 3.0;
+    else if (State.combo >= 200) power = 2.0;
+    else if (State.combo >= 100) power = 1.5;
+
+    State.ripples.push({ x: x, power: power, age: 0, life: 1400, radius: 0 });
+}
+
+function updateRipples(dt) {
+    if (!State.ripples || State.ripples.length === 0) return;
+    const out = [];
+    for (let i = 0; i < State.ripples.length; i++) {
+        const r = State.ripples[i];
+        r.age += dt;
+        // simple damping: reduce power over time
+        r.power = Math.max(0, r.power - (0.0015 * dt));
+        // expand radius linearly (pixels per second scaled by power)
+        r.radius += 200 * (dt / 1000) * (0.5 + r.power * 0.5);
+        if (r.age < r.life && r.power > 0.03) out.push(r);
+    }
+    State.ripples = out;
 }
 
     // --- GAME FLOW ---
