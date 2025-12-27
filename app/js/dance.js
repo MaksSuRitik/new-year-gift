@@ -33,7 +33,7 @@ const CONFIG = {
     speedStart: 800,
     speedEnd: 500,
     speedStartSecret: 700,
-    speedEndSecret: 400,
+    speedEndSecret: 450,
     hitPosition: 0.85,
     noteHeight: 210,
     hitScale: 1.15,
