@@ -30,10 +30,10 @@ const db = getFirestore(app);
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
 
 const CONFIG = {
-    speedStart: 1000,
+    speedStart: 800,
     speedEnd: 500,
-    speedStartSecret: 800,
-    speedEndSecret: 500,
+    speedStartSecret: 700,
+    speedEndSecret: 400,
     hitPosition: 0.85,
     noteHeight: 210,
     hitScale: 1.15,
