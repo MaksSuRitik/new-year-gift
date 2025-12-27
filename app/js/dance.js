@@ -1716,6 +1716,81 @@ function initGradients() {
         if (searchInput) { searchInput.value = ''; document.getElementById('no-songs-msg')?.classList.add('hidden'); }
     }
 
+    // ==========================================
+    // 🔒 MODAL: SECRET LOCK MESSAGE
+    // ==========================================
+    function showSecretLockModal() {
+        // Удаляем старое окно, если есть
+        const existing = document.getElementById('lock-modal');
+        if (existing) existing.remove();
+
+        // Создаем контейнер оверлея
+        const modal = document.createElement('div');
+        modal.id = 'lock-modal';
+        modal.style.cssText = `
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000;
+            display: flex; align-items: center; justify-content: center;
+            backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+            opacity: 0; transition: opacity 0.3s ease;
+        `;
+
+        // Создаем контент (карточку)
+        const content = document.createElement('div');
+        content.style.cssText = `
+            background: var(--glass-bg);
+            border: 1px solid var(--highlight);
+            box-shadow: 0 0 30px var(--accent-glow);
+            padding: 30px; border-radius: 20px;
+            text-align: center; max-width: 320px; width: 90%;
+            color: var(--text-color);
+            transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        `;
+
+        // Наполняем текстом
+        content.innerHTML = `
+            <div style="font-size: 3.5rem; margin-bottom: 15px; text-shadow: 0 0 15px var(--accent-glow);">🔒</div>
+            <h3 style="margin: 0 0 10px 0; color: var(--highlight); text-transform: uppercase;">Oops!</h3>
+            <p style="font-size: 1rem; margin-bottom: 25px; line-height: 1.4; opacity: 0.9;">
+                ${getText('secretLockMsg')}
+            </p>
+            <button id="lock-close-btn" style="
+                background: var(--highlight); color: #000; border: none;
+                padding: 12px 30px; border-radius: 50px; font-weight: bold; font-size: 1rem;
+                cursor: pointer; font-family: inherit; box-shadow: 0 0 15px var(--accent-glow);
+                transition: transform 0.2s;
+            ">${getText('close')}</button>
+        `;
+
+        modal.appendChild(content);
+        document.body.appendChild(modal);
+
+        // Анимация появления
+        requestAnimationFrame(() => {
+            modal.style.opacity = '1';
+            content.style.transform = 'scale(1)';
+        });
+
+        // Логика закрытия
+        const close = () => {
+            modal.style.opacity = '0';
+            content.style.transform = 'scale(0.8)';
+            setTimeout(() => modal.remove(), 300);
+        };
+
+        const btn = content.querySelector('#lock-close-btn');
+        btn.onclick = (e) => {
+            playClick(); // Используем ваш звук клика
+            e.stopPropagation();
+            close();
+        };
+        
+        // Закрытие по клику вне окна
+        modal.onclick = (e) => {
+            if (e.target === modal) close();
+        };
+    }
+
     // --- MENUS ---
     function renderMenu() {
         const list = document.getElementById('song-list');
