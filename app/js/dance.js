@@ -268,7 +268,7 @@ const songsDB = [
     { file: "mzlff,STEDD.mp3", title: "однополярності", artist: "mzlff, STED.D", duration: "3m 05s" },
     { file: "Skriptonit_-_Tancuj_so_mnoj_v_temnote.mp3", title: "Танцуй со мной в темноте", artist: "Скриптонит", duration: "3m 55s" },
     { file: "Pyrokinesis Трупный Синод.mp3", title: "Трупный Синод", artist: "Pyrokinesis", duration: "3m 40s" },
-    { file: "...Baby One More Time (from Kung Fu Panda 4).mp3", title: "Baby One More Time", artist: "Tenacious D", duration: "3m 13s" },
+    { file: "Baby One More Time.mp3", title: "Baby One More Time", artist: "Tenacious D", duration: "3m 13s" },
     { file: "Barricades.mp3", title: "Barricades", artist: "Sawano Hiroyuki", duration: "3m 41s" },
     { file: "Bad Liar.mp3", title: "Bad Liar", artist: "Imagine Dragons", duration: "4m 21s" },
     { file: "Beethoven Virus - Ultimate Version.mp3", title: "Beethoven Virus", artist: "logan feece", duration: "3m 38s" },
