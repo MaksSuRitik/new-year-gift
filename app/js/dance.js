@@ -894,7 +894,7 @@ function initGradients() {
         State.animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-   function update(songTime) {
+function update(songTime) {
         const hitTimeWindow = State.currentSpeed;
         const hitY = State.gameHeight * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
@@ -907,7 +907,6 @@ function initGradients() {
         for(let i = 0; i < State.mapTiles.length; i++) {
             const tile = State.mapTiles[i];
             if (!tile.spawned && tile.time - hitTimeWindow <= songTime) {
-                // Додаємо властивість для часу зникнення (якщо відпустимо ноту)
                 tile.fadeStartTime = 0; 
                 State.activeTiles.push(tile);
                 tile.spawned = true;
@@ -918,8 +917,14 @@ function initGradients() {
         for (let i = State.activeTiles.length - 1; i >= 0; i--) {
             const tile = State.activeTiles[i];
 
-            // 1. ВИДАЛЕННЯ "ВІДПУЩЕНИХ" НОТ (FADE OUT)
-            // Якщо нота була відпущена (released), вона зникає через 200мс
+            // 🔥 ФІКС 1: Миттєве видалення завершених нот
+            // Якщо нота готова (completed), їй немає чого робити в масиві.
+            if (tile.completed) {
+                State.activeTiles.splice(i, 1);
+                continue;
+            }
+
+            // 1. ЛОГІКА ЗНИКНЕННЯ (FADE OUT) ДЛЯ ВІДПУЩЕНИХ
             if (tile.released) {
                 if (tile.fadeStartTime === 0) tile.fadeStartTime = now;
                 if (now - tile.fadeStartTime > 200) {
@@ -963,12 +968,13 @@ function initGradients() {
                 if (isKeyPressed) tile.lastValidHoldTime = now;
 
                 if (isKeyPressed) {
+                    // ГРАВЕЦЬ ТРИМАЄ КНОПКУ
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 100;
+                            State.combo += 5;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -977,21 +983,28 @@ function initGradients() {
                         tile.holding = true;
                         State.lastHitTime = now;
                     } else {
-                        tile.completed = true;
-                        tile.holding = false;
-                        const mult = getComboMultiplier();
-                        State.score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
-                        State.combo++; 
-                        State.lastComboUpdateTime = now;
-                        if (State.combo > State.maxCombo) State.maxCombo = State.combo;
-                        updateScoreUI(true);
+                        // Успішне завершення (час вийшов)
+                        completeLongNote(tile);
                     }
                 } else {
-                    // Моментальний виліт + Запуск таймера зникнення
-                    if (songTime < tile.endTime) {
-                        tile.holding = false;
-                        tile.released = true; // Тепер це активує блок "FADE OUT" на початку циклу
-                        tile.fadeStartTime = now; 
+                    // ГРАВЕЦЬ ВІДПУСТИВ КНОПКУ
+                    
+                    // 🔥 ФІКС 2: "Допуск на фініші"
+                    // Якщо до кінця залишилось менше 100мс, зараховуємо як перемогу
+                    if (tile.endTime - songTime < 100) {
+                        completeLongNote(tile);
+                    } else {
+                        // Інакше - це зрив (released)
+                        if (songTime < tile.endTime) {
+                            tile.holding = false;
+                            tile.released = true;
+                            if (tile.fadeStartTime === 0) tile.fadeStartTime = now;
+                            
+                            if (State.holdingTiles[tile.lane] === tile) {
+                                State.holdingTiles[tile.lane] = null;
+                                toggleHoldEffect(tile.lane, false);
+                            }
+                        }
                     }
                 }
             }
@@ -1004,6 +1017,25 @@ function initGradients() {
                 State.activeTiles.splice(i, 1);
             }
         }
+    }
+
+    // Допоміжна функція для завершення довгої ноти (щоб не дублювати код)
+    function completeLongNote(tile) {
+        tile.completed = true;
+        tile.holding = false;
+        
+        // Очищаємо глобальний стан
+        if (State.holdingTiles[tile.lane] === tile) {
+            State.holdingTiles[tile.lane] = null;
+            toggleHoldEffect(tile.lane, false);
+        }
+
+        const mult = getComboMultiplier();
+        State.score += Math.round((CONFIG.scoreHoldTick * 5) * mult);
+        State.combo++; 
+        State.lastComboUpdateTime = Date.now();
+        if (State.combo > State.maxCombo) State.maxCombo = State.combo;
+        updateScoreUI(true);
     }
 
     // --- DRAW LOOP (OPTIMIZED) ---
@@ -1078,11 +1110,11 @@ function initGradients() {
                 // === A. HOLD STYLE (СТОВП) ===
                 const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
                 beamGrad.addColorStop(0, "rgba(0,0,0,0)");
-                beamGrad.addColorStop(0.3, p.glow);
-                beamGrad.addColorStop(1, comboPower > 0.5 ? "#ffffff" : p.glow);
+                beamGrad.addColorStop(0.4, p.glow);
+                beamGrad.addColorStop(1, comboPower > 0.5 ? "#c7c7c7ff" : p.glow);
 
                 // Якщо ми тримаємо - прозорість 100%, якщо відпустили - беремо згасаючу laneAlpha
-                let currentAlpha = State.holdingTiles[i] ? (0.8 + (comboPower * 0.2)) : laneAlpha;
+                let currentAlpha = State.holdingTiles[i] ? (0.4 + (comboPower * 0.1)) : laneAlpha;
                 
                 ctx.globalAlpha = currentAlpha;
                 ctx.fillStyle = beamGrad;
