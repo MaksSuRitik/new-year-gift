@@ -289,7 +289,7 @@ const songsDB = [
     { file: "Hero.mp3", title: "Hero", artist: "Skillet", duration: "3m 07s" },
     { file: "House of Memories.mp3", title: "House of Memories", artist: "Panic! At The Disco", duration: "3m 29s" },
     { file: "I Ain't Worried.mp3", title: "I Ain't Worried", artist: "OneRepublic", duration: "2m 28s" },
-    { file: "It's Time.mp3", title: "It's Time", artist: "Imagine Dragons", duration: "4m 00s" },
+    { file: "itstime.mp3", title: "It's Time", artist: "Imagine Dragons", duration: "4m 00s" },
     { file: "JUNGE BALLER.mp3", title: "JUNGE BALLER", artist: "6PM RECORDS, Ski Aggu, Haaland936, SIRA", duration: "2m 11s" },
     { file: "Kyouran Hey Kids!! - Noragami Aragoto.mp3", title: "Kyouran Hey Kids!!", artist: "Animelmack", duration: "3m 45s" },
     { file: "Lay All Your Love On Me.mp3", title: "Lay All Your Love On Me", artist: "ABBA", duration: "4m 34s" },

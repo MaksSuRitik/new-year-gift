@@ -1,170 +1,101 @@
 <!DOCTYPE html>
-<html lang="ua">
+<html lang="uk">
 <head>
-  <meta charset="UTF-8">
-  <title>Альбом спогадів</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="css/style.css">
-  
-  <script src="https://cdn.jsdelivr.net/npm/page-flip/dist/js/page-flip.browser.js"></script>
-
-  <style>
-    /* Локальні стилі для книги, щоб не лізти в main css */
-    body {
-        background: var(--bg-color, #0f0c29); /* Фон з теми */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 100vh;
-        overflow: hidden;
-    }
-
-    .book-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        padding-top: 20px;
-    }
-
-    /* Стиль самої сторінки */
-    .page {
-        background-color: #fdfaf7; /* Колір паперу */
-        border: 1px solid #c2b5a3;
-        overflow: hidden;
-        box-shadow: inset 0 0 30px rgba(0,0,0,0.1); /* Внутрішня тінь паперу */
-    }
-
-    /* Обкладинка (тверда) */
-    .page.cover {
-        background-color: #2a2a2a;
-        color: #e0c3fc;
-        border: 2px solid #6a11cb;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-    }
-
-    /* Контент всередині сторінки */
-    .page-content {
-        padding: 20px;
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
-        color: #333;
-    }
-
-    .page-content h2 { margin-top: 0; color: #444; font-family: 'Comic Sans MS', cursive; }
-    .page-content p { font-size: 0.9rem; line-height: 1.4; }
-
-    /* Контейнер для відео */
-    .video-frame {
-        width: 100%;
-        margin-top: auto;
-        margin-bottom: auto;
-        border-radius: 8px;
-        overflow: hidden;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        background: #000;
-    }
-
-    video {
-        width: 100%;
-        display: block;
-        max-height: 300px;
-    }
-
-    /* Кнопка "Назад" */
-    .back-btn {
-        position: absolute;
-        top: 20px; left: 20px;
-        text-decoration: none;
-        color: white;
-        background: rgba(255, 255, 255, 0.1);
-        padding: 10px 20px;
-        border-radius: 20px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        z-index: 100;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Інтерактивна стародавня книга">
+    <title>Ancient Book Experience</title>
+    
+    <link rel="stylesheet" href="css/style.css">
+    
 </head>
-<body data-theme="dark">
+<body>
 
-  <a href="index.html" class="back-btn">← Назад</a>
+    <a href="index.html" class="magic-back-btn">✨ Повернутися</a>
 
-  <div class="book-wrapper">
-    <div id="my-book">
-      
-        <div class="page cover" data-density="hard">
-            <div class="page-content">
-                <h1 style="font-size: 3rem;">OUR STORY</h1>
-                <p>Гортай →</p>
-            </div>
+    <div id="orientation-lock" class="orientation-lock">
+        <div class="orientation-msg">
+            <p>Будь ласка, переверніть пристрій горизонтально для читання.</p>
+            <div class="icon-rotate">↻</div>
         </div>
+    </div>
 
-        <div class="page">
-            <div class="page-content">
-                <h2>Привіт!</h2>
-                <p>Це маленька книга спогадів.</p>
-                <p>Тут зібрані моменти, які...</p>
-            </div>
-        </div>
+    <main class="scene">
+        
+        <div id="book" class="book">
 
-        <div class="page">
-            <div class="page-content">
-                <h3>Момент №1</h3>
-                <p>Пам'ятаєш цей день?</p>
-                
-                <div class="video-frame">
-                    <video controls playsinline>
-                        <source src="video/sample.mp4" type="video/mp4">
-                    </video>
+            <div class="cover cover--back"></div>
+
+            <div class="page" style="--page-index: 0;">
+                <div class="page__face page__face--front cover-texture">
+                    <div class="book-title">
+                        <h1>Chronicles</h1>
+                        <span class="subtitle">Volume I</span>
+                    </div>
+                </div>
+                <div class="page__face page__face--back paper-texture">
+                    <div class="content-placeholder">
+                        <h2>Вступ</h2>
+                        <p class="drop-cap">Т</p>
+                        <p>ут починається історія. Це місце зарезервоване під вступний текст.</p>
+                        <div class="separator">~~~ ⚜ ~~~</div>
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="page">
-            <div class="page-content">
-                <h3>Продовження...</h3>
-                <p>А тут ми робили...</p>
+            <div class="page" style="--page-index: 1;">
+                <div class="page__face page__face--front paper-texture">
+                    <div class="content-placeholder">
+                        <h3>Розділ I</h3>
+                        <p>Текст-риба для перевірки типографіки. Далеко за словесними горами, в країні голосних і приголосних живуть рибні тексти.</p>
+                        <p>Вони живуть ізольовано в буквених будинках на березі Семантики великого мовного океану.</p>
+                    </div>
+                    <div class="page-number">1</div>
+                </div>
+                <div class="page__face page__face--back paper-texture">
+                    <div class="content-placeholder">
+                        <h3>Відео архів</h3>
+                        <div class="video-container-stub">
+                            <span>[Місце для відео-контенту]</span>
+                        </div>
+                        <p class="caption">Опис того, що відбувається на відео.</p>
+                    </div>
+                    <div class="page-number">2</div>
+                </div>
             </div>
-        </div>
 
-        <div class="page cover" data-density="hard">
-            <div class="page-content">
-                <h2>Далі буде...</h2>
+            <div class="page" style="--page-index: 2;">
+                <div class="page__face page__face--front paper-texture">
+                    <div class="content-placeholder">
+                        <h3>Ілюстрації</h3>
+                        <div class="image-stub">
+                            <span>[Гравюра]</span>
+                        </div>
+                        <p>Текстура паперу повинна просвічуватися крізь чорнило.</p>
+                    </div>
+                    <div class="page-number">3</div>
+                </div>
+                <div class="page__face page__face--back paper-texture">
+                    <div class="content-placeholder ending">
+                        <p>Кінець ознайомчого фрагменту.</p>
+                    </div>
+                    <div class="page-number">4</div>
+                </div>
             </div>
+
+            <div class="page" style="--page-index: 3;">
+                <div class="page__face page__face--front paper-texture">
+                    <div class="content-placeholder">
+                        <p class="small-print">Виготовлено вручну кодом.</p>
+                    </div>
+                </div>
+                <div class="page__face page__face--back cover-texture">
+                    </div>
+            </div>
+
         </div>
+    </main>
 
-    </div>
-  </div>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const pageFlip = new St.PageFlip(document.getElementById('my-book'), {
-            width: 350,  // Ширина однієї сторінки
-            height: 550, // Висота сторінки
-            size: 'stretch',
-            minWidth: 300,
-            maxWidth: 1000,
-            minHeight: 400,
-            maxHeight: 1000,
-            showCover: true,
-            mobileScrollSupport: false // Вимикаємо скрол на мобільному, щоб працювали свайпи
-        });
-
-        // Завантажуємо сторінки
-        pageFlip.loadFromHTML(document.querySelectorAll('.page'));
-
-        // Важлива штука: зупиняти відео, коли гортаєш сторінку
-        pageFlip.on('flip', (e) => {
-            document.querySelectorAll('video').forEach(vid => vid.pause());
-        });
-    });
-  </script>
-
+    <script src="js/you.js"></script>
 </body>
 </html>
