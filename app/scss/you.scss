@@ -1,51 +1,43 @@
 /*
-    АРХІТЕКТУРА СТИЛІВ
-    -------------------
-    1. Змінні та налаштування
-    2. Базовий скидання та утиліти
-    3. UI елементи (Кнопка, Блокування)
-    4. 3D Сцена
-    5. Книга та геометрія
-    6. Сторінки та текстури
-    7. Типографіка та контент
-    8. Адаптивність
+    АРХІТЕКТУРА СТИЛІВ (ISOLATED)
 */
 
-// --- 1. ЗМІННІ ---
-
+// --- 1. ЗМІННІ (Локальні) ---
 $book-width-pc: 420px;
 $book-height-pc: 580px;
-$book-width-mob: 45vh; // Відносно висоти для ландшафту
+$book-width-mob: 45vh;
 $book-height-mob: 80vh;
 
-$duration: 1.2s; // Повільне, "важке" перегортання
-$ease-book: cubic-bezier(0.645, 0.045, 0.355, 1); // Easing "easeInOutCubic"
+$duration: 1.2s;
+$ease-book: cubic-bezier(0.645, 0.045, 0.355, 1);
 
-// Палітра стародавності
 $c-bg: #1a1814;
 $c-leather: #3d2618;
 $c-leather-dark: #26160d;
 $c-paper: #e3d2b4;
-$c-paper-shadow: #cbb692;
 $c-ink: #2b231e;
 $c-gold: #c5a059;
 
-// --- 2. BASE ---
+// --- 2. ІЗОЛЬОВАНА БАЗА ---
+// Всі глобальні зміни тепер живуть всередині body.book-theme
+// Це означає, що вони НЕ вплинуть на інші сторінки
 
-*, *::before, *::after {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
-html, body {
+body.book-theme {
     width: 100%;
     height: 100%;
-    overflow: hidden; // Жодного скролу сторінки, скрол тільки всередині книги
-    background-color: $c-bg;
-    font-family: 'Georgia', 'Times New Roman', serif; // Системні серифи для швидкості
+    overflow: hidden;
+    background-color: $c-bg; // Фон змінюється тільки тут
+    font-family: 'Georgia', 'Times New Roman', serif; // Шрифт змінюється тільки тут
     color: $c-ink;
     -webkit-font-smoothing: antialiased;
+
+    // Скидання відступів тільки для цієї сторінки, якщо треба
+    margin: 0;
+    padding: 0;
+
+    * {
+        box-sizing: border-box;
+    }
 }
 
 // --- 3. UI ЕЛЕМЕНТИ ---
@@ -65,6 +57,7 @@ html, body {
     transition: all 0.3s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
+    font-family: 'Georgia', serif; // Примусово задаємо шрифт кнопці
 
     &:hover {
         background: $c-gold;
@@ -72,9 +65,9 @@ html, body {
     }
 }
 
-// Блокування портретної орієнтації
+// Блокування (тільки всередині теми книги, або глобально, якщо ім'я унікальне)
 .orientation-lock {
-    display: none; // Приховано за замовчуванням
+    display: none;
     position: fixed;
     top: 0; left: 0; right: 0; bottom: 0;
     background: $c-leather-dark;
@@ -85,6 +78,7 @@ html, body {
     color: $c-paper;
     text-align: center;
     padding: 20px;
+    font-family: 'Georgia', serif;
 
     .icon-rotate {
         font-size: 48px;
@@ -99,9 +93,9 @@ html, body {
     100% { transform: rotate(-90deg); }
 }
 
-// Медіа-запит для портретної орієнтації на мобільних
 @media screen and (orientation: portrait) and (max-width: 800px) {
-    .orientation-lock {
+    // Показуємо лок тільки якщо ми на сторінці книги
+    body.book-theme .orientation-lock {
         display: flex;
     }
 }
@@ -114,8 +108,6 @@ html, body {
     display: flex;
     justify-content: center;
     align-items: center;
-    // Перспектива - ключовий параметр для реалізму.
-    // Чим менше число, тим сильніше викривлення.
     perspective: 1500px; 
     overflow: hidden;
 }
@@ -126,12 +118,8 @@ html, body {
     position: relative;
     width: $book-width-pc;
     height: $book-height-pc;
-    // Вкрай важливо: зберігає 3D простір для дочірніх елементів
     transform-style: preserve-3d; 
     transition: transform $duration $ease-book;
-    
-    // За замовчуванням книга закрита і лежить по центру
-    // Ми змістимо її трохи вправо, коли відкриємо (через JS)
 }
 
 // --- 6. СТОРІНКИ ТА ТЕКСТУРИ ---
@@ -142,14 +130,11 @@ html, body {
     height: 100%;
     top: 0;
     left: 0;
-    transform-origin: left center; // Вісь обертання - лівий край (корінець)
+    transform-origin: left center;
     transform-style: preserve-3d;
-    transition: transform $duration $ease-book, z-index 0s ($duration / 2); // z-index перемикаємо посередині анімації
-    
-    // Курсор як натяк на взаємодію
+    transition: transform $duration $ease-book, z-index 0s ($duration / 2);
     cursor: pointer;
 
-    // Клас .flipped додається JS-ом для перегортання
     &.flipped {
         transform: rotateY(-180deg);
     }
@@ -161,52 +146,40 @@ html, body {
     height: 100%;
     top: 0;
     left: 0;
-    backface-visibility: hidden; // Не показувати виворіт
-    overflow: hidden; // Контент не вилазить за межі паперу
+    backface-visibility: hidden;
+    overflow: hidden;
     padding: 40px;
-    
-    // Тіні для об'єму (внутрішні)
     box-shadow: inset 0 0 30px rgba(0,0,0,0.1);
 
     &--front {
-        // Лицьова сторона
         transform: rotateY(0deg);
-        // Градієнт імітує вигин біля корінця (зліва)
         background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 10%);
         border-radius: 0 4px 4px 0;
     }
 
     &--back {
-        // Зворотна сторона
         transform: rotateY(180deg);
-        // Градієнт імітує вигин біля корінця (справа, бо перевернуто)
         background: linear-gradient(to left, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 10%);
         border-radius: 4px 0 0 4px;
-        
-        // Вирівнювання номерів сторінок дзеркально
         text-align: left; 
     }
 }
 
-// --- ГЕНЕРАЦІЯ ТЕКСТУР (CSS ONLY) ---
+// ТЕКСТУРИ
 
-// Текстура паперу (шум + колір)
 .paper-texture {
     background-color: $c-paper;
-    // Створення шуму через радіальний градієнт
+    color: $c-ink; // Локальний колір тексту
     background-image: 
         linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.03) 98%),
         radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, transparent 50%);
     background-size: 20px 100%, 100% 100%;
 }
 
-// Текстура обкладинки (шкіра)
 .cover-texture {
     background-color: $c-leather;
-    color: $c-gold;
+    color: $c-gold; // Локальний колір тексту
     border: 2px solid $c-leather-dark;
-    
-    // Імітація грубої шкіри
     background-image: 
         radial-gradient($c-leather-dark 15%, transparent 16%),
         radial-gradient($c-leather-dark 15%, transparent 16%); 
@@ -225,6 +198,7 @@ html, body {
         border-bottom: 2px solid $c-gold;
         padding-bottom: 10px;
         margin-bottom: 10px;
+        font-family: 'Georgia', serif; // Гарантія шрифту
     }
     .subtitle {
         font-size: 1.2rem;
@@ -232,18 +206,17 @@ html, body {
     }
 }
 
-// Задня статична обкладинка (підкладка)
 .cover--back {
     position: absolute;
     width: 100%;
     height: 100%;
     background-color: $c-leather;
     border-radius: 0 4px 4px 0;
-    transform: translateZ(-2px); // Трохи позаду сторінок
-    box-shadow: 10px 10px 30px rgba(0,0,0,0.5); // Тінь всієї книги
+    transform: translateZ(-2px);
+    box-shadow: 10px 10px 30px rgba(0,0,0,0.5);
 }
 
-// --- 7. ТИПОГРАФІКА ТА КОНТЕНТ ---
+// --- 7. КОНТЕНТ ---
 
 .content-placeholder {
     height: 100%;
@@ -254,6 +227,7 @@ html, body {
         text-align: center;
         margin-bottom: 1rem;
         color: $c-leather;
+        font-family: 'Georgia', serif;
     }
     
     p {
@@ -263,7 +237,6 @@ html, body {
         text-align: justify;
     }
     
-    // Буквиця
     .drop-cap {
         float: left;
         font-size: 3.5rem;
@@ -292,7 +265,6 @@ html, body {
     font-size: 1.5rem;
 }
 
-// Заглушки
 .video-container-stub, .image-stub {
     width: 100%;
     background: rgba(0,0,0,0.05);
@@ -303,10 +275,8 @@ html, body {
     color: $c-leather;
     margin-bottom: 1rem;
 }
-
 .video-container-stub { height: 200px; }
 .image-stub { height: 250px; }
-
 .caption {
     font-size: 0.9rem;
     font-style: italic;
@@ -314,49 +284,19 @@ html, body {
     color: rgba($c-ink, 0.7);
 }
 
-// --- 8. АДАПТИВНІСТЬ (MOBILE LANDSCAPE) ---
-
-/*
-    Тут ми змінюємо геометрію для телефонів.
-    Коли екран малий по висоті (ландшафт телефону),
-    ми масштабуємо книгу, щоб вона влазила.
-*/
+// --- 8. АДАПТИВНІСТЬ ---
 
 @media (max-height: 600px) {
     .book {
         width: $book-width-mob;
         height: $book-height-mob;
     }
-    
-    .page__face {
-        padding: 20px;
-    }
-    
-    .content-placeholder p {
-        font-size: 0.9rem;
-    }
-
-    .cover-texture h1 {
-        font-size: 2rem;
-    }
+    .page__face { padding: 20px; }
+    .content-placeholder p { font-size: 0.9rem; }
+    .cover-texture h1 { font-size: 2rem; }
 }
 
-/* Для мобільних (по ширині), якщо вони в ландшафті.
-   Зміщуємо книгу так, щоб активна сторінка була по центру екрану.
-   Це буде керуватися класами JS: .view-left, .view-right
-*/
 @media (max-width: 900px) {
-    .scene {
-        perspective: 2000px; // Зменшуємо перспективу для мобільних, щоб менше спотворювало
-    }
-    
-    .book {
-        // На мобільному, якщо книга відкрита, нам треба зсунути її,
-        // бо фізично на екрані влазить тільки одна половина.
-        transition: transform $duration $ease-book;
-    }
-    
-    // Логіка зсуву буде додана до батьківського контейнера або самої книги через JS
-    // .book.shift-right -> показуємо ліву сторінку
-    // .book.shift-left -> показуємо праву сторінку
+    .scene { perspective: 2000px; }
+    .book { transition: transform $duration $ease-book; }
 }
