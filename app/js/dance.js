@@ -975,7 +975,7 @@ function update(songTime) {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 5;
+                            State.combo += 7;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -1157,16 +1157,93 @@ function update(songTime) {
         }
         ctx.restore();
 
-        // Розділювальні лінії
-        ctx.lineWidth = 2;
-        ctx.strokeStyle = (State.combo >= 200) ? 'rgba(255,255,255,0.1)' : colors.laneLine;
-        ctx.beginPath();
-        for (let i = 1; i < 4; i++) {
-            let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
-            ctx.moveTo(i * laneW + shakeX, 0);
-            ctx.lineTo(i * laneW + shakeX, State.gameHeight);
+// ==========================================
+        // 2.1. VERTICAL EQUALIZER LINES (FULL + BORDERS)
+        // ==========================================
+        if (State.analyser) {
+            State.analyser.getByteFrequencyData(State.dataArray);
         }
-        ctx.stroke();
+
+        const eqWidth = 5; 
+        
+        // Кольори (Знизу -> Вгору)
+        const cBase   = PALETTES.STEEL.main;   // Низ
+        const cMid1   = PALETTES.GOLD.glow;    // Середина
+        const cMid2   = '#d500f9';             // Вище (Пурпуровий)
+        const cTop    = PALETTES.COSMIC.glitch;// Пік (Неон)
+
+        // 🔥 ЗМІНА: Цикл від 0 до 4 (включає рамки зліва і справа)
+        for (let i = 0; i <= 4; i++) {
+            
+            let x = i * laneW;
+
+            // Коригування позиції для крайніх ліній, щоб вони не вилазили за екран
+            if (i === 0) x += eqWidth / 2;       // Лівий край трохи всередину
+            if (i === 4) x -= eqWidth / 2;       // Правий край трохи всередину
+            
+            // --- НАЛАШТУВАННЯ ЧУТЛИВОСТІ ---
+            let sensitivity = 1.0;
+            let freqIndex = 0;
+
+            if (i === 2) {
+                // ЦЕНТР: Бас (Kick)
+                sensitivity = 1.2; 
+                freqIndex = 4; 
+            } else if (i === 1 || i === 3) {
+                // ВНУТРІШНІ: Середні частоти (Голос/Снейр)
+                sensitivity = 0.8;
+                freqIndex = 0; 
+            } else {
+                // 🔥 РАМКИ (0 та 4): Високі частоти (Тарілочки)
+                // Високі частоти зазвичай тихіші, тому даємо їм буст чутливості
+                sensitivity = 1.5; 
+                freqIndex = 12; 
+            }
+
+            const rawValue = State.dataArray ? State.dataArray[freqIndex] : 0;
+            
+            // --- ДИНАМІКА РУХУ ---
+            let val = rawValue / 255.0; // 0.0 ... 1.0
+            
+            // Степінь 3 для різкості
+            let percent = Math.pow(val, 3) * sensitivity;
+            
+            // Обмежуємо
+            if (percent > 1.0) percent = 1.0; 
+
+            // Висота (від 15% до 100%)
+            const h = State.gameHeight * (0.15 + (percent * 0.90)); 
+            
+            const yBottom = State.gameHeight;
+            const yTop = yBottom - h;
+
+            // Градієнт
+            const grad = ctx.createLinearGradient(0, yBottom, 0, 0);
+            grad.addColorStop(0.1, cBase);   
+            grad.addColorStop(0.4, cMid1);   
+            grad.addColorStop(0.7, cMid2);   
+            grad.addColorStop(1.0, cTop);    
+
+            ctx.lineWidth = eqWidth;
+            ctx.lineCap = "round";
+
+            ctx.beginPath();
+            ctx.strokeStyle = grad;
+            
+            // Світіння
+            if (percent > 0.5) {
+                ctx.shadowBlur = percent * 20;
+                ctx.shadowColor = (percent > 0.8) ? cTop : cMid2;
+            } else {
+                ctx.shadowBlur = 0;
+            }
+
+            ctx.moveTo(x, yBottom);
+            ctx.lineTo(x, yTop);
+            ctx.stroke();
+            
+            ctx.shadowBlur = 0;
+        }
 
 // ==========================================
         // 3. Hit Line (RIPPLE EFFECT - ХВИЛІ)
@@ -1758,7 +1835,7 @@ function handleInputDown(lane) {
 function spawnRipple(lane) {
     const laneW = State.gameWidth / 4;
     const x = lane * laneW + laneW / 2;
-    let power = 1;
+    let power = 2;
     if (State.combo >= 800) power = 5;
     else if (State.combo >= 400) power = 4;
     else if (State.combo >= 200) power = 3;
@@ -1823,11 +1900,22 @@ function updateRipples(dt) {
         });
     }
 
-    function playMusic() {
+function playMusic() {
         if (State.sourceNode) State.sourceNode.stop();
         State.sourceNode = State.audioCtx.createBufferSource();
         State.sourceNode.buffer = State.audioBuffer;
-        State.sourceNode.connect(State.masterGain);
+
+        // Создаем анализатор для эквалайзера
+        if (!State.analyser) {
+            State.analyser = State.audioCtx.createAnalyser();
+            State.analyser.fftSize = 64; // Маленький размер для скорости (нам нужно всего 3 полоски)
+            State.dataArray = new Uint8Array(State.analyser.frequencyBinCount);
+        }
+
+        // Подключаем: Source -> Analyser -> Gain -> Destination
+        State.sourceNode.connect(State.analyser);
+        State.analyser.connect(State.masterGain);
+
         const startDelay = 2;
         State.startTime = State.audioCtx.currentTime + startDelay;
         State.sourceNode.start(State.startTime);
