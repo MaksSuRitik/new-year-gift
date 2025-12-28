@@ -1081,175 +1081,85 @@ function update(songTime) {
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
 // ==========================================
-        // 2. Lanes & Beams (FIXED LONG NOTE VISUALS)
-        // ==========================================
-        ctx.lineWidth = 2;
-        const now = Date.now();
-        let comboPower = Math.min(1, State.combo / 800);
-
-        ctx.save();
-        ctx.globalCompositeOperation = 'screen';
-
-        for (let i = 0; i < 4; i++) {
-            // Оновлюємо прозорість
-            if (State.holdingTiles[i]) {
-                State.laneBeamAlpha[i] = 1.0; 
-            } else {
-                State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.05); 
-            }
-
-            if (State.laneBeamAlpha[i] < 0.05) continue;
-
-            let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
-            const beamX = (i * laneW) + shakeX;
-            const laneAlpha = State.laneBeamAlpha[i];
-
-            // 🔥 ФІКС: Перевіряємо ТИП останньої ноти, а не те, чи тримаємо ми її зараз
-            // Якщо це була довга нота (навіть якщо ми її вже відпустили і вона згасає) -> малюємо СТОВП.
-            if (State.laneLastType[i] === 'long') {
-                
-                // === A. HOLD STYLE (СТОВП) ===
-                const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
-                beamGrad.addColorStop(0, "rgba(0,0,0,0)");
-                beamGrad.addColorStop(0.4, p.glow);
-                beamGrad.addColorStop(1, comboPower > 0.5 ? "#c7c7c7ff" : p.glow);
-
-                // Якщо ми тримаємо - прозорість 100%, якщо відпустили - беремо згасаючу laneAlpha
-                let currentAlpha = State.holdingTiles[i] ? (0.4 + (comboPower * 0.1)) : laneAlpha;
-                
-                ctx.globalAlpha = currentAlpha;
-                ctx.fillStyle = beamGrad;
-                ctx.fillRect(beamX, 0, laneW, hitY);
-
-            } else {
-                
-                // === B. TAP STYLE (ПОСТРІЛ) ===
-                const timeSinceHit = now - State.laneLastInputTime[i];
-                const speed = 1.8 + (comboPower * 1.5);
-                const beamLength = 350 + (comboPower * 400);
-
-                const headPos = hitY - (timeSinceHit * speed);
-                const tailPos = headPos + beamLength;
-
-                if (tailPos > -100) {
-                    const visibleTail = Math.min(tailPos, hitY);
-                    const visibleHead = headPos;
-                    const h = visibleTail - visibleHead;
-
-                    if (h > 0) {
-                        const beamGrad = ctx.createLinearGradient(0, visibleHead, 0, visibleTail);
-                        let coreColor = comboPower > 0.3 ? "#ffffff" : p.glow;
-                        if (State.combo >= 800) coreColor = "#26c691"; 
-
-                        beamGrad.addColorStop(0, "rgba(0,0,0,0)"); 
-                        beamGrad.addColorStop(0.2, coreColor);
-                        beamGrad.addColorStop(0.5, p.glow);        
-                        beamGrad.addColorStop(1, "rgba(0,0,0,0)"); 
-
-                        let dynamicAlpha = 0.7 + (comboPower * 0.3);
-                        ctx.globalAlpha = Math.min(1, laneAlpha * dynamicAlpha);
-
-                        ctx.fillStyle = beamGrad;
-                        ctx.fillRect(beamX, visibleHead, laneW, h);
-                    }
-                }
-            }
-        }
-        ctx.restore();
-
-// ==========================================
-        // 2.1. VERTICAL EQUALIZER + STATIC GRID LINES
+        // 2.1. VERTICAL EQUALIZER + STATIC GRID (OPTIMIZED)
         // ==========================================
         if (State.analyser) {
             State.analyser.getByteFrequencyData(State.dataArray);
         }
 
         const eqWidth = 5; 
-        const laneLineWidth = 3; // Товщина статичних ліній (як ти просив)
+        const laneLineWidth = 3; 
         
-        // Кольори (Знизу -> Вгору)
-        const cBase   = PALETTES.STEEL.main;   // Низ
-        const cMid1   = PALETTES.GOLD.glow;    // Середина
-        const cMid2   = '#d500f9';             // Вище (Пурпуровий)
-        const cTop    = PALETTES.COSMIC.glitch;// Пік (Неон)
+        // Кольори
+        const cBase   = PALETTES.STEEL.main;
+        const cMid1   = PALETTES.GOLD.glow;
+        const cMid2   = '#d500f9';
+        const cTop    = PALETTES.COSMIC.glitch;
 
-        // --- КРОК 1: МАЛЮЄМО ЕКВАЛАЙЗЕР (НА ФОНІ) ---
-        // Цикл від 0 до 4 (включає рамки)
+        // 🚀 ОПТИМІЗАЦІЯ 1: Створюємо градієнт ОДИН РАЗ перед циклом
+        // Він однаковий для всіх ліній (від низу екрану до верху)
+        const eqGrad = ctx.createLinearGradient(0, State.gameHeight, 0, 0);
+        eqGrad.addColorStop(0.1, cBase);   
+        eqGrad.addColorStop(0.4, cMid1);   
+        eqGrad.addColorStop(0.7, cMid2);   
+        eqGrad.addColorStop(1.0, cTop);    
+
+        ctx.lineWidth = eqWidth;
+        ctx.lineCap = "round";
+        ctx.strokeStyle = eqGrad; // Призначаємо градієнт один раз
+
+        // --- КРОК 1: ЕКВАЛАЙЗЕР ---
         for (let i = 0; i <= 4; i++) {
             let x = i * laneW;
             if (i === 0) x += eqWidth / 2;
             if (i === 4) x -= eqWidth / 2;
             
-            // Налаштування чутливості (твої правки)
             let sensitivity = 1.0;
             let freqIndex = 0;
 
             if (i === 2) {
-                // ЦЕНТР: +20% чутливості (Бас)
-                sensitivity = 1.2; 
-                freqIndex = 4; // Ти хотів поміняти індекс, я залишив твій варіант
+                sensitivity = 1.2; freqIndex = 4; // Центр
             } else if (i === 1 || i === 3) {
-                // ВНУТРІШНІ: -20% (Спокійніші)
-                sensitivity = 0.8;
-                freqIndex = 0; 
+                sensitivity = 0.8; freqIndex = 0; // Внутрішні
             } else {
-                // РАМКИ: +50% (Високі частоти)
-                sensitivity = 1.5; 
-                freqIndex = 12; 
+                sensitivity = 1.5; freqIndex = 12; // Рамки
             }
 
             const rawValue = State.dataArray ? State.dataArray[freqIndex] : 0;
             let val = rawValue / 255.0; 
-            
-            // Степінь 3 для різкості
             let percent = Math.pow(val, 3) * sensitivity;
             if (percent > 1.0) percent = 1.0; 
 
-            // Висота еквалайзера
-            const h = State.gameHeight * (0.15 + (percent * 0.85)); 
-            const yBottom = State.gameHeight;
-            const yTop = yBottom - h;
-
-            // Градієнт
-            const grad = ctx.createLinearGradient(0, yBottom, 0, 0);
-            grad.addColorStop(0.1, cBase);   
-            grad.addColorStop(0.4, cMid1);   
-            grad.addColorStop(0.7, cMid2);   
-            grad.addColorStop(1.0, cTop);    
-
-            ctx.lineWidth = eqWidth;
-            ctx.lineCap = "round";
+            const h = State.gameHeight * (0.15 + (percent * 0.90)); 
+            const yTop = State.gameHeight - h;
 
             ctx.beginPath();
-            ctx.strokeStyle = grad;
             
-            // Світіння
-            if (percent > 0.5) {
+            // 🚀 ОПТИМІЗАЦІЯ 2: Вимикаємо світіння на слабких пристроях або якщо лінія низька
+            // Світіння їсть найбільше ресурсів
+            if (percent > 0.5 && !State.isMobile) { 
                 ctx.shadowBlur = percent * 20;
                 ctx.shadowColor = (percent > 0.8) ? cTop : cMid2;
             } else {
                 ctx.shadowBlur = 0;
             }
 
-            ctx.moveTo(x, yBottom);
+            ctx.moveTo(x, State.gameHeight);
             ctx.lineTo(x, yTop);
             ctx.stroke();
-            ctx.shadowBlur = 0; // Скидаємо блюр
         }
-
-        // --- КРОК 2: МАЛЮЄМО СТАТИЧНІ ЛІНІЇ (ПОВЕРХ ЕКВАЛАЙЗЕРА) ---
-        // Це ті самі лінії, що були раніше, щоб гравець бачив межі
-        ctx.lineWidth = laneLineWidth; // Товщина 3px
         
-        // Колір ліній (залежить від комбо або теми)
+        // Скидаємо тіні, щоб не ламало інші елементи
+        ctx.shadowBlur = 0; 
+
+        // --- КРОК 2: СТАТИЧНІ ЛІНІЇ ---
+        ctx.lineWidth = laneLineWidth;
         ctx.strokeStyle = (State.combo >= 200) ? 'rgba(255,255,255,0.15)' : colors.laneLine;
         
         ctx.beginPath();
         for (let i = 1; i < 4; i++) {
-            // Тільки внутрішні лінії (1, 2, 3), рамки малювати не треба, бо там бордер контейнера
             let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
             const lineX = i * laneW + shakeX;
-            
             ctx.moveTo(lineX, 0);
             ctx.lineTo(lineX, State.gameHeight);
         }
