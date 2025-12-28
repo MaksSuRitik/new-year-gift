@@ -310,6 +310,7 @@ const songsDB = [
     { file: "Vielleicht Vielleicht.mp3", title: "Vielleicht Vielleicht", artist: "MilleniumKid, JBS", duration: "2m 23s" },
     { file: "Warriors.mp3", title: "Warriors", artist: "Imagine Dragons", duration: "2m 51s" },
     { file: "Whatever It Takes.mp3", title: "Whatever It Takes", artist: "Imagine Dragons", duration: "3m 21s" },
+    { file: "Ruler Of My Heart (FromеAlien Stage) AmaLee.mp3", title: "Ruler Of My Heart (From \"Alien Stage\")", artist: "AmaLee", duration: "3:38" },
     { file: "空想メソロギヰ.mp3", title: "空想メソロギヰ", artist: "Yousei Teikoku", duration: "4m 03s" }
 ];
 
