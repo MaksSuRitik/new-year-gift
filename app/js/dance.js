@@ -1031,68 +1031,102 @@ function initGradients() {
         
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
-        // 2. Lanes & Beams (UPDATED & FIXED)
+// ==========================================
+        // 2. Lanes & Beams (OPTIMIZED PROJECTILES)
+        // ==========================================
         ctx.lineWidth = 2;
+        const now = Date.now();
+        
+        // Розрахунок сили комбо (0.0 -> 1.0) для масштабування ефектів
+        let comboPower = Math.min(1, State.combo / 800);
+
+        // ОПТИМІЗАЦІЯ: Вмикаємо режим "світіння" ОДИН РАЗ для всіх ліній
+        // Це прибирає лаги, бо ми не перемикаємо контекст у циклі
+        ctx.save();
+        ctx.globalCompositeOperation = 'screen';
+
         for (let i = 0; i < 4; i++) {
+            // Оновлюємо прозорість
+            if (State.holdingTiles[i]) {
+                State.laneBeamAlpha[i] = 1.0; // Тримаємо - світиться
+            } else {
+                State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.05); // Відпустили - згасає
+            }
+
+            // Оптимізація: не малюємо те, що майже невидиме
+            if (State.laneBeamAlpha[i] < 0.05) continue;
+
             let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
             const beamX = (i * laneW) + shakeX;
-            if (State.holdingTiles[i]) State.laneBeamAlpha[i] = 1.0;
             const laneAlpha = State.laneBeamAlpha[i];
 
-            if (laneAlpha > 0.01) {
-                const alpha = Math.min(1, laneAlpha);
+            if (State.holdingTiles[i]) {
+                // === A. HOLD (УТРИМАННЯ - СТАТИЧНИЙ СТОВП) ===
+                // Малюємо суцільний стовп світла, який пульсує
                 const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
-                beamGrad.addColorStop(0, p.glow);
-                beamGrad.addColorStop(1, "rgba(0,0,0,0)");
+                beamGrad.addColorStop(0, "rgba(0,0,0,0)");
+                beamGrad.addColorStop(0.3, p.glow);
+                // При високому комбо низ стає білим (розжареним)
+                beamGrad.addColorStop(1, comboPower > 0.5 ? "#ffffff" : p.glow);
 
-                ctx.save();
-                ctx.globalCompositeOperation = 'screen';
-                ctx.globalAlpha = alpha * 0.35;
+                ctx.globalAlpha = 0.8 + (comboPower * 0.2);
                 ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
 
-                if (State.glowSprite) {
-                    const glowW = laneW * 1.6;
-                    const glowH = hitY * 0.9;
-                    ctx.globalAlpha = alpha * 0.4;
-                    ctx.drawImage(State.glowSprite, beamX + (laneW - glowW) / 2, Math.max(0, hitY - glowH), glowW, glowH);
-                }
-                ctx.restore();
+            } else {
+                // === B. TAP (ПОСТРІЛ - ЛІТАЮЧИЙ ІМПУЛЬС) ===
+                const timeSinceHit = now - State.laneLastInputTime[i];
 
-                if (!State.holdingTiles[i]) {
-                    State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.06);
-                }
-            }
+                // Швидкість і довжина залежать від комбо
+                // Чим вище комбо -> тим швидший і довший постріл
+                const speed = 1.8 + (comboPower * 1.5);
+                const beamLength = 350 + (comboPower * 400);
 
-            ctx.strokeStyle = (State.combo >= 200) ? '#333' : colors.laneLine;
-            if (i > 0) {
-                ctx.beginPath();
-                ctx.moveTo(i * laneW + shakeX, 0);
-                ctx.lineTo(i * laneW + shakeX, State.gameHeight);
-                ctx.stroke();
+                const headPos = hitY - (timeSinceHit * speed); // Голова летить вгору
+                const tailPos = headPos + beamLength;          // Хвіст наздоганяє
+
+                // Малюємо, тільки якщо хвіст ще видно на екрані
+                if (tailPos > -100) {
+                    const visibleTail = Math.min(tailPos, hitY);
+                    const visibleHead = headPos;
+                    const h = visibleTail - visibleHead;
+
+                    if (h > 0) {
+                        const beamGrad = ctx.createLinearGradient(0, visibleHead, 0, visibleTail);
+                        const coreColor = comboPower > 0.3 ? "#ffffff" : p.glow;
+
+                        beamGrad.addColorStop(0, "rgba(0,0,0,0)"); // Верх розмитий
+                        beamGrad.addColorStop(0.2, coreColor);     // Ядро імпульсу
+                        beamGrad.addColorStop(0.5, p.glow);        // Тіло імпульсу
+                        beamGrad.addColorStop(1, "rgba(0,0,0,0)"); // Хвіст прозорий
+
+                        // Динамічна яскравість
+                        let dynamicAlpha = 0.7 + (comboPower * 0.3);
+                        ctx.globalAlpha = Math.min(1, laneAlpha * dynamicAlpha);
+
+                        ctx.fillStyle = beamGrad;
+                        ctx.fillRect(beamX, visibleHead, laneW, h);
+                    }
+                }
             }
         }
+        ctx.restore(); // Вимикаємо режим світіння, повертаємо нормальний
 
-        // 3. Hit Line (ripple/wave physics)
-        ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
-        ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
-        // Draw multi-segment line sampling every 5px and summing active ripples
-        const step = 5;
-        const frequency = 0.04;
+        // Малюємо розділювальні лінії (окремо, без світіння)
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = (State.combo >= 200) ? 'rgba(255,255,255,0.1)' : colors.laneLine;
         ctx.beginPath();
-        for (let sx = 0; sx <= State.gameWidth; sx += step) {
-            let yOffset = 0;
-            for (let ri = 0; ri < (State.ripples ? State.ripples.length : 0); ri++) {
-                const r = State.ripples[ri];
-                const dist = Math.abs(r.x - sx);
-                const decay = Math.max(0, 1 - (r.age / r.life));
-                const time = (r.age / 1000) * 6; // wave speed multiplier
-                yOffset += Math.sin(dist * frequency - time) * (r.power * 5) * decay;
-            }
-            const y = hitY + yOffset;
-            if (sx === 0) ctx.moveTo(sx, y); else ctx.lineTo(sx, y);
+        for (let i = 1; i < 4; i++) {
+            let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
+            ctx.moveTo(i * laneW + shakeX, 0);
+            ctx.lineTo(i * laneW + shakeX, State.gameHeight);
         }
         ctx.stroke();
+
+        // 3. Hit Line
+        ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
+        ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
+        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(State.gameWidth, hitY); ctx.stroke();
 
         // 4. Notes
         const tapGradient = GRADIENT_CACHE.tap[p.name];
