@@ -1628,8 +1628,8 @@ function spawnRipple(lane) {
     const laneW = State.gameWidth / 4;
     const x = lane * laneW + laneW / 2;
     let power = 1.0;
-    if (State.combo >= 800) power = 4.0;
-    else if (State.combo >= 400) power = 3.0;
+    if (State.combo >= 800) power = 3.0;
+    else if (State.combo >= 400) power = 2.5;
     else if (State.combo >= 200) power = 2.0;
     else if (State.combo >= 100) power = 1.5;
 
