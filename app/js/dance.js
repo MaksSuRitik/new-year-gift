@@ -354,6 +354,7 @@ const State = {
     holdingTiles: [null, null, null, null],
     laneLastInputTime: [0, 0, 0, 0],
     laneBeamAlpha: [0, 0, 0, 0],
+    laneLastType: ['tap', 'tap', 'tap', 'tap'],
     
     // Render Arrays
     mapTiles: [],
@@ -705,6 +706,7 @@ function initGradients() {
 
         State.holdingTiles = [null, null, null, null];
         State.keyState = [false, false, false, false];
+        State.laneLastType = ['tap', 'tap', 'tap', 'tap'];
         State.laneBeamAlpha = [0, 0, 0, 0];
         State.ripples = [];
         State.lastRippleUpdateMs = Date.now();
@@ -892,7 +894,7 @@ function initGradients() {
         State.animationFrameId = requestAnimationFrame(gameLoop);
     }
 
-    function update(songTime) {
+   function update(songTime) {
         const hitTimeWindow = State.currentSpeed;
         const hitY = State.gameHeight * CONFIG.hitPosition;
         const themeColors = (document.body.getAttribute('data-theme') === 'light') ? CONFIG.colorsLight : CONFIG.colorsDark;
@@ -905,6 +907,8 @@ function initGradients() {
         for(let i = 0; i < State.mapTiles.length; i++) {
             const tile = State.mapTiles[i];
             if (!tile.spawned && tile.time - hitTimeWindow <= songTime) {
+                // Додаємо властивість для часу зникнення (якщо відпустимо ноту)
+                tile.fadeStartTime = 0; 
                 State.activeTiles.push(tile);
                 tile.spawned = true;
             }
@@ -913,6 +917,16 @@ function initGradients() {
         // Update active
         for (let i = State.activeTiles.length - 1; i >= 0; i--) {
             const tile = State.activeTiles[i];
+
+            // 1. ВИДАЛЕННЯ "ВІДПУЩЕНИХ" НОТ (FADE OUT)
+            // Якщо нота була відпущена (released), вона зникає через 200мс
+            if (tile.released) {
+                if (tile.fadeStartTime === 0) tile.fadeStartTime = now;
+                if (now - tile.fadeStartTime > 200) {
+                    State.activeTiles.splice(i, 1);
+                    continue; 
+                }
+            }
 
             // Auto-Catch Long Note Start
             if (!tile.hit && !tile.completed && !tile.failed && tile.type === 'long') {
@@ -948,13 +962,13 @@ function initGradients() {
                 const isKeyPressed = State.keyState[tile.lane];
                 if (isKeyPressed) tile.lastValidHoldTime = now;
 
-                if (isKeyPressed || (now - tile.lastValidHoldTime) < 150) {
+                if (isKeyPressed) {
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 5;
+                            State.combo += 100;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -973,15 +987,17 @@ function initGradients() {
                         updateScoreUI(true);
                     }
                 } else {
+                    // Моментальний виліт + Запуск таймера зникнення
                     if (songTime < tile.endTime) {
                         tile.holding = false;
-                        tile.released = true; 
+                        tile.released = true; // Тепер це активує блок "FADE OUT" на початку циклу
+                        tile.fadeStartTime = now; 
                     }
                 }
             }
 
             const limitY = State.gameHeight + 50;
-            if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY)) {
+            if ((tile.type === 'tap' && yStart > limitY && !tile.hit) || (tile.type === 'long' && yEnd > limitY && !tile.hit && !tile.released)) {
                 if (!tile.hit && !tile.completed && !tile.failed) {
                      missNote(tile, true);
                 }
@@ -1032,60 +1048,56 @@ function initGradients() {
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
 // ==========================================
-        // 2. Lanes & Beams (OPTIMIZED PROJECTILES)
+        // 2. Lanes & Beams (FIXED LONG NOTE VISUALS)
         // ==========================================
         ctx.lineWidth = 2;
         const now = Date.now();
-        
-        // Розрахунок сили комбо (0.0 -> 1.0) для масштабування ефектів
         let comboPower = Math.min(1, State.combo / 800);
 
-        // ОПТИМІЗАЦІЯ: Вмикаємо режим "світіння" ОДИН РАЗ для всіх ліній
-        // Це прибирає лаги, бо ми не перемикаємо контекст у циклі
         ctx.save();
         ctx.globalCompositeOperation = 'screen';
 
         for (let i = 0; i < 4; i++) {
             // Оновлюємо прозорість
             if (State.holdingTiles[i]) {
-                State.laneBeamAlpha[i] = 1.0; // Тримаємо - світиться
+                State.laneBeamAlpha[i] = 1.0; 
             } else {
-                State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.05); // Відпустили - згасає
+                State.laneBeamAlpha[i] = Math.max(0, State.laneBeamAlpha[i] - 0.05); 
             }
 
-            // Оптимізація: не малюємо те, що майже невидиме
             if (State.laneBeamAlpha[i] < 0.05) continue;
 
             let shakeX = State.holdingTiles[i] ? getDeterministicShake(i * 10, 4) : 0;
             const beamX = (i * laneW) + shakeX;
             const laneAlpha = State.laneBeamAlpha[i];
 
-            if (State.holdingTiles[i]) {
-                // === A. HOLD (УТРИМАННЯ - СТАТИЧНИЙ СТОВП) ===
-                // Малюємо суцільний стовп світла, який пульсує
+            // 🔥 ФІКС: Перевіряємо ТИП останньої ноти, а не те, чи тримаємо ми її зараз
+            // Якщо це була довга нота (навіть якщо ми її вже відпустили і вона згасає) -> малюємо СТОВП.
+            if (State.laneLastType[i] === 'long') {
+                
+                // === A. HOLD STYLE (СТОВП) ===
                 const beamGrad = ctx.createLinearGradient(0, 0, 0, hitY);
                 beamGrad.addColorStop(0, "rgba(0,0,0,0)");
                 beamGrad.addColorStop(0.3, p.glow);
-                // При високому комбо низ стає білим (розжареним)
                 beamGrad.addColorStop(1, comboPower > 0.5 ? "#ffffff" : p.glow);
 
-                ctx.globalAlpha = 0.8 + (comboPower * 0.2);
+                // Якщо ми тримаємо - прозорість 100%, якщо відпустили - беремо згасаючу laneAlpha
+                let currentAlpha = State.holdingTiles[i] ? (0.8 + (comboPower * 0.2)) : laneAlpha;
+                
+                ctx.globalAlpha = currentAlpha;
                 ctx.fillStyle = beamGrad;
                 ctx.fillRect(beamX, 0, laneW, hitY);
 
             } else {
-                // === B. TAP (ПОСТРІЛ - ЛІТАЮЧИЙ ІМПУЛЬС) ===
+                
+                // === B. TAP STYLE (ПОСТРІЛ) ===
                 const timeSinceHit = now - State.laneLastInputTime[i];
-
-                // Швидкість і довжина залежать від комбо
-                // Чим вище комбо -> тим швидший і довший постріл
                 const speed = 1.8 + (comboPower * 1.5);
                 const beamLength = 350 + (comboPower * 400);
 
-                const headPos = hitY - (timeSinceHit * speed); // Голова летить вгору
-                const tailPos = headPos + beamLength;          // Хвіст наздоганяє
+                const headPos = hitY - (timeSinceHit * speed);
+                const tailPos = headPos + beamLength;
 
-                // Малюємо, тільки якщо хвіст ще видно на екрані
                 if (tailPos > -100) {
                     const visibleTail = Math.min(tailPos, hitY);
                     const visibleHead = headPos;
@@ -1093,14 +1105,14 @@ function initGradients() {
 
                     if (h > 0) {
                         const beamGrad = ctx.createLinearGradient(0, visibleHead, 0, visibleTail);
-                        const coreColor = comboPower > 0.3 ? "#ffffff" : p.glow;
+                        let coreColor = comboPower > 0.3 ? "#ffffff" : p.glow;
+                        if (State.combo >= 800) coreColor = "#26c691"; 
 
-                        beamGrad.addColorStop(0, "rgba(0,0,0,0)"); // Верх розмитий
-                        beamGrad.addColorStop(0.2, coreColor);     // Ядро імпульсу
-                        beamGrad.addColorStop(0.5, p.glow);        // Тіло імпульсу
-                        beamGrad.addColorStop(1, "rgba(0,0,0,0)"); // Хвіст прозорий
+                        beamGrad.addColorStop(0, "rgba(0,0,0,0)"); 
+                        beamGrad.addColorStop(0.2, coreColor);
+                        beamGrad.addColorStop(0.5, p.glow);        
+                        beamGrad.addColorStop(1, "rgba(0,0,0,0)"); 
 
-                        // Динамічна яскравість
                         let dynamicAlpha = 0.7 + (comboPower * 0.3);
                         ctx.globalAlpha = Math.min(1, laneAlpha * dynamicAlpha);
 
@@ -1110,9 +1122,9 @@ function initGradients() {
                 }
             }
         }
-        ctx.restore(); // Вимикаємо режим світіння, повертаємо нормальний
+        ctx.restore();
 
-        // Малюємо розділювальні лінії (окремо, без світіння)
+        // Розділювальні лінії
         ctx.lineWidth = 2;
         ctx.strokeStyle = (State.combo >= 200) ? 'rgba(255,255,255,0.1)' : colors.laneLine;
         ctx.beginPath();
@@ -1123,11 +1135,38 @@ function initGradients() {
         }
         ctx.stroke();
 
-        // 3. Hit Line
+// ==========================================
+        // 3. Hit Line (RIPPLE EFFECT - ХВИЛІ)
+        // ==========================================
         ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
         ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
-        ctx.beginPath(); ctx.moveTo(0, hitY); ctx.lineTo(State.gameWidth, hitY); ctx.stroke();
+        ctx.lineJoin = "round";
 
+        ctx.beginPath();
+        const step = 6; // Оптимізація: малюємо кожні 6 пікселів
+        
+        for (let x = 0; x <= State.gameWidth; x += step) {
+            let yOffset = 0;
+            
+            // Оптимізація: перевіряємо тільки 10 останніх хвиль, щоб не вантажити CPU
+            const startRipple = Math.max(0, State.ripples.length - 10);
+            
+            for (let i = startRipple; i < State.ripples.length; i++) {
+                const r = State.ripples[i];
+                const dist = Math.abs(x - r.x);
+                
+                // Рахуємо вплив хвилі тільки якщо вона поруч (радіус + затухання)
+                if (dist < r.radius + 100) { 
+                    const wave = Math.sin(dist * 0.03 - r.age * 0.02);
+                    const damping = 1 / (1 + dist * 0.01); 
+                    yOffset += wave * r.power * damping;
+                }
+            }
+
+            if (x === 0) ctx.moveTo(x, hitY + yOffset);
+            else ctx.lineTo(x, hitY + yOffset);
+        }
+        ctx.stroke();
         // 4. Notes
         const tapGradient = GRADIENT_CACHE.tap[p.name];
 
@@ -1199,8 +1238,12 @@ function initGradients() {
                     grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
-                    
-                    if (tile.released) ctx.globalAlpha = 0.5;
+                   
+                    if (tile.released) {
+                    // Плавне зникнення за 200 мс
+                    const fadeProgress = (Date.now() - tile.fadeStartTime) / 200;
+                    ctx.globalAlpha = Math.max(0, 1 - fadeProgress);
+                }
                     
                     ctx.fillStyle = grad;
                     ctx.fillRect(x + 10, yTail, w - 20, tailH + 10);
@@ -1474,34 +1517,50 @@ function initGradients() {
         particlePoolIndex = (particlePoolIndex + count) % MAX_PARTICLES;
     }
 
-    function handleInputDown(lane) {
+function handleInputDown(lane) {
         if (!State.isPlaying || State.isPaused) return;
         const now = Date.now();
+        
+        // Анти-спам (залишаємо, щоб не можна було клікати 100 разів на сек)
         if (now - State.laneLastInputTime[lane] < 70) return;
-        State.laneLastInputTime[lane] = now;
+        
         State.keyState[lane] = true;
+        
+        // Підсвітка самої кнопки знизу (UI) залишається для відгуку
         if (laneElements[lane]) laneElements[lane].classList.add('active');
-        State.laneBeamAlpha[lane] = 1.0;
-        if (State.holdingTiles[lane]) return;
 
+        // --- ПЕРЕВІРКА 1: Чи ми перехоплюємо вже активну довгу ноту? ---
         const activeHold = State.activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed && !t.released);
         if (activeHold) {
             State.holdingTiles[lane] = activeHold;
             activeHold.lastValidHoldTime = now;
             toggleHoldEffect(lane, true);
+            
+            // 🔥 Вмикаємо ефект, бо ми успішно схопили ноту
+            State.laneBeamAlpha[lane] = 1.0; 
+            State.laneLastType[lane] = 'long'; // Оновлюємо тип
             return;
         }
 
+        // --- ПЕРЕВІРКА 2: Шукаємо нову ціль ---
         const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
         const target = State.activeTiles.find(t => {
             if (t.hit || t.completed || t.failed || t.released) return false;
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
+            // Розширили вікно хіта трохи для зручності
             return diff <= 210 && diff >= -240;
         });
 
         if (target) {
+            // === УСПІШНЕ ВЛУЧАННЯ ===
+            
+            // 🔥 Тільки тут запускаємо візуальні ефекти променя
+            State.laneLastInputTime[lane] = now; 
+            State.laneBeamAlpha[lane] = 1.0; 
+            State.laneLastType[lane] = target.type; // Запам'ятовуємо тип для draw()
+
             const diff = Math.abs(target.time - songTime);
             target.hit = true;
             State.consecutiveMisses = 0;
@@ -1511,6 +1570,7 @@ function initGradients() {
             if (target.type === 'tap') target.hitAnimStart = now;
             const mult = getComboMultiplier();
 
+            // Оцінка точності
             if (diff < 70) {
                 State.score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
@@ -1531,10 +1591,14 @@ function initGradients() {
                 State.combo++;
                 if(State.combo > State.maxCombo) State.maxCombo = State.combo;
             }
-            // Spawn a visual ripple on successful hit (only on initial down)
-            try { spawnRipple(lane); } catch(e) { /* fail safe */ }
+
+            // Хвиля тільки при влучанні
+            try { spawnRipple(lane); } catch(e) { }
             updateScoreUI(true);
+
         } else {
+            // === ПРОМАХ (КЛІК У ПУСТОТУ) ===
+            // Тут ми НЕ вмикаємо laneBeamAlpha, тому променя не буде
             missNote({ lane: lane }, false);
         }
     }
@@ -1661,14 +1725,14 @@ function initGradients() {
 function spawnRipple(lane) {
     const laneW = State.gameWidth / 4;
     const x = lane * laneW + laneW / 2;
-    let power = 1.0;
-    if (State.combo >= 800) power = 3.0;
-    else if (State.combo >= 400) power = 2.5;
-    else if (State.combo >= 200) power = 2.0;
-    else if (State.combo >= 100) power = 1.5;
+    let power = 1;
+    if (State.combo >= 800) power = 5;
+    else if (State.combo >= 400) power = 4;
+    else if (State.combo >= 200) power = 3;
+    else if (State.combo >= 100) power = 2;
 
     State.ripples.push({ x: x, power: power, age: 0, life: 1400, radius: 0 });
-    if (State.ripples.length > 5) {
+    if (State.ripples.length > 20) {
         State.ripples.shift(); // Видаляє найстарішу хвилю, якщо їх більше 30
     }
 }
