@@ -1582,7 +1582,7 @@ function handleInputDown(lane) {
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
             // Розширили вікно хіта трохи для зручності
-            return diff <= 210 && diff >= -240;
+            return diff <= 500 && diff >= -240;
         });
 
         if (target) {
