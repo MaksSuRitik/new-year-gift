@@ -1708,7 +1708,7 @@ function handleInputDown(lane) {
 
     // --- UI UPDATES ---
     function getComboMultiplier() {
-        if (State.combo >= 800) return 10.0;
+        if (State.combo >= 800) return 15.0;
         if (State.combo >= 400) return 5.0;
         if (State.combo >= 200) return 3.0;
         if (State.combo >=  100) return 2.0;
