@@ -1,106 +1,73 @@
 /*
-    АРХІТЕКТУРА СТИЛІВ (ISOLATED)
+    CHRONICLES: AAA IMMERSIVE STYLES (FIXED & ISOLATED)
 */
 
-// --- 1. ЗМІННІ (Локальні) ---
-$book-width-pc: 420px;
-$book-height-pc: 580px;
-$book-width-mob: 45vh;
-$book-height-mob: 80vh;
+// --- 1. CONFIGURATION ---
 
-$duration: 1.2s;
-$ease-book: cubic-bezier(0.645, 0.045, 0.355, 1);
-
-$c-bg: #1a1814;
-$c-leather: #3d2618;
-$c-leather-dark: #26160d;
-$c-paper: #e3d2b4;
+$c-void: #0f0e0d;
+$c-leather: #2a1d15;
+$c-leather-highlight: #4a3b32;
+$c-paper: #e6dccf;
+$c-paper-aged: #d1c0a5;
 $c-ink: #2b231e;
+$c-ink-faded: #5c4d42;
 $c-gold: #c5a059;
+$c-gold-shine: #f0e68c;
 
-// --- 2. ІЗОЛЬОВАНА БАЗА ---
-// Всі глобальні зміни тепер живуть всередині body.book-theme
-// Це означає, що вони НЕ вплинуть на інші сторінки
+$book-width-pc: 460px;
+$book-height-pc: 640px;
+$book-thick: 40px;
 
+$ease-physics: cubic-bezier(0.25, 1, 0.5, 1);
+$anim-speed: 1.4s;
+
+$font-body: 'Cormorant Garamond', serif;
+$font-display: 'Cinzel Decorative', cursive;
+$font-hand: 'Pinyon Script', cursive;
+
+// --- 2. MIXINS ---
+
+@mixin texture-paper {
+    background-color: $c-paper;
+    filter: url('#paper-grain') sepia(20%);
+    background-image: radial-gradient(circle at center, transparent 40%, rgba($c-leather, 0.2) 100%);
+}
+
+@mixin texture-leather {
+    background-color: $c-leather;
+    background-image: 
+        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjMmExZDE1Jy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyMzZDI2MTgnLz4KPC9zdmc+"),
+        radial-gradient(circle at 30% 30%, rgba($c-leather-highlight, 0.5), transparent 40%);
+    box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+}
+
+@mixin text-gold {
+    color: $c-gold;
+    background: linear-gradient(135deg, $c-gold 0%, $c-gold-shine 50%, $c-gold 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
+    filter: drop-shadow(0 0 2px rgba($c-gold, 0.3));
+}
+
+@mixin absolute-full {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+}
+
+// --- 3. SCENE (GLOBAL LAYOUT) ---
+
+// Стилі для body діють тільки якщо є клас .book-theme
 body.book-theme {
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    background-color: $c-bg; // Фон змінюється тільки тут
-    font-family: 'Georgia', 'Times New Roman', serif; // Шрифт змінюється тільки тут
-    color: $c-ink;
-    -webkit-font-smoothing: antialiased;
-
-    // Скидання відступів тільки для цієї сторінки, якщо треба
     margin: 0;
     padding: 0;
-
-    * {
-        box-sizing: border-box;
-    }
+    width: 100%;
+    height: 100vh;
+    background-color: $c-void;
+    background: radial-gradient(circle at 50% 50%, #1a1816 0%, $c-void 100%);
+    overflow: hidden;
 }
-
-// --- 3. UI ЕЛЕМЕНТИ ---
-
-.magic-back-btn {
-    position: fixed;
-    top: 20px;
-    left: 20px;
-    z-index: 1000;
-    text-decoration: none;
-    color: $c-paper;
-    border: 1px solid $c-gold;
-    padding: 10px 20px;
-    border-radius: 4px;
-    background: rgba(0,0,0,0.5);
-    font-size: 14px;
-    transition: all 0.3s ease;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    font-family: 'Georgia', serif; // Примусово задаємо шрифт кнопці
-
-    &:hover {
-        background: $c-gold;
-        color: $c-leather-dark;
-    }
-}
-
-// Блокування (тільки всередині теми книги, або глобально, якщо ім'я унікальне)
-.orientation-lock {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: $c-leather-dark;
-    z-index: 9999;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    color: $c-paper;
-    text-align: center;
-    padding: 20px;
-    font-family: 'Georgia', serif;
-
-    .icon-rotate {
-        font-size: 48px;
-        margin-top: 20px;
-        animation: rotateIcon 2s infinite linear;
-    }
-}
-
-@keyframes rotateIcon {
-    0% { transform: rotate(0deg); }
-    25% { transform: rotate(-90deg); }
-    100% { transform: rotate(-90deg); }
-}
-
-@media screen and (orientation: portrait) and (max-width: 800px) {
-    // Показуємо лок тільки якщо ми на сторінці книги
-    body.book-theme .orientation-lock {
-        display: flex;
-    }
-}
-
-// --- 4. 3D СЦЕНА ---
 
 .scene {
     width: 100%;
@@ -108,195 +75,475 @@ body.book-theme {
     display: flex;
     justify-content: center;
     align-items: center;
-    perspective: 1500px; 
-    overflow: hidden;
+    perspective: 1800px;
+    overflow: visible;
 }
 
-// --- 5. КНИГА ---
+// --- 4. THE BOOK CONTAINER ---
 
 .book {
     position: relative;
     width: $book-width-pc;
     height: $book-height-pc;
-    transform-style: preserve-3d; 
-    transition: transform $duration $ease-book;
+    transform-style: preserve-3d;
+    transition: transform $anim-speed $ease-physics;
+    transform: translateX(25%) rotateY(0deg); 
+    
+    // === ВАЖЛИВО: ШРИФТИ ТЕПЕР ТУТ ===
+    // Вони діють ТІЛЬКИ всередині .book
+    font-family: $font-body;
+    color: $c-ink;
 }
 
-// --- 6. СТОРІНКИ ТА ТЕКСТУРИ ---
+.book-shadow {
+    position: absolute;
+    bottom: -20px;
+    left: 5%;
+    width: 90%;
+    height: 40px;
+    background: rgba(0,0,0,0.6);
+    filter: blur(20px);
+    transform: rotateX(90deg) translateZ(-40px);
+    transition: all $anim-speed ease;
+}
+
+.book-spine {
+    position: absolute;
+    top: 0; left: 0;
+    width: $book-thick;
+    height: 100%;
+    background: $c-leather;
+    transform: rotateY(90deg) translateZ(-$book-thick / 2);
+    transform-origin: left;
+    background-image: linear-gradient(to right, rgba(0,0,0,0.5), transparent, rgba(0,0,0,0.5));
+    border-radius: 2px;
+}
+
+// --- 5. PAGES ---
 
 .page {
     position: absolute;
     width: 100%;
     height: 100%;
-    top: 0;
-    left: 0;
+    top: 0; left: 0;
     transform-origin: left center;
     transform-style: preserve-3d;
-    transition: transform $duration $ease-book, z-index 0s ($duration / 2);
-    cursor: pointer;
+    transition: transform $anim-speed $ease-physics;
+    cursor: grab;
+
+    &:active { cursor: grabbing; }
 
     &.flipped {
         transform: rotateY(-180deg);
+        .layer-lighting { opacity: 1; }
     }
 }
 
 .page__face {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    top: 0;
-    left: 0;
+    @include absolute-full;
     backface-visibility: hidden;
     overflow: hidden;
-    padding: 40px;
-    box-shadow: inset 0 0 30px rgba(0,0,0,0.1);
-
+    background-color: $c-paper;
+    border-radius: 0 4px 4px 0;
+    
     &--front {
-        transform: rotateY(0deg);
-        background: linear-gradient(to right, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 10%);
-        border-radius: 0 4px 4px 0;
+        transform: rotateY(0deg) translateZ(1px);
     }
 
     &--back {
-        transform: rotateY(180deg);
-        background: linear-gradient(to left, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0) 10%);
+        transform: rotateY(180deg) translateZ(1px);
         border-radius: 4px 0 0 4px;
-        text-align: left; 
+        .layer-lighting {
+            background: linear-gradient(to left, rgba(0,0,0,0.15) 0%, transparent 15%);
+        }
     }
 }
 
-// ТЕКСТУРИ
+// --- 6. LAYERS ---
 
-.paper-texture {
+.layer-base {
+    @include absolute-full;
     background-color: $c-paper;
-    color: $c-ink; // Локальний колір тексту
-    background-image: 
-        linear-gradient(90deg, transparent 98%, rgba(0,0,0,0.03) 98%),
-        radial-gradient(circle at 50% 50%, rgba(0,0,0,0.02) 0%, transparent 50%);
-    background-size: 20px 100%, 100% 100%;
+}
+
+.layer-texture {
+    @include absolute-full;
+    @include texture-paper;
+    opacity: 0.8;
+    mix-blend-mode: multiply;
+    pointer-events: none;
+}
+
+.layer-lighting {
+    @include absolute-full;
+    pointer-events: none;
+    background: linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 10%, transparent 95%, rgba(0,0,0,0.05) 100%);
+    transition: opacity 0.5s ease;
+    z-index: 10;
 }
 
 .cover-texture {
-    background-color: $c-leather;
-    color: $c-gold; // Локальний колір тексту
-    border: 2px solid $c-leather-dark;
-    background-image: 
-        radial-gradient($c-leather-dark 15%, transparent 16%),
-        radial-gradient($c-leather-dark 15%, transparent 16%); 
-    background-size: 10px 10px;
-    background-position: 0 0, 5px 5px;
+    @include texture-leather;
+    color: $c-gold;
+    border: 2px solid darken($c-leather, 10%);
     
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    text-shadow: 0 2px 2px rgba(0,0,0,0.5);
-    
-    h1 {
-        font-size: 3rem;
-        border-bottom: 2px solid $c-gold;
-        padding-bottom: 10px;
-        margin-bottom: 10px;
-        font-family: 'Georgia', serif; // Гарантія шрифту
-    }
-    .subtitle {
-        font-size: 1.2rem;
-        font-style: italic;
+    &:after {
+        content: '';
+        @include absolute-full;
+        margin: 10px;
+        border: 1px dashed rgba($c-gold, 0.3);
+        box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
+        border-radius: 2px;
+        pointer-events: none;
     }
 }
 
 .cover--back {
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    background-color: $c-leather;
-    border-radius: 0 4px 4px 0;
-    transform: translateZ(-2px);
-    box-shadow: 10px 10px 30px rgba(0,0,0,0.5);
+    transform: translateZ(-$book-thick) rotateY(180deg) !important;
+    border-radius: 4px 0 0 4px;
+    box-shadow: -5px 5px 20px rgba(0,0,0,0.5);
 }
 
-// --- 7. КОНТЕНТ ---
+// --- 7. TYPOGRAPHY (ISOLATED INSIDE BOOK) ---
 
-.content-placeholder {
+.content-wrapper {
+    position: relative;
     height: 100%;
+    padding: 60px 50px;
+    z-index: 5;
     display: flex;
     flex-direction: column;
     
-    h2, h3 {
+    &.flex-center { justify-content: center; align-items: center; }
+    &.flex-bottom { justify-content: flex-end; align-items: center; padding-bottom: 40px; }
+}
+
+// === ОСЬ ТУТ БУЛА ПРОБЛЕМА. ТЕПЕР ВОНА ВИПРАВЛЕНА ===
+// Ми вкладаємо всі стилі тексту всередину .book
+// Тепер h1, p та інші теги зміняться ТІЛЬКИ всередині книги.
+
+.book {
+    h1, h2, h3 {
+        font-family: $font-display;
+        font-weight: 700;
+        margin: 0;
         text-align: center;
-        margin-bottom: 1rem;
-        color: $c-leather;
-        font-family: 'Georgia', serif;
+        color: $c-ink;
     }
-    
+
     p {
+        font-size: 1.15rem;
         line-height: 1.6;
-        font-size: 1.1rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.2rem;
         text-align: justify;
+        text-indent: 1.5rem;
+        
+        &.drop-cap-text {
+            text-indent: 0;
+        }
     }
-    
+
     .drop-cap {
         float: left;
-        font-size: 3.5rem;
+        font-family: $font-display;
+        font-size: 4rem;
         line-height: 0.8;
-        padding-right: 8px;
-        padding-top: 4px;
-        font-weight: bold;
         color: $c-leather;
+        margin-right: 8px;
+        margin-top: 4px;
+        text-shadow: 1px 1px 0 rgba($c-gold, 0.5);
     }
+
+    .small-print {
+        font-size: 0.8rem;
+        color: $c-ink-faded;
+        font-style: italic;
+    }
+
+    .text-center { text-align: center; text-indent: 0; }
+    .font-italic { font-style: italic; }
+}
+
+// --- 8. ELEMENTS DECOR ---
+
+.cover-content {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    z-index: 5;
+    transform: translateZ(2px);
+}
+
+.emboss-frame {
+    border: 2px solid $c-gold;
+    padding: 40px 20px;
+    text-align: center;
+    background: rgba(0,0,0,0.2);
+    box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+    position: relative;
+    
+    // Вкладені заголовки для обкладинки
+    h1 {
+        @include text-gold;
+        font-size: 3.5rem;
+        letter-spacing: 2px;
+        margin: 20px 0;
+        text-transform: uppercase;
+    }
+    
+    .subtitle {
+        color: rgba($c-gold, 0.8);
+        font-family: $font-body;
+        font-size: 1.2rem;
+        letter-spacing: 4px;
+        text-transform: uppercase;
+    }
+    
+    .main-symbol {
+        font-size: 4rem;
+        color: $c-gold;
+        opacity: 0.8;
+        filter: drop-shadow(0 0 10px rgba($c-gold, 0.4));
+    }
+}
+
+.corner-ornament {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border: 2px solid $c-gold;
+    opacity: 0.6;
+    
+    &.top-left { top: 20px; left: 20px; border-bottom: none; border-right: none; }
+    &.top-right { top: 20px; right: 20px; border-bottom: none; border-left: none; }
+    &.bottom-left { bottom: 20px; left: 20px; border-top: none; border-right: none; }
+    &.bottom-right { bottom: 20px; right: 20px; border-top: none; border-left: none; }
 }
 
 .page-number {
     position: absolute;
-    bottom: 20px;
-    width: 100%;
+    bottom: 25px;
+    left: 0; right: 0;
     text-align: center;
-    font-size: 0.9rem;
-    color: rgba($c-ink, 0.6);
-    left: 0;
+    font-family: $font-display;
+    color: rgba($c-ink, 0.5);
+    font-size: 1rem;
+    
+    &:before, &:after {
+        content: '—';
+        margin: 0 10px;
+        color: rgba($c-gold, 0.6);
+    }
 }
 
-.separator {
-    text-align: center;
-    margin-top: 20px;
-    color: $c-gold;
-    font-size: 1.5rem;
+// --- 9. MAGIC FRAMES & UI ---
+
+.magic-frame {
+    width: 100%;
+    height: 220px;
+    border: 4px double $c-leather;
+    position: relative;
+    margin: 20px 0;
+    background: #111;
+    overflow: hidden;
+    box-shadow: inset 0 0 30px #000;
+    
+    &__border {
+        @include absolute-full;
+        border: 1px solid rgba($c-gold, 0.3);
+        z-index: 2;
+        &:after {
+            content: '';
+            position: absolute;
+            top: 5px; left: 5px; right: 5px; bottom: 5px;
+            border: 1px solid rgba($c-gold, 0.1);
+        }
+    }
+    
+    &__inner {
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        color: rgba($c-gold, 0.5);
+    }
+    
+    .placeholder-rune {
+        font-size: 3rem;
+        margin-bottom: 10px;
+        opacity: 0.7;
+    }
+    
+    .shimmer-effect {
+        position: absolute;
+        top: 0; left: -100%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba($c-gold, 0.1), transparent);
+        animation: shimmer 3s infinite;
+        transform: skewX(-20deg);
+    }
 }
 
-.video-container-stub, .image-stub {
+@keyframes shimmer {
+    0% { left: -100%; }
+    100% { left: 200%; }
+}
+
+.handwritten-note {
+    font-family: $font-hand;
+    font-size: 1.8rem;
+    color: $c-ink-faded;
+    transform: rotate(-2deg);
+    margin: 30px 0;
+    text-align: center;
+    position: relative;
+    
+    &:before {
+        content: '✍';
+        font-size: 1rem;
+        position: absolute;
+        left: -10px;
+        top: 5px;
+        opacity: 0.5;
+    }
+}
+
+.illuminated-border {
+    border: 1px solid rgba($c-gold, 0.4);
+    padding: 30px;
+    height: 100%;
+    position: relative;
+    &:before {
+        content: '⚜';
+        position: absolute;
+        top: -15px; left: 50%;
+        transform: translateX(-50%);
+        background: $c-paper;
+        padding: 0 10px;
+        color: $c-gold;
+    }
+}
+
+.engraving-container {
     width: 100%;
-    background: rgba(0,0,0,0.05);
-    border: 1px dashed $c-leather;
+    height: 260px;
+    border: 1px solid rgba($c-ink, 0.2);
+    margin: 20px 0;
+    background: 
+        radial-gradient(circle, rgba(0,0,0,0.02) 2px, transparent 2.5px),
+        rgba(0,0,0,0.03);
+    background-size: 4px 4px, 100% 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    
+    .icon-engraving {
+        font-size: 5rem;
+        color: rgba($c-ink, 0.3);
+        filter: blur(0.5px);
+    }
+}
+
+// --- 10. UI CONTROLS & MOBILE ---
+
+.magic-back-btn {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    z-index: 1000;
+    text-decoration: none;
     display: flex;
     align-items: center;
-    justify-content: center;
-    color: $c-leather;
-    margin-bottom: 1rem;
-}
-.video-container-stub { height: 200px; }
-.image-stub { height: 250px; }
-.caption {
-    font-size: 0.9rem;
-    font-style: italic;
-    text-align: center;
-    color: rgba($c-ink, 0.7);
-}
-
-// --- 8. АДАПТИВНІСТЬ ---
-
-@media (max-height: 600px) {
-    .book {
-        width: $book-width-mob;
-        height: $book-height-mob;
+    gap: 10px;
+    color: $c-gold;
+    font-family: $font-display;
+    background: rgba(0,0,0,0.6);
+    padding: 10px 20px;
+    border: 1px solid rgba($c-gold, 0.3);
+    border-radius: 30px;
+    backdrop-filter: blur(5px);
+    transition: all 0.3s ease;
+    
+    &:hover {
+        background: rgba($c-gold, 0.1);
+        border-color: $c-gold;
+        box-shadow: 0 0 15px rgba($c-gold, 0.2);
     }
-    .page__face { padding: 20px; }
-    .content-placeholder p { font-size: 0.9rem; }
-    .cover-texture h1 { font-size: 2rem; }
+    
+    .btn-icon { font-size: 1.2rem; }
+}
+
+.orientation-lock {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: $c-void;
+    z-index: 9999;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: $c-gold;
+    font-family: $font-display;
+    text-align: center;
+    
+    .rune-circle {
+        width: 60px;
+        height: 60px;
+        border: 2px dashed rgba($c-gold, 0.5);
+        border-radius: 50%;
+        margin-bottom: 20px;
+        animation: rotateIcon 10s infinite linear;
+    }
+    
+    .icon-rotate {
+        font-size: 40px;
+        margin-top: 20px;
+        animation: rotateSimple 2s infinite ease-in-out;
+    }
+}
+
+@keyframes rotateIcon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+@keyframes rotateSimple { 0% { transform: rotate(0deg); } 25% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
+
+@media screen and (orientation: portrait) and (max-width: 900px) {
+    body.book-theme .orientation-lock { display: flex; }
 }
 
 @media (max-width: 900px) {
-    .scene { perspective: 2000px; }
-    .book { transition: transform $duration $ease-book; }
+    $book-width-mob: 85vw;
+    $book-height-mob: 120vw;
+
+    .scene {
+        perspective: 2500px;
+        overflow: hidden;
+    }
+
+    .book {
+        width: $book-width-mob;
+        height: $book-height-mob;
+        transform: translateX(0); 
+    }
+    
+    .page__face {
+        padding: 30px;
+    }
+    
+    .content-wrapper {
+        padding: 20px;
+    }
+    
+    .book {
+        h1 { font-size: 2.5rem; }
+        h3 { font-size: 1.5rem; }
+        p { font-size: 1rem; line-height: 1.5; }
+    }
+    
+    .emboss-frame h1 { font-size: 2rem; }
+    
+    .magic-back-btn .btn-text { display: none; }
 }

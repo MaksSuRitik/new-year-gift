@@ -3,19 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="description" content="Інтерактивна стародавня книга">
-    <title>Ancient Book Experience</title>
+    <meta name="theme-color" content="#0f0e0d">
+    <meta name="description" content="Chronicles: Interactive Ancient Tome Experience">
+    <title>Chronicles: Volume I</title>
     
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Pinyon+Script&display=swap" rel="stylesheet">
     
+    <link rel="stylesheet" href="css/you.scss"> <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="book-theme">
 
-    <a href="index.html" class="magic-back-btn">✨ Повернутися</a>
+    <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+        <defs>
+            <filter id="paper-grain" x="0%" y="0%" width="100%" height="100%">
+                <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
+                <feDiffuseLighting in="noise" lighting-color="#e3d2b4" surfaceScale="1">
+                    <feDistantLight azimuth="45" elevation="60" />
+                </feDiffuseLighting>
+            </filter>
+            
+            <filter id="gold-leaf">
+                <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="4" result="noise" />
+                <feColorMatrix type="saturate" values="0" in="SourceGraphic" result="grayscale"/>
+                <feComposite operator="in" in="noise" in2="SourceAlpha" result="maskedNoise"/>
+                <feLighting lighting-color="#ffd700" surfaceScale="2" specularConstant="1" specularExponent="20">
+                     <fePointLight x="-5000" y="-10000" z="20000"/>
+                </feLighting>
+                <feComposite operator="in" in2="SourceGraphic"/>
+            </filter>
+        </defs>
+    </svg>
+
+    <a href="index.html" class="magic-back-btn" aria-label="Повернутися">
+        <span class="btn-icon">✦</span> <span class="btn-text">Вихід</span>
+    </a>
 
     <div id="orientation-lock" class="orientation-lock">
-        <div class="orientation-msg">
-            <p>Будь ласка, переверніть пристрій горизонтально для читання.</p>
+        <div class="lock-content">
+            <div class="rune-circle"></div>
+            <p class="lock-msg">Розгорніть сувій горизонтально<br><span class="small">Для доступу до хронік</span></p>
             <div class="icon-rotate">↻</div>
         </div>
     </div>
@@ -24,77 +52,152 @@
         
         <div id="book" class="book">
 
-            <div class="cover cover--back"></div>
+            <div class="book-spine"></div>
+            <div class="book-shadow"></div>
 
             <div class="page" style="--page-index: 0;">
                 <div class="page__face page__face--front cover-texture">
-                    <div class="book-title">
-                        <h1>Chronicles</h1>
-                        <span class="subtitle">Volume I</span>
+                    <div class="corner-ornament top-left"></div>
+                    <div class="corner-ornament top-right"></div>
+                    <div class="corner-ornament bottom-left"></div>
+                    <div class="corner-ornament bottom-right"></div>
+                    
+                    <div class="cover-content">
+                        <div class="emboss-frame">
+                            <div class="main-symbol">⚜</div>
+                            <h1 class="book-title">Chronicles</h1>
+                            <span class="subtitle">Volume I: The Awakening</span>
+                        </div>
                     </div>
+                    
+                    <div class="layer-lighting"></div>
                 </div>
+                
                 <div class="page__face page__face--back paper-texture">
-                    <div class="content-placeholder">
-                        <h2>Вступ</h2>
-                        <p class="drop-cap">Т</p>
-                        <p>ут починається історія. Це місце зарезервоване під вступний текст.</p>
-                        <div class="separator">~~~ ⚜ ~~~</div>
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    <div class="content-wrapper">
+                        <div class="illuminated-border">
+                            <h2>Вступ</h2>
+                            <p class="drop-cap-text">
+                                <span class="drop-cap">Т</span>ут, у темряві століть, ми починаємо нашу подорож. Ці сторінки зберігають пам'ять про події, що передували Великому Розлому.
+                            </p>
+                            <p>Читачу, будь обережним. Слова мають вагу, а образи — силу.</p>
+                            <div class="divider-ornament">~~~ ✦ ~~~</div>
+                        </div>
                     </div>
+                    <div class="layer-lighting"></div>
                 </div>
             </div>
 
             <div class="page" style="--page-index: 1;">
                 <div class="page__face page__face--front paper-texture">
-                    <div class="content-placeholder">
-                        <h3>Розділ I</h3>
-                        <p>Текст-риба для перевірки типографіки. Далеко за словесними горами, в країні голосних і приголосних живуть рибні тексти.</p>
-                        <p>Вони живуть ізольовано в буквених будинках на березі Семантики великого мовного океану.</p>
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div> <div class="content-wrapper">
+                        <header class="page-header">
+                            <h3>Розділ I</h3>
+                            <span class="chapter-ornament">❂</span>
+                        </header>
+                        
+                        <article class="text-block">
+                            <p>Далеко за горами синтаксису, в країні голосних і приголосних живуть рибні тексти. Вони живуть ізольовано в буквених будинках на березі Семантики.</p>
+                            <p>Маленький струмок протікає повз їхнє місце і постачає його всіма необхідними правилами. Це райська країна.</p>
+                            
+                            <blockquote class="handwritten-note">
+                                "Істина завжди ховається між рядками..."
+                            </blockquote>
+                        </article>
+
+                        <div class="page-number">I</div>
                     </div>
-                    <div class="page-number">1</div>
+                    
+                    <div class="layer-lighting"></div>
                 </div>
+
                 <div class="page__face page__face--back paper-texture">
-                    <div class="content-placeholder">
-                        <h3>Відео архів</h3>
-                        <div class="video-container-stub">
-                            <span>[Місце для відео-контенту]</span>
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    
+                    <div class="content-wrapper">
+                        <h3>Архів Візій</h3>
+                        
+                        <div class="magic-frame" data-status="locked">
+                            <div class="magic-frame__border"></div>
+                            <div class="magic-frame__inner">
+                                <div class="placeholder-rune">▶</div>
+                                <span class="placeholder-text">Візія недоступна</span>
+                                <div class="shimmer-effect"></div>
+                            </div>
                         </div>
-                        <p class="caption">Опис того, що відбувається на відео.</p>
+                        
+                        <p class="caption font-italic">Фігура 1.1: Спотворення реальності.</p>
+                        <div class="page-number">II</div>
                     </div>
-                    <div class="page-number">2</div>
+                    
+                    <div class="layer-lighting"></div>
                 </div>
             </div>
 
             <div class="page" style="--page-index: 2;">
                 <div class="page__face page__face--front paper-texture">
-                    <div class="content-placeholder">
-                        <h3>Ілюстрації</h3>
-                        <div class="image-stub">
-                            <span>[Гравюра]</span>
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    
+                    <div class="content-wrapper">
+                        <h3>Артефакти</h3>
+                        
+                        <div class="engraving-container">
+                            <div class="engraving-placeholder">
+                                <span class="icon-engraving">⚔</span>
+                            </div>
+                            <div class="ink-splatter"></div>
                         </div>
-                        <p>Текстура паперу повинна просвічуватися крізь чорнило.</p>
+                        
+                        <p>Клинки стародавніх героїв, викувані в полум'ї Драконячої Гори. Чорнило ледь тримається на цьому старому папері.</p>
+                        <div class="page-number">III</div>
                     </div>
-                    <div class="page-number">3</div>
+                    
+                    <div class="layer-lighting"></div>
                 </div>
+
                 <div class="page__face page__face--back paper-texture">
-                    <div class="content-placeholder ending">
-                        <p>Кінець ознайомчого фрагменту.</p>
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    
+                    <div class="content-wrapper flex-center">
+                        <div class="ending-mark">
+                            <span>⚜</span>
+                        </div>
+                        <p class="text-center">Кінець ознайомчого фрагменту.</p>
+                        <p class="small-print text-center">Далі сторінки склеєні часом.</p>
+                        <div class="page-number">IV</div>
                     </div>
-                    <div class="page-number">4</div>
+                    
+                    <div class="layer-lighting"></div>
                 </div>
             </div>
 
             <div class="page" style="--page-index: 3;">
                 <div class="page__face page__face--front paper-texture">
-                    <div class="content-placeholder">
-                        <p class="small-print">Виготовлено вручну кодом.</p>
+                    <div class="layer-base"></div>
+                    <div class="content-wrapper flex-bottom">
+                        <p class="colophon">Handcrafted by Code.<br>MMXXV</p>
                     </div>
+                    <div class="layer-lighting"></div>
                 </div>
-                <div class="page__face page__face--back cover-texture">
-                    </div>
+
+                <div class="page__face page__face--back cover-texture cover--back">
+                    <div class="corner-ornament top-left"></div>
+                    <div class="corner-ornament bottom-right"></div>
+                    <div class="emboss-logo-small">C</div>
+                    <div class="layer-lighting"></div>
+                </div>
             </div>
 
         </div>
     </main>
+
+    <audio id="sfx-flip" preload="auto" src="assets/page-flip.mp3"></audio>
 
     <script src="js/you.js"></script>
 </body>
