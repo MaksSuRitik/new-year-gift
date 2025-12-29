@@ -1024,7 +1024,7 @@ function update(songTime) {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 7;
+                            State.combo += 100000;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
