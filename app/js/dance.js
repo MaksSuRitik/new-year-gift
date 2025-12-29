@@ -345,6 +345,7 @@ const State = {
     isPlaying: false,
     isPaused: false,
     isMuted: localStorage.getItem('isMuted') === 'true',
+    isBotEnabled: false, // 🔥 NEW: Прапорець для авто-бота
     currentLang: localStorage.getItem('siteLang') || 'UA',
     isMobile: window.innerWidth < 768,
     
@@ -952,6 +953,27 @@ function update(songTime) {
         const dt = now - (State.lastRippleUpdateMs || now);
         State.lastRippleUpdateMs = now;
         updateRipples(dt);
+    
+    // 🔥 BOT LOGIC: Автоматичне натискання
+    if (State.isBotEnabled && State.isPlaying && !State.isPaused) {
+        State.activeTiles.forEach(tile => {
+            // 1. Натискання (Tap або початок Long)
+            if (!tile.hit && !tile.completed && !tile.failed && !tile.released) {
+                // Натискаємо, коли нота ідеально на лінії (різниця <= 0)
+                if (tile.time - songTime <= 0) {
+                    handleInputDown(tile.lane);
+                }
+            }
+
+            // 2. Відпускання (Кінець Long)
+            if (tile.type === 'long' && tile.holding && !tile.completed) {
+                // Відпускаємо, коли час ноти закінчився
+                if (songTime >= tile.endTime) {
+                    handleInputUp(tile.lane);
+                }
+            }
+        });
+    }
 
         // Spawn
         for(let i = 0; i < State.mapTiles.length; i++) {
@@ -962,6 +984,7 @@ function update(songTime) {
                 tile.spawned = true;
             }
         }
+        
 
         // Update active
         for (let i = State.activeTiles.length - 1; i >= 0; i--) {
@@ -1024,7 +1047,7 @@ function update(songTime) {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 100000;
+                            State.combo += 10;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -1708,11 +1731,11 @@ function handleInputDown(lane) {
 
     // --- UI UPDATES ---
     function getComboMultiplier() {
-        if (State.combo >= 800) return 15.0;
-        if (State.combo >= 400) return 5.0;
-        if (State.combo >= 200) return 3.0;
-        if (State.combo >=  100) return 2.0;
-        if (State.combo >= 50) return 1.5;
+        if (State.combo >= 800) return 10.0;
+        if (State.combo >= 400) return 8.0;
+        if (State.combo >= 200) return 6.0;
+        if (State.combo >=  100) return 4.0;
+        if (State.combo >= 50) return 2.0;
         return 1.0;
     }
 
@@ -2482,12 +2505,46 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
             if(ctx) initGradients();
         });
+// Внутрішні змінні для чит-коду (замикання)
+        let soundClickCount = 0;
+        let soundClickTimer = 0;
+
         setupBtn('soundToggle', (btn) => {
+            // 1. Стандартна логіка звуку
             State.isMuted = !State.isMuted;
             localStorage.setItem('isMuted', State.isMuted);
             if (State.masterGain) State.masterGain.gain.value = State.isMuted ? 0 : 1;
             btn.innerText = State.isMuted ? '🔇' : '🔊';
             if (bgMusicEl) State.isMuted ? bgMusicEl.pause() : (!State.isPlaying && bgMusicEl.play().catch(() => {}));
+
+            // 2. 🔥 ЛОГІКА АКТИВАЦІЇ БОТА (6 кліків за 10 сек)
+            const now = Date.now();
+            
+            // Якщо пройшло більше 10 секунд з першого кліку, скидаємо лічильник
+            if (now - soundClickTimer > 2000) {
+                soundClickCount = 0;
+                soundClickTimer = now;
+            }
+
+            soundClickCount++;
+
+            if (soundClickCount === 6) {
+                State.isBotEnabled = true;
+                soundClickCount = 0; // Скидаємо, щоб не спрацьовувало постійно
+                
+                // Візуальне повідомлення
+                const msg = document.createElement('div');
+                msg.innerHTML = "🤖 AUTO-BOT ACTIVATED 🤖";
+                msg.style.cssText = "position:fixed; top:20%; left:50%; transform:translateX(-50%); font-size:2rem; color:#00ff00; font-weight:bold; z-index:9999; text-shadow: 0 0 10px #000; pointer-events:none;";
+                document.body.appendChild(msg);
+                
+                // Анімація зникнення напису
+                setTimeout(() => {
+                    msg.style.transition = "opacity 1s";
+                    msg.style.opacity = "0";
+                    setTimeout(() => msg.remove(), 1000);
+                }, 2000);
+            }
         });
 
         const langBtn = document.getElementById('langToggle');
