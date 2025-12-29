@@ -1603,3 +1603,44 @@ canvas#rhythmCanvas {
 .rank-1 { color: #FFD700; text-shadow: 0 0 10px #FFD700; font-size: 1.2rem; }
 .rank-2 { color: #C0C0C0; text-shadow: 0 0 10px #C0C0C0; font-size: 1.1rem; }
 .rank-3 { color: #CD7F32; text-shadow: 0 0 10px #CD7F32; font-size: 1.1rem; }
+/* ... Existing SCSS ... */
+
+/* ==========================================
+   💎 DIAMOND STARS & DARKER NOTES
+   ========================================== */
+
+/* --- ДІАМАНТОВА ЗІРКА (В ГРІ) --- */
+.star-marker.diamond {
+    color: #00f2ff !important; /* Яскравий ціан */
+    text-shadow: 
+        0 0 10px #00f2ff,
+        0 0 20px #00f2ff,
+        0 0 5px #ffffff;
+    transform: scale(1.5) rotate(15deg); /* Трохи більша і під нахилом */
+    z-index: 10;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Анімація появи діаманта */
+.star-marker.diamond.active {
+    animation: diamondPop 0.6s ease-out forwards;
+}
+
+@keyframes diamondPop {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.8); opacity: 1; }
+    100% { transform: scale(1.5) rotate(15deg); }
+}
+
+/* --- ДІАМАНТОВА ЗІРКА (В МЕНЮ/РЕЗУЛЬТАТАХ) --- */
+.star-diamond {
+    color: #00f2ff;
+    text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
+    display: inline-block;
+}
+
+/* Щоб зірки в меню стояли рівно */
+.stars-display {
+    display: inline-flex;
+    gap: 2px;
+}

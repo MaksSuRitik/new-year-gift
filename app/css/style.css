@@ -3831,6 +3831,76 @@ canvas#rhythmCanvas {
   font-size: 1.1rem;
 }
 
+/* ... Existing SCSS ... */
+/* ==========================================
+   💎 DIAMOND STARS & DARKER NOTES
+   ========================================== */
+/* --- ДІАМАНТОВА ЗІРКА (В ГРІ) --- */
+.star-marker.diamond {
+  color: #00f2ff !important; /* Яскравий ціан */
+  text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff, 0 0 5px #ffffff;
+  -webkit-transform: scale(1.5) rotate(15deg);
+      -ms-transform: scale(1.5) rotate(15deg);
+          transform: scale(1.5) rotate(15deg); /* Трохи більша і під нахилом */
+  z-index: 10;
+  -webkit-transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Анімація появи діаманта */
+.star-marker.diamond.active {
+  -webkit-animation: diamondPop 0.6s ease-out forwards;
+          animation: diamondPop 0.6s ease-out forwards;
+}
+
+@-webkit-keyframes diamondPop {
+  0% {
+    -webkit-transform: scale(0.5);
+            transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    -webkit-transform: scale(1.8);
+            transform: scale(1.8);
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(1.5) rotate(15deg);
+            transform: scale(1.5) rotate(15deg);
+  }
+}
+
+@keyframes diamondPop {
+  0% {
+    -webkit-transform: scale(0.5);
+            transform: scale(0.5);
+    opacity: 0;
+  }
+  50% {
+    -webkit-transform: scale(1.8);
+            transform: scale(1.8);
+    opacity: 1;
+  }
+  100% {
+    -webkit-transform: scale(1.5) rotate(15deg);
+            transform: scale(1.5) rotate(15deg);
+  }
+}
+/* --- ДІАМАНТОВА ЗІРКА (В МЕНЮ/РЕЗУЛЬТАТАХ) --- */
+.star-diamond {
+  color: #00f2ff;
+  text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
+  display: inline-block;
+}
+
+/* Щоб зірки в меню стояли рівно */
+.stars-display {
+  display: -webkit-inline-box;
+  display: -ms-inline-flexbox;
+  display: inline-flex;
+  gap: 2px;
+}
+
 /*
     CHRONICLES: AAA IMMERSIVE STYLES (FIXED & ISOLATED)
 */

@@ -61,11 +61,28 @@ const CONFIG = {
 };
 
 const PALETTES = {
-    STEEL: { light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1' },
-    GOLD: { black: '#1a1a1a', choco: '#2d1b15', amber: '#e6ca3fff', light: '#bcaaa4', glow: '#e6ca3fff', border: '#e6ca3fff' },
-    COSMIC: { core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff', glow: '#d500f9', border: '#00e5ff' },
-    LEGENDARY: { body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', long1: '#26c691ff', long2: 'rgba(7, 80, 76, 0.99)' },
-    ELECTRIC: { tap1: '#eceff1', tap2: '#607d8b', long1: '#607d8b', long2: '#37474f', glow: '#00bcd4', border: '#80deea' }
+    // long1 - це голова довгої ноти (зробив темнішим)
+    // long2 - це хвіст (залишив як було або трохи підправив)
+    STEEL: { 
+        light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1',
+        long1: '#37474f', long2: '#90a4ae' // Темно-сіра голова
+    },
+    GOLD: { 
+        black: '#1a1a1a', choco: '#2d1b15', amber: '#e6ca3fff', light: '#bcaaa4', glow: '#e6ca3fff', border: '#e6ca3fff',
+        long1: '#5D4037', long2: '#e6ca3fff' // Темно-коричнева голова
+    },
+    COSMIC: { 
+        core: '#2a003b', accent: '#d500f9', glitch: '#00e5ff', glow: '#d500f9', border: '#00e5ff',
+        long1: '#4a148c', long2: '#d500f9' // Темно-фіолетова голова
+    },
+    LEGENDARY: { 
+        body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', 
+        long1: '#004d40', long2: 'rgba(7, 80, 76, 0.99)' // Дуже темна бірюза для голови
+    },
+    ELECTRIC: { 
+        tap1: '#eceff1', tap2: '#607d8b', glow: '#00bcd4', border: '#80deea',
+        long1: '#006064', long2: '#37474f' // Темний ціан
+    }
 };
 
 // TRANSLATIONS: added leaderboard-specific keys
@@ -331,6 +348,13 @@ const State = {
     currentLang: localStorage.getItem('siteLang') || 'UA',
     isMobile: window.innerWidth < 768,
     
+    score: 0,
+    maxPossibleScore: 0,
+    combo: 0,
+    maxCombo: 0,
+    consecutiveMisses: 0,
+    totalMisses: 0, // 🔥 CHANGE: Загальна кількість промахів за гру
+    starStatus: [], // 🔥 CHANGE: Масив стану зірок (0-нема, 1-золото, 2-діамант)
     // Game Logic
     startTime: 0,
     score: 0,
@@ -695,6 +719,8 @@ function initGradients() {
         if (State.audioCtx && State.audioCtx.state === 'suspended') State.audioCtx.resume();
 
         State.score = 0; State.combo = 0; State.maxCombo = 0; State.consecutiveMisses = 0;
+        State.totalMisses = 0; // 🔥 CHANGE
+        State.starStatus = [0, 0, 0, 0, 0]; // 🔥 CHANGE: Скидаємо стан 5 зірок
         State.lastComboUpdateTime = 0;
         State.activeTiles = []; State.mapTiles = [];
         
@@ -733,19 +759,42 @@ function initGradients() {
         if(ctx) initGradients();
     }
 
-    function getSavedData(songTitle) {
-        try {
-            const data = localStorage.getItem(`neon_rhythm_${songTitle}`);
-            return data ? JSON.parse(data) : { score: 0, stars: 0 };
-        } catch (e) { return { score: 0, stars: 0 }; }
+function getSavedData(songTitle) {
+    try {
+        const data = localStorage.getItem(`neon_rhythm_${songTitle}`);
+        // 🔥 CHANGE: Додаємо дефолтний starTypes, якщо його немає
+        return data ? JSON.parse(data) : { score: 0, stars: 0, starTypes: [] };
+    } catch (e) { return { score: 0, stars: 0, starTypes: [] }; }
+}
+
+function saveGameData(songTitle, newScore, newStars) {
+    const current = getSavedData(songTitle);
+    const finalScore = Math.max(newScore, current.score || 0);
+    const finalStars = Math.max(newStars, current.stars || 0);
+    
+    // 🔥 CHANGE: Логіка злиття діамантових зірок
+    // Ми беремо старі типи зірок і оновлюємо їх новими, ТІЛЬКИ якщо новий тип кращий (2 > 1 > 0)
+    let finalTypes = current.starTypes || [];
+    
+    // Заповнюємо масив, якщо він короткий
+    for(let k=0; k<5; k++) {
+        if(finalTypes[k] === undefined) finalTypes[k] = 0;
     }
 
-    function saveGameData(songTitle, newScore, newStars) {
-        const current = getSavedData(songTitle);
-        const finalScore = Math.max(newScore, current.score || 0);
-        const finalStars = Math.max(newStars, current.stars || 0);
-        localStorage.setItem(`neon_rhythm_${songTitle}`, JSON.stringify({ score: finalScore, stars: finalStars }));
+    // State.starStatus - це результат поточної гри
+    for (let i = 0; i < 5; i++) {
+        const newType = State.starStatus[i] || 0;
+        const oldType = finalTypes[i] || 0;
+        // Зберігаємо максимум: якщо була Діамантова (2), вона залишиться (2), навіть якщо зараз Золота (1)
+        finalTypes[i] = Math.max(newType, oldType);
     }
+
+    localStorage.setItem(`neon_rhythm_${songTitle}`, JSON.stringify({ 
+        score: finalScore, 
+        stars: finalStars, 
+        starTypes: finalTypes // Зберігаємо масив
+    }));
+}
 
     // --- PULSE ENGINE (Chart Generation) ---
     async function analyzeAudio(url, sessionId) {
@@ -1049,23 +1098,23 @@ function update(songTime) {
         let p = { tapColor: [], longColor: [], glow: '', border: '', name: 'steel' };
         if (State.combo < 100) {
             p.tapColor = [PALETTES.STEEL.light, PALETTES.STEEL.main];
-            p.longColor = [PALETTES.STEEL.main, PALETTES.STEEL.dark];
+            p.longColor = [PALETTES.STEEL.long1, PALETTES.STEEL.long2]; // 🔥 CHANGE
             p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border; p.name = 'steel';
         } else if (State.combo < 200) {
             p.tapColor = [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2];
-            p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2];
+            p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2]; // 🔥 CHANGE
             p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border; p.name = 'electric';
         } else if (State.combo < 400) {
             p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
-            p.longColor = [PALETTES.GOLD.amber, PALETTES.GOLD.light];
+           p.longColor = [PALETTES.GOLD.long1, PALETTES.GOLD.long2]; // 🔥 CHANGE
             p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border; p.name = 'gold';
         } else if (State.combo < 800) {
             p.tapColor = ['#000000', PALETTES.COSMIC.core];
-            p.longColor = [PALETTES.COSMIC.accent, PALETTES.COSMIC.glitch];
+           p.longColor = [PALETTES.COSMIC.long1, PALETTES.COSMIC.long2]; // 🔥 CHANGE
             p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border; p.name = 'cosmic';
         } else {
             p.tapColor = [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2];
-            p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2];
+            p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2]; // 🔥 CHANGE
             p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent; p.name = 'legendary';
         }
 
@@ -1285,9 +1334,12 @@ function update(songTime) {
                 }
 
                 // Head
-                let headColors = (State.combo >= 200 && !tile.failed && !tile.released) ? p.tapColor : colorSet;
+                let headColors = p.longColor; 
+
+// Використовуємо 0-й індекс (darker defined in palette) для верху градієнта
                 let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
-                hGrad.addColorStop(0, headColors[0]); hGrad.addColorStop(1, headColors[1]);
+                hGrad.addColorStop(0, headColors[0]); // Darker head color
+                hGrad.addColorStop(1, headColors[1]); // Tail/Lighter color connection
                 ctx.fillStyle = hGrad;
                 
                 if (enableHeavyEffects && !tile.released && State.glowSprite) {
@@ -1642,6 +1694,7 @@ function handleInputDown(lane) {
 
     function missNote(tile, isSpawnedMiss) {
         State.consecutiveMisses++;
+        State.totalMisses++; // 🔥 CHANGE: Фіксуємо промах назавжди для цієї спроби
         State.combo = 0;
         State.lastComboUpdateTime = 0; 
         updateScoreUI(); 
@@ -1721,20 +1774,42 @@ function handleInputDown(lane) {
         }
     }
 
-    function updateProgressBar(current, total) {
-        if (!progressBar) return;
-        const ratio = Math.min(1, current / total);
-        progressBar.style.width = `${ratio * 100}%`;
-        
-        // Simple check
-        starsElements.forEach(s => s?.classList.remove('active'));
-        const isSecret = songsDB[State.currentSongIndex].isSecret;
-        const t = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
-        t.forEach((limit, i) => {
-             if (ratio > limit && starsElements[i]) starsElements[i].classList.add('active');
-        });
-    }
+function updateProgressBar(current, total) {
+    if (!progressBar) return;
+    const ratio = Math.min(1, current / total);
+    progressBar.style.width = `${ratio * 100}%`;
+    
+    // Визначаємо пороги (3 для звичайних, 5 для секретних)
+    const isSecret = songsDB[State.currentSongIndex].isSecret;
+    const limits = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
 
+    limits.forEach((limit, i) => {
+        if (!starsElements[i]) return;
+
+        // Якщо ми пройшли поріг
+        if (ratio >= limit) {
+            // Якщо статус ще не встановлено (0)
+            if (State.starStatus[i] === 0) {
+                // 🔥 CHANGE: Перевіряємо, чи були промахи
+                if (State.totalMisses === 0) {
+                    State.starStatus[i] = 2; // Diamond
+                } else {
+                    State.starStatus[i] = 1; // Gold
+                }
+            }
+            
+            // Візуалізація
+            starsElements[i].classList.add('active');
+            if (State.starStatus[i] === 2) {
+                starsElements[i].classList.add('diamond'); // Додаємо клас з SCSS
+                starsElements[i].innerHTML = '💎'; // Міняємо символ (опціонально)
+            } else {
+                starsElements[i].classList.remove('diamond');
+                starsElements[i].innerHTML = '★';
+            }
+        }
+    });
+}
     // NEW: generate small radial glow sprite once (used by notes & beams)
     function createGlowSprite(size = 128) {
 	if (!document) return;
@@ -1893,10 +1968,23 @@ function playMusic() {
             try { await syncGlobalProgress(); } catch (e) { console.error(e); }
         }
 
-        let starsStr = "";
-        const total = isSecret ? 5 : 3;
-        for (let i = 0; i < total; i++) starsStr += i < starsCount ? "★" : "☆";
-        document.getElementById('final-stars').innerText = starsStr;
+// В кінці функції endGame...
+let starsHTML = "";
+const total = isSecret ? 5 : 3;
+
+for (let i = 0; i < total; i++) {
+    // State.starStatus містить типи зірок для ЦІЄЇ гри
+    if (i < starsCount) {
+        if (State.starStatus[i] === 2) {
+            starsHTML += '<span class="star-diamond" style="font-size: 3rem; margin: 0 5px;">💎</span>';
+        } else {
+            starsHTML += '<span style="color: gold; font-size: 3rem; margin: 0 5px;">★</span>';
+        }
+    } else {
+        starsHTML += '<span style="color: #555; font-size: 3rem; margin: 0 5px;">★</span>';
+    }
+}
+document.getElementById('final-stars').innerHTML = starsHTML; // Використовуємо innerHTML, а не innerText
 
         document.getElementById('result-screen').classList.remove('hidden');
         updateGameText();
@@ -1988,15 +2076,18 @@ function playMusic() {
     }
 
     // --- MENUS ---
+// --- MENUS ---
     function renderMenu() {
         const list = document.getElementById('song-list');
         if (!list) return;
         list.innerHTML = '';
 
+        // Перевірка на відкриття секретного рівня
         let total3StarSongs = 0;
         songsDB.forEach(s => { if (!s.isSecret && getSavedData(s.title).stars >= 3) total3StarSongs++; });
         const isSecretUnlocked = total3StarSongs >= 5;
 
+        // Кнопка зміни імені
         if (localStorage.getItem('playerName')) {
             const nameBtn = document.createElement('button');
             nameBtn.className = 'btn-change-name'; 
@@ -2005,25 +2096,53 @@ function playMusic() {
             list.appendChild(nameBtn);
         }
 
+        // Кнопка таблиці лідерів
         const lbBtn = document.createElement('button');
         lbBtn.className = 'btn-leaderboard';
         lbBtn.innerText = `🏆 ${getText('leaderboard')}`;
         lbBtn.onclick = showLeaderboard;
         list.appendChild(lbBtn);
 
+        // --- ЦИКЛ ГЕНЕРАЦІЇ ПІСЕНЬ ---
         songsDB.forEach((s, i) => {
             const saved = getSavedData(s.title);
+            
+            // 🔥 ВИПРАВЛЕНО: Генерація зірок (Діаманти/Золото) ТУТ, всередині циклу
             let starsStr = '';
             const maxStars = s.isSecret ? 5 : 3;
-            for (let j = 0; j < maxStars; j++) starsStr += j < saved.stars ? '★' : '☆';
+            const types = saved.starTypes || []; // Беремо збережені типи
+
+            for (let j = 0; j < maxStars; j++) {
+                const type = types[j] || 0;
+                const isEarned = j < saved.stars; // Чи отримана зірка
+
+                if (isEarned) {
+                    if (type === 2) {
+                        // 💎 Діамантова
+                        starsStr += '<span class="star-diamond">💎</span>';
+                    } else {
+                        // ★ Золота
+                        starsStr += '★';
+                    }
+                } else {
+                    // ☆ Порожня
+                    starsStr += '☆';
+                }
+            }
+            // -----------------------------------------------------------
 
             const el = document.createElement('div');
             el.className = 'song-card';
+            
+            // Стилізація карток
             if (s.isSecret) {
                 if (!isSecretUnlocked) el.classList.add('song-locked');
                 else el.classList.add('secret-song-card');
-            } else if (s.tag) el.classList.add(`song-${s.tag}`);
+            } else if (s.tag) {
+                el.classList.add(`song-${s.tag}`);
+            }
 
+            // Клік по картці
             el.onclick = () => {
                 playClick();
                 if (s.isSecret && !isSecretUnlocked) { showSecretLockModal(); return; }
@@ -2031,6 +2150,7 @@ function playMusic() {
             };
             el.onmouseenter = playHover;
 
+            // HTML картки
             el.innerHTML = `
                 <div class="song-info">
                     <h3>${s.title} <span class="song-duration">${s.duration}</span></h3>
@@ -2043,6 +2163,7 @@ function playMusic() {
             `;
             list.appendChild(el);
         });
+        
         updateGameText();
     }
 
