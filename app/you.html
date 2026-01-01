@@ -4,54 +4,55 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="theme-color" content="#0f0e0d">
-    <meta name="description" content="Chronicles: Interactive Ancient Tome Experience">
-    <title>Chronicles: Volume I</title>
+    <meta name="description" content="Chronicles Anastaxian: An Interactive Archive">
+    <title>Chronicles Anastaxian</title>
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Pinyon+Script&display=swap" rel="stylesheet">
     
-    <link rel="stylesheet" href="css/you.scss"> <link rel="stylesheet" href="css/style.css">
-</head>
+    <link rel="stylesheet" href="css/style.css"> 
+    </head>
 <body class="book-theme">
 
     <svg style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
         <defs>
-            <filter id="paper-grain" x="0%" y="0%" width="100%" height="100%">
+            <filter id="paper-grain">
                 <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" result="noise" />
                 <feDiffuseLighting in="noise" lighting-color="#e3d2b4" surfaceScale="1">
                     <feDistantLight azimuth="45" elevation="60" />
                 </feDiffuseLighting>
             </filter>
             
-            <filter id="gold-leaf">
-                <feTurbulence type="fractalNoise" baseFrequency="0.2" numOctaves="4" result="noise" />
-                <feColorMatrix type="saturate" values="0" in="SourceGraphic" result="grayscale"/>
-                <feComposite operator="in" in="noise" in2="SourceAlpha" result="maskedNoise"/>
-                <feLighting lighting-color="#ffd700" surfaceScale="2" specularConstant="1" specularExponent="20">
-                     <fePointLight x="-5000" y="-10000" z="20000"/>
-                </feLighting>
-                <feComposite operator="in" in2="SourceGraphic"/>
+            <filter id="ink-wash">
+                <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="3" result="noise" />
+                <feDisplacementMap in="SourceGraphic" in2="noise" scale="6" />
+                <feSepia values="0.6"/>
             </filter>
         </defs>
     </svg>
 
+    <div class="lang-switcher">
+        <button class="lang-btn active" onclick="setLanguage('ua')">UA</button>
+        <button class="lang-btn" onclick="setLanguage('ru')">RU</button>
+        <button class="lang-btn" onclick="setLanguage('meow')">🐱</button>
+    </div>
+
     <a href="index.html" class="magic-back-btn" aria-label="Повернутися">
-        <span class="btn-icon">✦</span> <span class="btn-text">Вихід</span>
+        <span class="btn-icon">✦</span> 
+        <span class="btn-text" data-i18n="btn_exit">Вихід</span>
     </a>
 
     <div id="orientation-lock" class="orientation-lock">
         <div class="lock-content">
             <div class="rune-circle"></div>
-            <p class="lock-msg">Розгорніть сувій горизонтально<br><span class="small">Для доступу до хронік</span></p>
+            <p class="lock-msg">Відкрийте хроніки<br><span class="small">Поверніть пристрій</span></p>
             <div class="icon-rotate">↻</div>
         </div>
     </div>
 
     <main class="scene">
-        
         <div id="book" class="book">
-
             <div class="book-spine"></div>
             <div class="book-shadow"></div>
 
@@ -65,12 +66,10 @@
                     <div class="cover-content">
                         <div class="emboss-frame">
                             <div class="main-symbol">⚜</div>
-                            <h1 class="book-title">Chronicles</h1>
-                            <span class="subtitle">Volume I: The Awakening</span>
+                            <h1 class="book-title">Chronicles<br>Anastaxian</h1>
+                            <span class="subtitle">Volume I: Truth & Abyss</span>
                         </div>
                     </div>
-                    
-                    <div class="layer-lighting"></div>
                 </div>
                 
                 <div class="page__face page__face--back paper-texture">
@@ -78,11 +77,11 @@
                     <div class="layer-texture"></div>
                     <div class="content-wrapper">
                         <div class="illuminated-border">
-                            <h2>Вступ</h2>
-                            <p class="drop-cap-text">
-                                <span class="drop-cap">Т</span>ут, у темряві століть, ми починаємо нашу подорож. Ці сторінки зберігають пам'ять про події, що передували Великому Розлому.
+                            <h2 data-i18n="preface_title">Передмова</h2>
+                            <p class="drop-cap-text" data-i18n="preface_p1">
+                                <span class="drop-cap">Т</span>ут, у темряві цифрових століть, ми зберігаємо свідчення. Ці сторінки містять правду про Детектор Брехні, Безодню та Велику Панду.
                             </p>
-                            <p>Читачу, будь обережним. Слова мають вагу, а образи — силу.</p>
+                            <p data-i18n="preface_p2">Торкнись ілюстрацій, щоб почути їхній голос.</p>
                             <div class="divider-ornament">~~~ ✦ ~~~</div>
                         </div>
                     </div>
@@ -93,47 +92,38 @@
             <div class="page" style="--page-index: 1;">
                 <div class="page__face page__face--front paper-texture">
                     <div class="layer-base"></div>
-                    <div class="layer-texture"></div> <div class="content-wrapper">
+                    <div class="layer-texture"></div>
+                    <div class="content-wrapper">
                         <header class="page-header">
-                            <h3>Розділ I</h3>
-                            <span class="chapter-ornament">❂</span>
+                            <h3 data-i18n="det_title">Детектор Брехні</h3>
+                            <span class="chapter-ornament">I</span>
                         </header>
-                        
                         <article class="text-block">
-                            <p>Далеко за горами синтаксису, в країні голосних і приголосних живуть рибні тексти. Вони живуть ізольовано в буквених будинках на березі Семантики.</p>
-                            <p>Маленький струмок протікає повз їхнє місце і постачає його всіма необхідними правилами. Це райська країна.</p>
+                            <p data-i18n="det_p1">Вчені з Непалу та Дагестану винайшли детектор брехні, який б'є струмом за "неправду". Експеримент проводили на Анастасян.</p>
+                            <p data-i18n="det_p2">Детектор виявився настільки чутливим, що реагував навіть на сарказм та філософські роздуми. Анастасян — теж була впевнена.</p>
                             
-                            <blockquote class="handwritten-note">
-                                "Істина завжди ховається між рядками..."
-                            </blockquote>
+                            <div class="video-frame ink-style">
+                                <video loop muted playsinline src="audio/news/det1.mp4"></video>
+                                <div class="video-overlay"><span class="sound-icon">🔇</span></div>
+                            </div>
                         </article>
-
                         <div class="page-number">I</div>
                     </div>
-                    
                     <div class="layer-lighting"></div>
                 </div>
 
                 <div class="page__face page__face--back paper-texture">
                     <div class="layer-base"></div>
                     <div class="layer-texture"></div>
-                    
                     <div class="content-wrapper">
-                        <h3>Архів Візій</h3>
-                        
-                        <div class="magic-frame" data-status="locked">
-                            <div class="magic-frame__border"></div>
-                            <div class="magic-frame__inner">
-                                <div class="placeholder-rune">▶</div>
-                                <span class="placeholder-text">Візія недоступна</span>
-                                <div class="shimmer-effect"></div>
-                            </div>
+                         <h3 data-i18n="proof_title">Докази</h3>
+                         <div class="video-frame large-frame ink-style">
+                            <video loop muted playsinline src="audio/news/det2.mp4"></video>
+                            <div class="video-overlay"><span class="sound-icon">🔇</span></div>
                         </div>
-                        
-                        <p class="caption font-italic">Фігура 1.1: Спотворення реальності.</p>
+                        <p class="caption" data-i18n="proof_caption">Фіг 1.2: Процес калібрування істини.</p>
                         <div class="page-number">II</div>
                     </div>
-                    
                     <div class="layer-lighting"></div>
                 </div>
             </div>
@@ -142,46 +132,99 @@
                 <div class="page__face page__face--front paper-texture">
                     <div class="layer-base"></div>
                     <div class="layer-texture"></div>
-                    
                     <div class="content-wrapper">
-                        <h3>Артефакти</h3>
+                        <header class="page-header">
+                            <h3 data-i18n="chat_title">Експеримент Чату</h3>
+                            <span class="chapter-ornament">II</span>
+                        </header>
+                        <article class="text-block">
+                            <p data-i18n="chat_p1">Після серії невдалих спостережень, було вирішено підключити нейромережу до загального чату.</p>
+                            <p data-i18n="chat_p2">Результати вразили навіть скептиків. Хаос, що утворився, не піддається логічному опису, тому висновки з нього робити небезпечно.</p>
+                        </article>
                         
-                        <div class="engraving-container">
-                            <div class="engraving-placeholder">
-                                <span class="icon-engraving">⚔</span>
-                            </div>
-                            <div class="ink-splatter"></div>
+                         <div class="video-frame ink-style mt-auto">
+                            <video loop muted playsinline src="audio/news/det3.mp4"></video>
+                            <div class="video-overlay"><span class="sound-icon">🔇</span></div>
                         </div>
-                        
-                        <p>Клинки стародавніх героїв, викувані в полум'ї Драконячої Гори. Чорнило ледь тримається на цьому старому папері.</p>
+
                         <div class="page-number">III</div>
                     </div>
-                    
                     <div class="layer-lighting"></div>
                 </div>
 
                 <div class="page__face page__face--back paper-texture">
                     <div class="layer-base"></div>
                     <div class="layer-texture"></div>
-                    
-                    <div class="content-wrapper flex-center">
-                        <div class="ending-mark">
-                            <span>⚜</span>
+                    <div class="content-wrapper">
+                        <header class="page-header">
+                            <h3 data-i18n="panda_title">Легенда Панди</h3>
+                            <span class="chapter-ornament">III</span>
+                        </header>
+                        <article class="text-block">
+                            <p data-i18n="panda_p1">Під час перегляду відомого мультфільму про Кунг-Фу, реальність почала викривлятися.</p>
+                            <p data-i18n="panda_p2">Озвучка змінилася настільки, що стародавні техніки перетворилися на абсурдний стендап з новинами без сценарію.</p>
+                        </article>
+                        
+                        <div class="video-frame circle-frame ink-style">
+                            <video loop muted playsinline src="audio/news/panda1.mp4"></video>
+                            <div class="video-overlay"><span class="sound-icon">🔇</span></div>
                         </div>
-                        <p class="text-center">Кінець ознайомчого фрагменту.</p>
-                        <p class="small-print text-center">Далі сторінки склеєні часом.</p>
+                        
                         <div class="page-number">IV</div>
                     </div>
-                    
                     <div class="layer-lighting"></div>
                 </div>
             </div>
 
-            <div class="page" style="--page-index: 3;">
+             <div class="page" style="--page-index: 3;">
+                <div class="page__face page__face--front paper-texture">
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    <div class="content-wrapper">
+                        <header class="page-header">
+                            <h3 data-i18n="abyss_title">Безодня</h3>
+                            <span class="chapter-ornament">IV</span>
+                        </header>
+                        
+                        <div class="engraving-container" style="height: 150px; margin-bottom: 20px;">
+                            <div class="video-frame full-fill ink-style">
+                                <video loop muted playsinline src="audio/news/bez1.mp4"></video>
+                                <div class="video-overlay"><span class="sound-icon">🔇</span></div>
+                            </div>
+                        </div>
+
+                        <article class="text-block">
+                            <p data-i18n="abyss_p1">Щомісячне оновлення Безодні викликає тремтіння навіть у найдосвідченіших мандрівників.</p>
+                            <p data-i18n="abyss_p2">Але справжній жах ховається не в цифрах шкоди, а в тому, скільки часу витрачено даремно на шлях з Безодні до зірок.</p>
+                        </article>
+                        <div class="page-number">V</div>
+                    </div>
+                    <div class="layer-lighting"></div>
+                </div>
+
+                <div class="page__face page__face--back paper-texture">
+                    <div class="layer-base"></div>
+                    <div class="layer-texture"></div>
+                    <div class="content-wrapper flex-center">
+                        <div class="video-frame circle-frame ink-style" style="width: 200px; height: 200px;">
+                            <video loop muted playsinline src="audio/news/bez1.mp4"></video>
+                            <div class="video-overlay"><span class="sound-icon">🔇</span></div>
+                        </div>
+                        <div class="ending-mark">
+                            <span>⚜</span>
+                        </div>
+                        <p class="text-center" data-i18n="end_text">Кінець Першого Тому.</p>
+                        <div class="page-number">VI</div>
+                    </div>
+                    <div class="layer-lighting"></div>
+                </div>
+            </div>
+
+            <div class="page" style="--page-index: 4;">
                 <div class="page__face page__face--front paper-texture">
                     <div class="layer-base"></div>
                     <div class="content-wrapper flex-bottom">
-                        <p class="colophon">Handcrafted by Code.<br>MMXXV</p>
+                        <p class="colophon" data-i18n="colophon">Автор тексту Володар Підвалу<br>Автор проекту та розробник Макс</p>
                     </div>
                     <div class="layer-lighting"></div>
                 </div>
@@ -189,7 +232,7 @@
                 <div class="page__face page__face--back cover-texture cover--back">
                     <div class="corner-ornament top-left"></div>
                     <div class="corner-ornament bottom-right"></div>
-                    <div class="emboss-logo-small">C</div>
+                    <div class="emboss-logo-small">A</div>
                     <div class="layer-lighting"></div>
                 </div>
             </div>
@@ -198,7 +241,6 @@
     </main>
 
     <audio id="sfx-flip" preload="auto" src="assets/page-flip.mp3"></audio>
-
     <script src="js/you.js"></script>
 </body>
 </html>

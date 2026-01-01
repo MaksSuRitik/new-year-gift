@@ -1,5 +1,6 @@
 /*
-    CHRONICLES: AAA IMMERSIVE STYLES (FIXED & ISOLATED)
+    CHRONICLES ANASTAXIAN: AAA IMMERSIVE STYLES
+    Updated for Mobile Scale & Video Integration
 */
 
 // --- 1. CONFIGURATION ---
@@ -8,14 +9,14 @@ $c-void: #0f0e0d;
 $c-leather: #2a1d15;
 $c-leather-highlight: #4a3b32;
 $c-paper: #e6dccf;
-$c-paper-aged: #d1c0a5;
 $c-ink: #2b231e;
 $c-ink-faded: #5c4d42;
 $c-gold: #c5a059;
 $c-gold-shine: #f0e68c;
+$c-magic-glow: #e2d2b4;
 
-$book-width-pc: 460px;
-$book-height-pc: 640px;
+$book-width-pc: 480px;  // Slightly wider for video fitting
+$book-height-pc: 660px;
 $book-thick: 40px;
 
 $ease-physics: cubic-bezier(0.25, 1, 0.5, 1);
@@ -30,15 +31,14 @@ $font-hand: 'Pinyon Script', cursive;
 @mixin texture-paper {
     background-color: $c-paper;
     filter: url('#paper-grain') sepia(20%);
-    background-image: radial-gradient(circle at center, transparent 40%, rgba($c-leather, 0.2) 100%);
+    background-image: radial-gradient(circle at center, transparent 40%, rgba($c-leather, 0.1) 100%);
 }
 
 @mixin texture-leather {
     background-color: $c-leather;
     background-image: 
-        url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0naHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmcnIHdpZHRoPSc0JyBoZWlnaHQ9JzQnPgo8cmVjdCB3aWR0aD0nNCcgaGVpZ2h0PSc0JyBmaWxsPScjMmExZDE1Jy8+CjxyZWN0IHdpZHRoPScxJyBoZWlnaHQ9JzEnIGZpbGw9JyMzZDI2MTgnLz4KPC9zdmc+"),
         radial-gradient(circle at 30% 30%, rgba($c-leather-highlight, 0.5), transparent 40%);
-    box-shadow: inset 0 0 40px rgba(0,0,0,0.8);
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.9);
 }
 
 @mixin text-gold {
@@ -47,8 +47,7 @@ $font-hand: 'Pinyon Script', cursive;
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;
-    text-shadow: 0 1px 1px rgba(0,0,0,0.5);
-    filter: drop-shadow(0 0 2px rgba($c-gold, 0.3));
+    text-shadow: 0 1px 2px rgba(0,0,0,0.6);
 }
 
 @mixin absolute-full {
@@ -58,7 +57,6 @@ $font-hand: 'Pinyon Script', cursive;
 
 // --- 3. SCENE (GLOBAL LAYOUT) ---
 
-// Стилі для body діють тільки якщо є клас .book-theme
 body.book-theme {
     margin: 0;
     padding: 0;
@@ -67,6 +65,7 @@ body.book-theme {
     background-color: $c-void;
     background: radial-gradient(circle at 50% 50%, #1a1816 0%, $c-void 100%);
     overflow: hidden;
+    color: $c-ink;
 }
 
 .scene {
@@ -75,8 +74,8 @@ body.book-theme {
     display: flex;
     justify-content: center;
     align-items: center;
-    perspective: 1800px;
-    overflow: visible;
+    perspective: 2000px;
+    overflow: hidden;
 }
 
 // --- 4. THE BOOK CONTAINER ---
@@ -87,12 +86,8 @@ body.book-theme {
     height: $book-height-pc;
     transform-style: preserve-3d;
     transition: transform $anim-speed $ease-physics;
-    transform: translateX(25%) rotateY(0deg); 
-    
-    // === ВАЖЛИВО: ШРИФТИ ТЕПЕР ТУТ ===
-    // Вони діють ТІЛЬКИ всередині .book
+    // Initial state set by JS
     font-family: $font-body;
-    color: $c-ink;
 }
 
 .book-shadow {
@@ -115,8 +110,7 @@ body.book-theme {
     background: $c-leather;
     transform: rotateY(90deg) translateZ(-$book-thick / 2);
     transform-origin: left;
-    background-image: linear-gradient(to right, rgba(0,0,0,0.5), transparent, rgba(0,0,0,0.5));
-    border-radius: 2px;
+    background-image: linear-gradient(to right, rgba(0,0,0,0.6), transparent 40%, transparent 60%, rgba(0,0,0,0.6));
 }
 
 // --- 5. PAGES ---
@@ -145,6 +139,7 @@ body.book-theme {
     overflow: hidden;
     background-color: $c-paper;
     border-radius: 0 4px 4px 0;
+    border: 1px solid rgba(0,0,0,0.05);
     
     &--front {
         transform: rotateY(0deg) translateZ(1px);
@@ -154,30 +149,25 @@ body.book-theme {
         transform: rotateY(180deg) translateZ(1px);
         border-radius: 4px 0 0 4px;
         .layer-lighting {
-            background: linear-gradient(to left, rgba(0,0,0,0.15) 0%, transparent 15%);
+            background: linear-gradient(to left, rgba(0,0,0,0.2) 0%, transparent 20%);
         }
     }
 }
 
-// --- 6. LAYERS ---
+// --- 6. LAYERS & TEXTURES ---
 
-.layer-base {
-    @include absolute-full;
-    background-color: $c-paper;
+.layer-base { @include absolute-full; background-color: $c-paper; }
+.layer-texture { 
+    @include absolute-full; 
+    @include texture-paper; 
+    opacity: 0.8; 
+    mix-blend-mode: multiply; 
+    pointer-events: none; 
 }
-
-.layer-texture {
-    @include absolute-full;
-    @include texture-paper;
-    opacity: 0.8;
-    mix-blend-mode: multiply;
-    pointer-events: none;
-}
-
 .layer-lighting {
     @include absolute-full;
     pointer-events: none;
-    background: linear-gradient(to right, rgba(0,0,0,0.2) 0%, transparent 10%, transparent 95%, rgba(0,0,0,0.05) 100%);
+    background: linear-gradient(to right, rgba(0,0,0,0.25) 0%, transparent 12%, transparent 95%, rgba(0,0,0,0.05) 100%);
     transition: opacity 0.5s ease;
     z-index: 10;
 }
@@ -185,15 +175,16 @@ body.book-theme {
 .cover-texture {
     @include texture-leather;
     color: $c-gold;
-    border: 2px solid darken($c-leather, 10%);
+    border: 3px solid darken($c-leather, 15%);
     
+    // Golden Frame
     &:after {
         content: '';
         @include absolute-full;
-        margin: 10px;
-        border: 1px dashed rgba($c-gold, 0.3);
-        box-shadow: 0 0 0 2px rgba(0,0,0,0.2);
-        border-radius: 2px;
+        margin: 12px;
+        border: 2px solid $c-gold;
+        outline: 1px solid rgba(0,0,0,0.5);
+        outline-offset: -4px;
         pointer-events: none;
     }
 }
@@ -204,23 +195,20 @@ body.book-theme {
     box-shadow: -5px 5px 20px rgba(0,0,0,0.5);
 }
 
-// --- 7. TYPOGRAPHY (ISOLATED INSIDE BOOK) ---
+// --- 7. TYPOGRAPHY & LAYOUT ---
 
 .content-wrapper {
     position: relative;
     height: 100%;
-    padding: 60px 50px;
+    padding: 50px 40px;
     z-index: 5;
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
     
     &.flex-center { justify-content: center; align-items: center; }
     &.flex-bottom { justify-content: flex-end; align-items: center; padding-bottom: 40px; }
 }
-
-// === ОСЬ ТУТ БУЛА ПРОБЛЕМА. ТЕПЕР ВОНА ВИПРАВЛЕНА ===
-// Ми вкладаємо всі стилі тексту всередину .book
-// Тепер h1, p та інші теги зміняться ТІЛЬКИ всередині книги.
 
 .book {
     h1, h2, h3 {
@@ -229,42 +217,124 @@ body.book-theme {
         margin: 0;
         text-align: center;
         color: $c-ink;
+        line-height: 1.2;
+    }
+
+    h3 {
+        font-size: 2rem;
+        border-bottom: 1px solid rgba($c-gold, 0.5);
+        padding-bottom: 10px;
+        margin-bottom: 5px;
+    }
+
+    .chapter-ornament {
+        display: block;
+        text-align: center;
+        font-family: $font-display;
+        color: $c-gold;
+        font-size: 1.5rem;
+        margin-bottom: 20px;
     }
 
     p {
-        font-size: 1.15rem;
-        line-height: 1.6;
-        margin-bottom: 1.2rem;
+        font-size: 1.1rem;
+        line-height: 1.5;
+        margin-bottom: 1rem;
         text-align: justify;
         text-indent: 1.5rem;
         
-        &.drop-cap-text {
+        &.drop-cap-text { text-indent: 0; }
+        &.caption {
+            font-size: 0.9rem;
+            text-align: center;
+            font-style: italic;
+            color: $c-ink-faded;
             text-indent: 0;
+            margin-top: 10px;
         }
     }
 
     .drop-cap {
         float: left;
         font-family: $font-display;
-        font-size: 4rem;
+        font-size: 3.5rem;
         line-height: 0.8;
         color: $c-leather;
         margin-right: 8px;
         margin-top: 4px;
-        text-shadow: 1px 1px 0 rgba($c-gold, 0.5);
     }
-
-    .small-print {
-        font-size: 0.8rem;
-        color: $c-ink-faded;
-        font-style: italic;
-    }
-
-    .text-center { text-align: center; text-indent: 0; }
-    .font-italic { font-style: italic; }
+    
+    .mt-auto { margin-top: auto; }
 }
 
-// --- 8. ELEMENTS DECOR ---
+// --- 8. VIDEO "LIVING INK" STYLING ---
+
+.video-frame {
+    position: relative;
+    width: 100%;
+    margin: 15px 0;
+    overflow: hidden;
+    background: #000;
+    transition: transform 0.3s ease;
+    cursor: pointer;
+
+    video {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        transition: filter 0.5s ease;
+    }
+    
+    // Default Ink Style
+    &.ink-style {
+        border-radius: 2px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        
+        video {
+            filter: sepia(0.5) contrast(1.1) brightness(0.9) grayscale(0.2);
+            // Apply Ink Wash SVG filter if supported or fallback
+        }
+
+        &:hover video {
+            filter: sepia(0.1) contrast(1.0) brightness(1.0) grayscale(0);
+        }
+    }
+    
+    // Shape Variants
+    &.large-frame { height: 280px; border: 4px double $c-ink-faded; }
+    &.full-fill { height: 100%; }
+    
+    &.circle-frame {
+        width: 220px;
+        height: 220px;
+        border-radius: 50%;
+        margin: 20px auto;
+        border: 4px solid $c-gold;
+        box-shadow: 0 0 15px rgba($c-gold, 0.3);
+    }
+    
+    .video-overlay {
+        position: absolute;
+        top: 10px; right: 10px;
+        width: 30px; height: 30px;
+        background: rgba(0,0,0,0.6);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 14px;
+        opacity: 0.7;
+        transition: opacity 0.3s;
+        pointer-events: none;
+    }
+
+    &.playing .video-overlay { opacity: 0; }
+    &:hover .video-overlay { opacity: 1; }
+}
+
+// --- 9. DECORATIVE ELEMENTS ---
 
 .cover-content {
     height: 100%;
@@ -283,144 +353,78 @@ body.book-theme {
     background: rgba(0,0,0,0.2);
     box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
     position: relative;
+    width: 70%;
     
-    // Вкладені заголовки для обкладинки
     h1 {
         @include text-gold;
-        font-size: 3.5rem;
+        font-size: 2rem;
         letter-spacing: 2px;
         margin: 20px 0;
         text-transform: uppercase;
+        line-height: 1;
     }
     
     .subtitle {
-        color: rgba($c-gold, 0.8);
+        color: rgba($c-gold, 0.9);
         font-family: $font-body;
-        font-size: 1.2rem;
-        letter-spacing: 4px;
+        font-size: 1.1rem;
+        letter-spacing: 3px;
         text-transform: uppercase;
     }
     
     .main-symbol {
-        font-size: 4rem;
+        font-size: 3.5rem;
         color: $c-gold;
-        opacity: 0.8;
-        filter: drop-shadow(0 0 10px rgba($c-gold, 0.4));
+        text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
 }
 
 .corner-ornament {
     position: absolute;
-    width: 40px;
-    height: 40px;
-    border: 2px solid $c-gold;
-    opacity: 0.6;
+    width: 50px; height: 50px;
+    opacity: 0.8;
+    background-image: url("data:image/svg+xml,%3Csvg width='50' height='50' viewBox='0 0 50 50' fill='none' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M2 2H20C35 2 48 15 48 30V48' stroke='%23c5a059' stroke-width='2'/%3E%3Cpath d='M6 6H18C28 6 38 16 38 28V44' stroke='%23c5a059' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: contain;
     
-    &.top-left { top: 20px; left: 20px; border-bottom: none; border-right: none; }
-    &.top-right { top: 20px; right: 20px; border-bottom: none; border-left: none; }
-    &.bottom-left { bottom: 20px; left: 20px; border-top: none; border-right: none; }
-    &.bottom-right { bottom: 20px; right: 20px; border-top: none; border-left: none; }
+    &.top-left { top: 15px; left: 15px; }
+    &.top-right { top: 15px; right: 15px; transform: rotate(90deg); }
+    &.bottom-right { bottom: 15px; right: 15px; transform: rotate(180deg); }
+    &.bottom-left { bottom: 15px; left: 15px; transform: rotate(-90deg); }
+}
+
+.divider-ornament {
+    text-align: center;
+    color: $c-gold;
+    font-family: $font-display;
+    margin: 30px 0;
+    font-size: 1.2rem;
+    opacity: 0.7;
 }
 
 .page-number {
     position: absolute;
-    bottom: 25px;
-    left: 0; right: 0;
+    bottom: 20px; left: 0; right: 0;
     text-align: center;
     font-family: $font-display;
     color: rgba($c-ink, 0.5);
-    font-size: 1rem;
-    
-    &:before, &:after {
-        content: '—';
-        margin: 0 10px;
-        color: rgba($c-gold, 0.6);
-    }
-}
-
-// --- 9. MAGIC FRAMES & UI ---
-
-.magic-frame {
-    width: 100%;
-    height: 220px;
-    border: 4px double $c-leather;
-    position: relative;
-    margin: 20px 0;
-    background: #111;
-    overflow: hidden;
-    box-shadow: inset 0 0 30px #000;
-    
-    &__border {
-        @include absolute-full;
-        border: 1px solid rgba($c-gold, 0.3);
-        z-index: 2;
-        &:after {
-            content: '';
-            position: absolute;
-            top: 5px; left: 5px; right: 5px; bottom: 5px;
-            border: 1px solid rgba($c-gold, 0.1);
-        }
-    }
-    
-    &__inner {
-        height: 100%;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        color: rgba($c-gold, 0.5);
-    }
-    
-    .placeholder-rune {
-        font-size: 3rem;
-        margin-bottom: 10px;
-        opacity: 0.7;
-    }
-    
-    .shimmer-effect {
-        position: absolute;
-        top: 0; left: -100%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(90deg, transparent, rgba($c-gold, 0.1), transparent);
-        animation: shimmer 3s infinite;
-        transform: skewX(-20deg);
-    }
-}
-
-@keyframes shimmer {
-    0% { left: -100%; }
-    100% { left: 200%; }
-}
-
-.handwritten-note {
-    font-family: $font-hand;
-    font-size: 1.8rem;
-    color: $c-ink-faded;
-    transform: rotate(-2deg);
-    margin: 30px 0;
-    text-align: center;
-    position: relative;
-    
-    &:before {
-        content: '✍';
-        font-size: 1rem;
-        position: absolute;
-        left: -10px;
-        top: 5px;
-        opacity: 0.5;
-    }
+    font-size: 0.9rem;
+    &:before, &:after { content: '—'; margin: 0 8px; color: $c-gold; }
 }
 
 .illuminated-border {
     border: 1px solid rgba($c-gold, 0.4);
-    padding: 30px;
+    padding: 20px;
     height: 100%;
     position: relative;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    
     &:before {
         content: '⚜';
         position: absolute;
-        top: -15px; left: 50%;
+        top: -12px; left: 50%;
         transform: translateX(-50%);
         background: $c-paper;
         padding: 0 10px;
@@ -428,122 +432,93 @@ body.book-theme {
     }
 }
 
-.engraving-container {
-    width: 100%;
-    height: 260px;
-    border: 1px solid rgba($c-ink, 0.2);
-    margin: 20px 0;
-    background: 
-        radial-gradient(circle, rgba(0,0,0,0.02) 2px, transparent 2.5px),
-        rgba(0,0,0,0.03);
-    background-size: 4px 4px, 100% 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    
-    .icon-engraving {
-        font-size: 5rem;
-        color: rgba($c-ink, 0.3);
-        filter: blur(0.5px);
-    }
-}
-
-// --- 10. UI CONTROLS & MOBILE ---
+// --- 10. UI & MOBILE ---
 
 .magic-back-btn {
     position: fixed;
-    top: 30px;
-    left: 30px;
-    z-index: 1000;
+    top: 20px; left: 20px;
+    z-index: 2000;
     text-decoration: none;
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 8px;
     color: $c-gold;
     font-family: $font-display;
-    background: rgba(0,0,0,0.6);
-    padding: 10px 20px;
-    border: 1px solid rgba($c-gold, 0.3);
-    border-radius: 30px;
-    backdrop-filter: blur(5px);
-    transition: all 0.3s ease;
+    background: rgba(0,0,0,0.7);
+    padding: 8px 16px;
+    border: 1px solid rgba($c-gold, 0.4);
+    border-radius: 20px;
+    transition: 0.3s;
     
-    &:hover {
-        background: rgba($c-gold, 0.1);
-        border-color: $c-gold;
-        box-shadow: 0 0 15px rgba($c-gold, 0.2);
-    }
-    
-    .btn-icon { font-size: 1.2rem; }
+    &:hover { background: rgba($c-gold, 0.2); box-shadow: 0 0 10px rgba($c-gold, 0.3); }
 }
 
-.orientation-lock {
-    display: none;
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: $c-void;
-    z-index: 9999;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    color: $c-gold;
-    font-family: $font-display;
-    text-align: center;
-    
-    .rune-circle {
-        width: 60px;
-        height: 60px;
-        border: 2px dashed rgba($c-gold, 0.5);
-        border-radius: 50%;
-        margin-bottom: 20px;
-        animation: rotateIcon 10s infinite linear;
-    }
-    
-    .icon-rotate {
-        font-size: 40px;
-        margin-top: 20px;
-        animation: rotateSimple 2s infinite ease-in-out;
-    }
-}
+.orientation-lock { display: none; }
 
-@keyframes rotateIcon { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-@keyframes rotateSimple { 0% { transform: rotate(0deg); } 25% { transform: rotate(-90deg); } 100% { transform: rotate(-90deg); } }
-
-@media screen and (orientation: portrait) and (max-width: 900px) {
-    body.book-theme .orientation-lock { display: flex; }
-}
+// --- 11. RESPONSIVENESS ---
 
 @media (max-width: 900px) {
-    $book-width-mob: 85vw;
-    $book-height-mob: 120vw;
-
-    .scene {
-        perspective: 2500px;
-        overflow: hidden;
-    }
-
-    .book {
-        width: $book-width-mob;
-        height: $book-height-mob;
-        transform: translateX(0); 
-    }
-    
-    .page__face {
-        padding: 30px;
-    }
-    
-    .content-wrapper {
-        padding: 20px;
-    }
-    
-    .book {
-        h1 { font-size: 2.5rem; }
-        h3 { font-size: 1.5rem; }
-        p { font-size: 1rem; line-height: 1.5; }
-    }
-    
-    .emboss-frame h1 { font-size: 2rem; }
-    
+    // Logic handled by JS Transform mainly, but UI adjustments here
     .magic-back-btn .btn-text { display: none; }
+    
+    // Allow text to be slightly smaller on very small phones
+    .book p { font-size: 1rem; line-height: 1.4; }
+    .emboss-frame h1 { font-size: 2.2rem; }
+}
+
+@media screen and (orientation: portrait) and (max-width: 600px) {
+.orientation-lock { 
+        display: flex; /* Було none, стало flex */
+        /* Це змусить користувача перевернути телефон, де дві сторінки влізуть ідеально */
+    } 
+    .scene {
+        display: none; /* Ховаємо книгу, поки не переверне */
+    }
+}
+
+/* --- LANGUAGE SWITCHER --- */
+.lang-switcher {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    display: flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.6);
+    padding: 5px;
+    border-radius: 20px;
+    border: 1px solid rgba($c-gold, 0.3);
+
+    .lang-btn {
+        background: transparent;
+        border: none;
+        color: rgba($c-gold, 0.6);
+        font-family: $font-display;
+        font-size: 0.9rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        transition: all 0.3s ease;
+        border-radius: 15px;
+
+        &:hover {
+            color: $c-gold;
+            text-shadow: 0 0 5px $c-gold;
+        }
+
+        &.active {
+            color: #0f0e0d;
+            background: $c-gold;
+            font-weight: bold;
+            box-shadow: 0 0 10px rgba($c-gold, 0.5);
+        }
+    }
+}
+
+// Mobile fix for switcher
+@media (max-width: 900px) {
+    .lang-switcher {
+        top: 15px;
+        right: 15px;
+        .lang-btn { font-size: 0.8rem; padding: 4px 8px; }
+    }
 }
