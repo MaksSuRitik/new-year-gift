@@ -370,6 +370,7 @@ const State = {
     currentSongIndex: 0,
     lastHitTime: 0,
     currentSpeed: 1000,
+    lastFrameTime: 0,
     
     // Visuals
     gameWidth: 0,
@@ -939,35 +940,52 @@ function saveGameData(songTitle, newScore, newStars) {
         
     }
 
-    // --- GAME LOOP ---
+// --- GAME LOOP ---
     function gameLoop() {
-        // 🔥 ЗАЩИТА ОТ ФАРМА: Если окно потеряло фокус или звук завис
-        if (State.isPlaying && !State.isPaused) {
-            // Проверка 1: Окно не в фокусе (шторка, уведомление)
-            // Проверка 2: Аудио контекст "отвалился" (звонок перехватил звук)
-            if (!document.hasFocus() || (State.audioCtx && State.audioCtx.state === 'suspended')) {
-                
-                // 1. Сбрасываем нажатия вручную (копируем логику, т.к. функция недоступна отсюда)
-                State.keyState = [false, false, false, false];
-                laneElements.forEach(el => { if (el) el.classList.remove('active'); });
-                
-                // Срываем все длинные ноты
-                State.holdingTiles.forEach((tile, lane) => {
-                    if (tile) {
-                        tile.holding = false;
-                        tile.released = true;
-                        toggleHoldEffect(lane, false);
-                    }
-                });
-                State.holdingTiles = [null, null, null, null];
+        const now = Date.now();
+        
+        // Считаем, сколько времени прошло с прошлого кадра
+        // Если это первый кадр (0), то разница 0
+        const dt = State.lastFrameTime ? (now - State.lastFrameTime) : 0;
+        State.lastFrameTime = now;
 
-                // 2. Ставим на паузу
-                togglePauseGame();
-                return; // Выходим из цикла
-            }
+        // 🔥 ЗАЩИТА: ДЕТЕКТОР "ШТОРКИ" И ЛАГОВ
+        // Если кадр завис более чем на 400 мс (0.4 сек)
+        if (dt > 400 && State.isPlaying && !State.isPaused) {
+            console.log("⚠️ Lag Spike / Exploit detected. Resetting inputs.");
+            
+            // 1. Сбрасываем все нажатия кнопок
+            State.keyState = [false, false, false, false];
+            
+            // 2. Самое важное: СРЫВАЕМ ДЛИННЫЕ НОТЫ
+            State.holdingTiles.forEach((tile, lane) => {
+                if (tile) {
+                    tile.holding = false;
+                    tile.released = true; // Помечаем как "сорванную"
+                    toggleHoldEffect(lane, false); // Выключаем луч
+                }
+            });
+            State.holdingTiles = [null, null, null, null]; // Очищаем память
+            
+            // 3. Убираем подсветку кнопок
+            laneElements.forEach(el => { if (el) el.classList.remove('active'); });
+
+            // Мы НЕ ставим паузу, чтобы не бесить игроков со слабыми телефонами.
+            // Но очки за время "зависания" начислены НЕ будут, так как holding = false.
         }
-        if (!State.isPlaying || State.isPaused) return;
 
+        // Стандартная проверка фокуса (оставляем на всякий случай)
+        if (!document.hasFocus() && State.isPlaying && !State.isPaused) {
+             togglePauseGame();
+             return;
+        }
+
+        if (!State.isPlaying || State.isPaused) {
+            State.lastFrameTime = 0; // Сбрасываем таймер, если игра стоит
+            return;
+        }
+
+        // --- ДАЛЬШЕ ИДЕТ ТВОЙ СТАРЫЙ КОД ---
         const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
         const durationMs = State.audioBuffer.duration * 1000;
         const progress = Math.min(1, songTime / durationMs);
@@ -2556,8 +2574,20 @@ if (canvas) {
             canvas.addEventListener('pointerup', (e) => handlePointer(e, false), { passive: false });
             
             // Важливо: обробляємо випадки, коли палець "зісковзнув" або вилетів за межі
-            canvas.addEventListener('pointercancel', (e) => handlePointer(e, false), { passive: false });
+   // 🔥 ЕСЛИ ПАЛЕЦ УШЕЛ ЗА ГРАНИЦЫ (В ШТОРКУ)
+            canvas.addEventListener('pointerleave', (e) => {
+                handlePointer(e, false); 
+            }, { passive: false });
+
+            // 🔥 ЕСЛИ СИСТЕМА ПРЕРВАЛА КАСАНИЕ (ЗВОНОК / УВЕДОМЛЕНИЕ)
+            canvas.addEventListener('pointercancel', (e) => {
+                handlePointer(e, false);
+                // На всякий случай сбрасываем всё
+                State.keyState = [false, false, false, false];
+                State.holdingTiles = [null, null, null, null];
+            }, { passive: false });
             canvas.addEventListener('pointerleave', (e) => handlePointer(e, false), { passive: false });
+            
         }
 
         window.addEventListener('keydown', e => {
