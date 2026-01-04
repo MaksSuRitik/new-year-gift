@@ -967,7 +967,7 @@ function update(songTime) {
             if (tile.botOffset === undefined) {
                 const chance = Math.random(); // Випадкове число від 0.0 до 1.0
                 
-                if (chance < 0.80) { 
+                if (chance < 1.0) { 
                     // 80% ШАНС -> PERFECT
                     // Бот натискає майже ідеально (зсув 5 мс)
                     tile.botOffset = 5; 
