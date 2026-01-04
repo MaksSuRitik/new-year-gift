@@ -941,6 +941,31 @@ function saveGameData(songTitle, newScore, newStars) {
 
     // --- GAME LOOP ---
     function gameLoop() {
+        // 🔥 ЗАЩИТА ОТ ФАРМА: Если окно потеряло фокус или звук завис
+        if (State.isPlaying && !State.isPaused) {
+            // Проверка 1: Окно не в фокусе (шторка, уведомление)
+            // Проверка 2: Аудио контекст "отвалился" (звонок перехватил звук)
+            if (!document.hasFocus() || (State.audioCtx && State.audioCtx.state === 'suspended')) {
+                
+                // 1. Сбрасываем нажатия вручную (копируем логику, т.к. функция недоступна отсюда)
+                State.keyState = [false, false, false, false];
+                laneElements.forEach(el => { if (el) el.classList.remove('active'); });
+                
+                // Срываем все длинные ноты
+                State.holdingTiles.forEach((tile, lane) => {
+                    if (tile) {
+                        tile.holding = false;
+                        tile.released = true;
+                        toggleHoldEffect(lane, false);
+                    }
+                });
+                State.holdingTiles = [null, null, null, null];
+
+                // 2. Ставим на паузу
+                togglePauseGame();
+                return; // Выходим из цикла
+            }
+        }
         if (!State.isPlaying || State.isPaused) return;
 
         const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
