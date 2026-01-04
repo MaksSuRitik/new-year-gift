@@ -810,6 +810,22 @@ function saveGameData(songTitle, newScore, newStars) {
             State.masterGain.connect(State.audioCtx.destination);
         }
         if (State.audioCtx.state === 'suspended') await State.audioCtx.resume();
+        // 1. Создаем уникальное число (seed) из названия песни
+    const songTitle = songsDB[State.currentSongIndex].title;
+    let seed = 0;
+    for (let i = 0; i < songTitle.length; i++) {
+        seed = ((seed << 5) - seed) + songTitle.charCodeAt(i);
+        seed |= 0; // Превращаем в 32bit integer
+    }
+    if (seed < 0) seed = -seed; // Убираем минус
+    if (seed === 0) seed = 12345; // Защита от нуля
+
+    // 2. Функция "Стабильного Рандома" (LCG алгоритм)
+    // Она всегда будет выдавать одинаковые результаты для одного и того же seed
+    const getStableRandom = () => {
+        seed = (seed * 9301 + 49297) % 233280;
+        return seed / 233280;
+    };
 
         try {
             const response = await fetch(url);
@@ -880,7 +896,7 @@ function saveGameData(songTitle, newScore, newStars) {
                     let dur = type === 'long' ? Math.min(sustainInfo.duration, 2.0) : 0;
 
                     let notesCount = 1;
-                    if ((flux > 0.2 || energy > 0.8) && Math.random() > 0.6 && type !== 'long') notesCount = 2;
+                    if ((flux > 0.2 || energy > 0.8) && getStableRandom() > 0.6 && type !== 'long') notesCount = 2;
 
                     let lanes = smartLaneAllocator(laneFreeTime, notesCount, time, lastLane);
 
@@ -919,6 +935,8 @@ function saveGameData(songTitle, newScore, newStars) {
             if (sessionId === State.currentSessionId) { alert("Generation Error: " + error.message); quitGame(); }
             return null;
         }
+        
+        
     }
 
     // --- GAME LOOP ---
