@@ -722,6 +722,7 @@ function initGradients() {
         if (State.animationFrameId) { cancelAnimationFrame(State.animationFrameId); State.animationFrameId = null; }
         if (State.sourceNode) { try { State.sourceNode.stop(); } catch (e) { } State.sourceNode = null; }
         State.isPlaying = false; State.isPaused = false;
+        State.isCheated = false;
         if (State.audioCtx && State.audioCtx.state === 'suspended') State.audioCtx.resume();
 
         State.score = 0; State.combo = 0; State.maxCombo = 0; State.consecutiveMisses = 0;
@@ -949,29 +950,31 @@ function saveGameData(songTitle, newScore, newStars) {
         const dt = State.lastFrameTime ? (now - State.lastFrameTime) : 0;
         State.lastFrameTime = now;
 
-        // 🔥 ЗАЩИТА: ДЕТЕКТОР "ШТОРКИ" И ЛАГОВ
-        // Если кадр завис более чем на 400 мс (0.4 сек)
+// 🔥 ЗАЩИТА ОТ ЧИТЕРОВ
+        // Если зависание больше 0.4 сек -> Это шторка или эксплойт
         if (dt > 400 && State.isPlaying && !State.isPaused) {
-            console.log("⚠️ Lag Spike / Exploit detected. Resetting inputs.");
+            console.log("⚠️ Exploit detected. Score wiped.");
             
-            // 1. Сбрасываем все нажатия кнопок
+            // 1. СТАВИМ МЕТКУ "ЧИТЕР" (чтобы рекорд не сохранился в конце)
+            State.isCheated = true;
+
+            // 2. ОБНУЛЯЕМ СЧЕТ (Самое главное!)
+            // Игрок сразу увидит 0 и поймет, что баг не сработал.
+            State.score = 0;
+            State.combo = 0;
+            updateScoreUI(); // Обновляем цифры на экране
+
+            // 3. Сбрасываем нажатия и ноты (как было раньше)
             State.keyState = [false, false, false, false];
-            
-            // 2. Самое важное: СРЫВАЕМ ДЛИННЫЕ НОТЫ
             State.holdingTiles.forEach((tile, lane) => {
                 if (tile) {
                     tile.holding = false;
-                    tile.released = true; // Помечаем как "сорванную"
-                    toggleHoldEffect(lane, false); // Выключаем луч
+                    tile.released = true; 
+                    toggleHoldEffect(lane, false);
                 }
             });
-            State.holdingTiles = [null, null, null, null]; // Очищаем память
-            
-            // 3. Убираем подсветку кнопок
+            State.holdingTiles = [null, null, null, null];
             laneElements.forEach(el => { if (el) el.classList.remove('active'); });
-
-            // Мы НЕ ставим паузу, чтобы не бесить игроков со слабыми телефонами.
-            // Но очки за время "зависания" начислены НЕ будут, так как holding = false.
         }
 
         // Стандартная проверка фокуса (оставляем на всякий случай)
@@ -2068,8 +2071,10 @@ function playMusic() {
             }
         }
 
-        if (State.score > 0) saveGameData(songsDB[State.currentSongIndex].title, State.score, starsCount);
-        // Update global leaderboard for non-secret songs
+// Сохраняем ТОЛЬКО если очки > 0 И не было замечено читерство
+        if (State.score > 0 && !State.isCheated) {
+            saveGameData(songsDB[State.currentSongIndex].title, State.score, starsCount);
+        }
         if (!songsDB[State.currentSongIndex].isSecret) {
             try { await syncGlobalProgress(); } catch (e) { console.error(e); }
         }
