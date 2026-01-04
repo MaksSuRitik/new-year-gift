@@ -2681,3 +2681,4 @@ if (canvas) {
     setTimeout(resizeCanvas, 100);
 
 });
+// Final upload check
