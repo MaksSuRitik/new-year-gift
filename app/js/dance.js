@@ -77,7 +77,10 @@ const PALETTES = {
     },
     LEGENDARY: { 
         body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', 
-        long1: '#004d40', long2: 'rgba(7, 80, 76, 0.99)' // Дуже темна бірюза для голови
+        // long1 = Темна голова (залишаємо як було)
+        // long2 = Яскравий бірюзовий хвіст (щоб був градієнт від темного до світлого)
+        long1: '#004d40', 
+        long2: '#3ef5b8' // 🔥 CHANGE: Зробив світлішим для контрасту
     },
     ELECTRIC: { 
         tap1: '#eceff1', tap2: '#607d8b', glow: '#00bcd4', border: '#80deea',
@@ -345,6 +348,7 @@ const State = {
     isPlaying: false,
     isPaused: false,
     isMuted: localStorage.getItem('isMuted') === 'true',
+    isBotEnabled: false, // 🔥 NEW: Прапорець для авто-бота
     currentLang: localStorage.getItem('siteLang') || 'UA',
     isMobile: window.innerWidth < 768,
     
@@ -428,6 +432,7 @@ const GRADIENT_CACHE = {
 let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl, scoreEl;
 let starsElements = [];
 let laneElements = [null, null, null, null];
+let gameRect = null; 
 
 // ==========================================
 // 🛠 AUDIO PROCESSING CORE
@@ -952,6 +957,45 @@ function update(songTime) {
         const dt = now - (State.lastRippleUpdateMs || now);
         State.lastRippleUpdateMs = now;
         updateRipples(dt);
+    
+// 🔥 BOT LOGIC: Розумний авто-бот з ймовірністю (70% Good, 30% Perfect)
+    if (State.isBotEnabled && State.isPlaying && !State.isPaused) {
+        State.activeTiles.forEach(tile => {
+            
+            // 1. ВИЗНАЧЕННЯ ТОЧНОСТІ (один раз для кожної ноти)
+            // Ми записуємо 'botOffset' у саму ноту, щоб вона запам'ятала свою долю
+            if (tile.botOffset === undefined) {
+                const chance = Math.random(); // Випадкове число від 0.0 до 1.0
+                
+                if (chance < 0.80) { 
+                    // 80% ШАНС -> PERFECT
+                    // Бот натискає майже ідеально (зсув 5 мс)
+                    tile.botOffset = 5; 
+                } else {
+                    // 20% ШАНС -> GOOD
+                    // Бот поспішає і натискає на 100 мс раніше (поріг Perfect < 70)
+                    tile.botOffset = 100; 
+                }
+            }
+
+            // 2. НАТИСКАННЯ (Tap або початок Long)
+            if (!tile.hit && !tile.completed && !tile.failed && !tile.released) {
+                // Перевіряємо, чи настав час натискати з урахуванням нашого "зсуву"
+                // (tile.time - songTime) — це скільки часу лишилось до ідеального удару
+                if (tile.time - songTime <= tile.botOffset) {
+                    handleInputDown(tile.lane);
+                }
+            }
+
+            // 3. ВІДПУСКАННЯ (Кінець Long)
+            // Довгі ноти бот тримає чесно до кінця
+            if (tile.type === 'long' && tile.holding && !tile.completed) {
+                if (songTime >= tile.endTime) {
+                    handleInputUp(tile.lane);
+                }
+            }
+        });
+    }
 
         // Spawn
         for(let i = 0; i < State.mapTiles.length; i++) {
@@ -962,6 +1006,7 @@ function update(songTime) {
                 tile.spawned = true;
             }
         }
+        
 
         // Update active
         for (let i = State.activeTiles.length - 1; i >= 0; i--) {
@@ -1024,7 +1069,7 @@ function update(songTime) {
                         if (tile.holdTicks % 10 === 0) {
                             const mult = getComboMultiplier();
                             State.score += Math.round(CONFIG.scoreHoldTick * mult);
-                            State.combo += 100000;
+                            State.combo += 10;
                             State.lastComboUpdateTime = now;
                             if (State.combo > State.maxCombo) State.maxCombo = State.combo;
                             updateScoreUI(true); 
@@ -1709,10 +1754,10 @@ function handleInputDown(lane) {
     // --- UI UPDATES ---
     function getComboMultiplier() {
         if (State.combo >= 800) return 10.0;
-        if (State.combo >= 400) return 5.0;
-        if (State.combo >= 200) return 3.0;
-        if (State.combo >=  100) return 2.0;
-        if (State.combo >= 50) return 1.5;
+        if (State.combo >= 400) return 8.0;
+        if (State.combo >= 200) return 6.0;
+        if (State.combo >=  100) return 4.0;
+        if (State.combo >= 50) return 2.0;
         return 1.0;
     }
 
@@ -2433,27 +2478,43 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             });
         }
 
-        if (canvas) {
-            const handleTouch = (e, isDown) => {
-                e.preventDefault();
-                const rect = canvas.getBoundingClientRect();
-                const touches = e.changedTouches;
-                for (let i = 0; i < touches.length; i++) {
-                    const lane = Math.floor((touches[i].clientX - rect.left) / (rect.width / 4));
-                    if (lane >= 0 && lane < 4) isDown ? handleInputDown(lane) : handleInputUp(lane);
+if (canvas) {
+            // 🔥 НОВИЙ ОБРОБНИК (POINTER EVENTS)
+            const handlePointer = (e, isDown) => {
+                // Блокуємо зум і скрол
+                if (e.cancelable) e.preventDefault();
+                
+                // Страховка: якщо кеш пустий, оновимо його (але зазвичай він вже є)
+                if (!gameRect) gameRect = canvas.getBoundingClientRect();
+
+                // Отримуємо X координату конкретно цього пальця/миші
+                const clientX = e.clientX;
+                
+                // Рахуємо доріжку (0, 1, 2, 3)
+                // Використовуємо закешований gameRect, це миттєво
+                const lane = Math.floor((clientX - gameRect.left) / (gameRect.width / 4));
+
+                if (lane >= 0 && lane < 4) {
+                    if (isDown) {
+                        handleInputDown(lane);
+                        // "Захоплюємо" цей палець, щоб якщо він трохи зсунеться, 
+                        // браузер знав, що він все ще контролює цей елемент
+                        canvas.setPointerCapture(e.pointerId);
+                    } else {
+                        handleInputUp(lane);
+                        canvas.releasePointerCapture(e.pointerId);
+                    }
                 }
             };
-            canvas.addEventListener('touchstart', (e) => handleTouch(e, true), { passive: false });
-            canvas.addEventListener('touchend', (e) => handleTouch(e, false), { passive: false });
-            canvas.addEventListener('mousedown', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const lane = Math.floor((e.clientX - rect.left) / (rect.width / 4));
-                if (lane >= 0 && lane < 4) {
-                    handleInputDown(lane);
-                    const upHandler = () => { handleInputUp(lane); window.removeEventListener('mouseup', upHandler); };
-                    window.addEventListener('mouseup', upHandler);
-                }
-            });
+
+            // pointerdown/up працюють і для миші, і для пальців
+            // passive: false обов'язково для e.preventDefault()
+            canvas.addEventListener('pointerdown', (e) => handlePointer(e, true), { passive: false });
+            canvas.addEventListener('pointerup', (e) => handlePointer(e, false), { passive: false });
+            
+            // Важливо: обробляємо випадки, коли палець "зісковзнув" або вилетів за межі
+            canvas.addEventListener('pointercancel', (e) => handlePointer(e, false), { passive: false });
+            canvas.addEventListener('pointerleave', (e) => handlePointer(e, false), { passive: false });
         }
 
         window.addEventListener('keydown', e => {
@@ -2482,12 +2543,46 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
             if(ctx) initGradients();
         });
+// Внутрішні змінні для чит-коду (замикання)
+        let soundClickCount = 0;
+        let soundClickTimer = 0;
+
         setupBtn('soundToggle', (btn) => {
+            // 1. Стандартна логіка звуку
             State.isMuted = !State.isMuted;
             localStorage.setItem('isMuted', State.isMuted);
             if (State.masterGain) State.masterGain.gain.value = State.isMuted ? 0 : 1;
             btn.innerText = State.isMuted ? '🔇' : '🔊';
             if (bgMusicEl) State.isMuted ? bgMusicEl.pause() : (!State.isPlaying && bgMusicEl.play().catch(() => {}));
+
+            // 2. 🔥 ЛОГІКА АКТИВАЦІЇ БОТА (6 кліків за 10 сек)
+            const now = Date.now();
+            
+            // Якщо пройшло більше 10 секунд з першого кліку, скидаємо лічильник
+            if (now - soundClickTimer > 2000) {
+                soundClickCount = 0;
+                soundClickTimer = now;
+            }
+
+            soundClickCount++;
+
+            if (soundClickCount === 6) {
+                State.isBotEnabled = true;
+                soundClickCount = 0; // Скидаємо, щоб не спрацьовувало постійно
+                
+                // Візуальне повідомлення
+                const msg = document.createElement('div');
+                msg.innerHTML = "🤖 AUTO-BOT ACTIVATED 🤖";
+                msg.style.cssText = "position:fixed; top:20%; left:50%; transform:translateX(-50%); font-size:2rem; color:#00ff00; font-weight:bold; z-index:9999; text-shadow: 0 0 10px #000; pointer-events:none;";
+                document.body.appendChild(msg);
+                
+                // Анімація зникнення напису
+                setTimeout(() => {
+                    msg.style.transition = "opacity 1s";
+                    msg.style.opacity = "0";
+                    setTimeout(() => msg.remove(), 1000);
+                }, 2000);
+            }
         });
 
         const langBtn = document.getElementById('langToggle');
@@ -2547,6 +2642,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             ctx.scale(dpr, dpr); 
             
             initGradients();
+            gameRect = canvas.getBoundingClientRect();
         }
         State.isMobile = window.innerWidth < 768;
     }
