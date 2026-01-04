@@ -2656,6 +2656,53 @@ if (canvas) {
         }
     }
 
+    // ==========================================
+    // 🛡️ SECURITY FIX: ANTI-EXPLOIT (Calls/Notifications)
+    // ==========================================
+    
+    // Функция для принудительного сброса всех нажатий
+    function forceReleaseAllInputs() {
+        // 1. Сбрасываем состояние клавиш
+        State.keyState = [false, false, false, false];
+
+        // 2. Убираем визуальную подсветку дорожек
+        laneElements.forEach(el => { if (el) el.classList.remove('active'); });
+        State.laneBeamAlpha = [0, 0, 0, 0];
+
+        // 3. Разрываем удержание длинных нот (Long Notes)
+        // Это самое важное: прекращаем фарм очков
+        State.holdingTiles.forEach((tile, lane) => {
+            if (tile) {
+                tile.holding = false;
+                // Можно пометить как released, чтобы нота "сорвалась"
+                tile.released = true; 
+                if (tile.fadeStartTime === 0) tile.fadeStartTime = Date.now();
+                // Выключаем визуальный эффект луча
+                toggleHoldEffect(lane, false);
+            }
+        });
+        // Очищаем массив удерживаемых нот
+        State.holdingTiles = [null, null, null, null];
+    }
+
+    // СЛУШАТЕЛЬ 1: Потеря фокуса (Звонок, клик по уведомлению, Alt+Tab)
+    window.addEventListener('blur', () => {
+        forceReleaseAllInputs(); // Сразу обрубаем нажатия
+        if (State.isPlaying && !State.isPaused) {
+            togglePauseGame(); // Ставим на паузу
+        }
+    });
+
+    // СЛУШАТЕЛЬ 2: Скрытие вкладки/браузера (Сворачивание, выключение экрана)
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            forceReleaseAllInputs(); // Сразу обрубаем нажатия
+            if (State.isPlaying && !State.isPaused) {
+                togglePauseGame(); // Ставим на паузу
+            }
+        }
+    });
+
     function resizeCanvas() { 
         if (gameContainer && gameContainer.clientWidth && canvas) { 
             const dpr = Math.min(window.devicePixelRatio || 1, 1.5); 
