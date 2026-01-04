@@ -2543,10 +2543,61 @@ if (canvas) {
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
             if(ctx) initGradients();
         });
-// Внутрішні змінні для чит-коду (замикання)
-        let soundClickCount = 0;
-        let soundClickTimer = 0;
+// --- ЛОГІКА ЧІТ-КОДУ (ЗМІННІ) ---
+        let cheatTimer = 0;
+        let cheatThemeCount = 0;
+        let cheatSoundCount = 0;
 
+        // Функція перевірки: чи виконані умови (2 теми + 4 звуки)
+        const checkCheatActivation = () => {
+            if (cheatThemeCount === 2 && cheatSoundCount === 4) {
+                State.isBotEnabled = true;
+                
+                // Скидаємо лічильники, щоб код не спрацьовував повторно при наступних кліках
+                cheatThemeCount = 0;
+                cheatSoundCount = 0;
+                
+                // Візуальне повідомлення про активацію
+                const msg = document.createElement('div');
+                msg.innerHTML = "🤖 AUTO-BOT ACTIVATED 🤖";
+                msg.style.cssText = "position:fixed; top:20%; left:50%; transform:translateX(-50%); font-size:2rem; color:#00ff00; font-weight:bold; z-index:9999; text-shadow: 0 0 10px #000; pointer-events:none;";
+                document.body.appendChild(msg);
+                
+                setTimeout(() => {
+                    msg.style.transition = "opacity 1s";
+                    msg.style.opacity = "0";
+                    setTimeout(() => msg.remove(), 1000);
+                }, 2000);
+            }
+        };
+
+        // Функція оновлення таймера
+        const updateCheatTimer = () => {
+            const now = Date.now();
+            // Якщо пройшло більше 10 секунд з початку введення коду — скидаємо все
+            if (now - cheatTimer > 10000) {
+                cheatThemeCount = 0;
+                cheatSoundCount = 0;
+                cheatTimer = now; // Запускаємо новий відлік 10 сек
+            }
+        };
+
+        // --- КНОПКА ТЕМИ (Theme) ---
+        setupBtn('themeToggle', (btn) => {
+            // 1. Стандартна логіка зміни теми
+            const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+            document.body.setAttribute('data-theme', next);
+            localStorage.setItem('siteTheme', next);
+            btn.innerText = next === 'dark' ? '🌙' : '☀️';
+            if(ctx) initGradients();
+
+            // 2. 🔥 ЧІТ-ЛОГІКА ТЕМИ
+            updateCheatTimer();
+            cheatThemeCount++; // +1 до теми
+            checkCheatActivation();
+        });
+
+        // --- КНОПКА ЗВУКУ (Sound) ---
         setupBtn('soundToggle', (btn) => {
             // 1. Стандартна логіка звуку
             State.isMuted = !State.isMuted;
@@ -2555,34 +2606,10 @@ if (canvas) {
             btn.innerText = State.isMuted ? '🔇' : '🔊';
             if (bgMusicEl) State.isMuted ? bgMusicEl.pause() : (!State.isPlaying && bgMusicEl.play().catch(() => {}));
 
-            // 2. 🔥 ЛОГІКА АКТИВАЦІЇ БОТА (6 кліків за 10 сек)
-            const now = Date.now();
-            
-            // Якщо пройшло більше 10 секунд з першого кліку, скидаємо лічильник
-            if (now - soundClickTimer > 2000) {
-                soundClickCount = 0;
-                soundClickTimer = now;
-            }
-
-            soundClickCount++;
-
-            if (soundClickCount === 6) {
-                State.isBotEnabled = true;
-                soundClickCount = 0; // Скидаємо, щоб не спрацьовувало постійно
-                
-                // Візуальне повідомлення
-                const msg = document.createElement('div');
-                msg.innerHTML = "🤖 AUTO-BOT ACTIVATED 🤖";
-                msg.style.cssText = "position:fixed; top:20%; left:50%; transform:translateX(-50%); font-size:2rem; color:#00ff00; font-weight:bold; z-index:9999; text-shadow: 0 0 10px #000; pointer-events:none;";
-                document.body.appendChild(msg);
-                
-                // Анімація зникнення напису
-                setTimeout(() => {
-                    msg.style.transition = "opacity 1s";
-                    msg.style.opacity = "0";
-                    setTimeout(() => msg.remove(), 1000);
-                }, 2000);
-            }
+            // 2. 🔥 ЧІТ-ЛОГІКА ЗВУКУ
+            updateCheatTimer();
+            cheatSoundCount++; // +1 до звуку
+            checkCheatActivation();
         });
 
         const langBtn = document.getElementById('langToggle');
