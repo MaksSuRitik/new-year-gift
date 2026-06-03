@@ -1,18 +1,22 @@
+// Загальні стилі для стандартних кнопок інтерфейсу.
+// Я використовую CSS-змінні для підтримки глобальної системи тем (світлої/темної).
 .btn {
   background: var(--glass-bg); backdrop-filter: blur(20px);
   border: 1px solid var(--glass-border);
   width: 48px; height: 48px; border-radius: 16px;
   color: var(--text-color); cursor: pointer;
   transition: 0.3s;
+  // Додаю тонку внутрішню тінь (блик), щоб надати кнопці об'ємності, що характерно для ефекту glassmorphism.
   box-shadow: inset 0 1px 0 rgba(255,255,255,0.1);
 
   &:hover { background: var(--accent-glow); transform: scale(1.1); }
 }
 
-// Велика кнопка старту
+// Стилізація великих кнопок вибору режимів у головному меню.
 .mega-button {
   position: relative;
   width: 300px; height: 200px;
+  // Застосовую напівпрозорий фон та розмиття для створення ефекту матового скла.
   background: var(--glass-bg);
   backdrop-filter: blur(var(--glass-blur));
   border: 1px solid var(--glass-border);
@@ -22,6 +26,7 @@
   overflow: hidden;
   transition: all 0.3s;
   box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+  // Запускаю постійну пульсуючу анімацію тіні, щоб привернути увагу користувача до активних елементів.
   animation: pulse-block 3s infinite;
 
   .content-wrapper { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; gap: 10px; }
@@ -30,26 +35,27 @@
 
   &:hover {
     transform: scale(1.05);
+    // При наведенні курсору я зупиняю пульсацію і застосовую статичне світіння акцентним кольором.
     animation: none;
-    // НОВЕ: Світіння акцентним кольором (Ціан або Бордо)
     border-color: var(--highlight);
     box-shadow: 0 0 50px var(--accent-glow);
   }
   &:active { transform: scale(0.95); }
 }
 
+// Кнопки для виконання основних дій (наприклад, підтвердження).
 .action-btn {
   padding: 15px 40px;
   font-size: 1.5rem;
   font-weight: bold;
   border-radius: 40px;
 
-  // Скло + Тонка кольорова рамка
+  // Комбіную напівпрозорий фон з кольоровою рамкою для кращого контрасту.
   background: rgba(255, 255, 255, 0.05);
   backdrop-filter: blur(15px);
-  border: 2px solid var(--highlight); // Рамка кольору теми (Ціан/Бордо)
+  border: 2px solid var(--highlight); 
 
-  // Легке світіння у спокійному стані
+  // Задаю базове легке світіння навіть у неактивному стані.
   box-shadow: 0 0 10px var(--accent-glow);
 
   color: var(--text-color);
@@ -58,23 +64,25 @@
   text-decoration: none;
   display: inline-block;
 
-  // ПРИ НАВЕДЕННІ - ЯСКРАВИЙ СПАЛАХ
+  // Логіка для стану hover: я інвертую кольори для створення яскравого спалаху.
   &:hover {
-    background: var(--highlight); // Заливаємо кольором
-    color: var(--bg-color);       // Текст стає кольором фону (контраст)
-    box-shadow: 0 0 30px var(--highlight); // Потужне світіння
+    background: var(--highlight); 
+    color: var(--bg-color);       
+    box-shadow: 0 0 30px var(--highlight); 
     transform: scale(1.05);
     border-color: var(--highlight);
   }
 }
+
+// Модифікатор для кнопок деструктивних дій (відміна, видалення).
 .action-btn.btn-danger {
   border-color: #ff5555;
   &:hover { background: #ff5555; }
 }
 
-// Кнопка Спін (Біла пігулка)
+// Спеціальна кнопка "Спін" для режиму рулетки.
 .sketch-spin-btn {
-  // НОВЕ: Використовуємо змінні
+  // Тут я жорстко прив'язую кольори до системних змінних, щоб кнопка автоматично адаптувалася при зміні теми з темної на світлу і навпаки.
   background: var(--highlight);
   color: var(--bg-color);
 
@@ -86,32 +94,35 @@
   &:active { transform: scale(0.95); }
 }
 
+// Проста текстова кнопка повернення назад, без складної графіки.
 .simple-back {
   position: absolute; top: 20px; left: 20px; color: #fff; text-decoration: none; opacity: 0.7;
   &:hover { opacity: 1; }
 }
 
+// Кнопка закриття модальних вікон (хрестик).
 .close-btn {
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: var(--text-color);
   font-size: 1.5rem;
   cursor: pointer;
-  // Робимо кнопку круглою
+  // Я роблю кнопку ідеально круглою для естетичності.
   width: 42px; height: 42px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   transition: all 0.3s ease;
 
   &:hover {
-    background: var(--highlight); // При наведенні заливається кольором
-    color: #000; // Іконка стає чорною для контрасту
+    background: var(--highlight); 
+    color: #000; 
     border-color: var(--highlight);
-    box-shadow: 0 0 15px var(--highlight); // Світиться
-    transform: rotate(90deg); // Прикольний ефект повороту
+    box-shadow: 0 0 15px var(--highlight); 
+    // Додаю ефект обертання на 90 градусів при наведенні для інтерактивності.
+    transform: rotate(90deg); 
   }
 }
 
-/* Кнопка Паузи */
+// Кнопка паузи, що розташовується безпосередньо в інтерфейсі гри поверх Canvas.
 .pause-btn {
    position: absolute;
    top: 20px;
@@ -123,18 +134,20 @@
    color: white;
    font-size: 1.2rem;
    cursor: pointer;
+   // Я встановлюю високий z-index, щоб кнопка гарантовано перекривала всі графічні ефекти гри.
    z-index: 150;
    display: flex; align-items: center; justify-content: center;
 }
 
 // ==========================================
-// 🔙 GLOBAL BACK BUTTON (THEME FIX)
+// ГЛОБАЛЬНА КНОПКА ПОВЕРНЕННЯ (АДАПТАЦІЯ ПІД ТЕМИ)
 // ==========================================
 
 #global-back-btn {
   position: fixed;
   top: 20px;
   left: 20px;
+  // Встановлюю найвищий пріоритет накладання, оскільки ця кнопка має бути доступною поверх будь-якого екрану.
   z-index: 200; 
   
   padding: 10px 22px;
@@ -144,7 +157,7 @@
   cursor: pointer;
   transition: all 0.3s ease;
   
-  // Темна тема (Default)
+  // Базові стилі спираються на CSS-змінні для підтримки теми, яку обрав користувач.
   background: var(--glass-bg);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
@@ -160,13 +173,14 @@
   }
 }
 
-/* --- КНОПКА ТАБЛИЦІ ЛІДЕРІВ --- */
+// Кнопка виклику модального вікна з таблицею лідерів, яка рендериться на основі даних з Firebase.
 .btn-leaderboard {
   display: block;
   margin: 15px auto;
   padding: 10px 25px;
   border: none;
   border-radius: 20px;
+  // Я використовую діагональний градієнт, щоб візуально виділити цю кнопку серед інших у меню.
   background: linear-gradient(45deg, var(--highlight), var(--blob-1));
   color: #fff;
   font-family: inherit;
@@ -182,6 +196,7 @@
   }
 }
 
+// Кнопка підтвердження вводу (використовується при первинній реєстрації імені гравця).
 .name-submit-btn {
   padding: 12px 30px;
   border: none;
@@ -201,6 +216,7 @@
     transform: scale(1.05);
   }
 
+  // Стан disabled я активую через JavaScript під час виконання асинхронного запиту до Firebase, щоб запобігти повторним клікам.
   &:disabled {
     background: #555;
     opacity: 0.6;
@@ -209,10 +225,10 @@
   }
 }
 
-/* Кнопка зміни імені в меню */
+// Менша кнопка в інтерфейсі меню, яка дозволяє змінити раніше збережене ім'я.
 .btn-change-name {
   display: block;
-  margin: 0 auto 10px auto; /* Центруємо і відступ знизу */
+  margin: 0 auto 10px auto; 
   padding: 8px 20px;
   border: 1px solid var(--glass-border);
   border-radius: 15px;
@@ -232,10 +248,12 @@
   }
 }
 
+  // Кнопка-заглушка для секретного рівня. Я використовую її в модальному вікні, якщо гравець ще не розблокував рівень.
   .secret-lock-btn {
     padding: 10px 30px; border: none; border-radius: 50px;
     background: var(--highlight);
-    color: var(--bg-color); /* Адаптується під тему через змінні */
+    // Текст адаптується під загальний фон теми, забезпечуючи читабельність.
+    color: var(--bg-color); 
     font-weight: bold; cursor: pointer; transition: 0.3s;
     &:hover { box-shadow: 0 0 15px var(--highlight); transform: scale(1.05); }
   }

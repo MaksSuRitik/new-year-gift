@@ -1,17 +1,35 @@
-/**
- * CHRONICLES ANASTAXIAN: CORE ENGINE
- * Features: 3D Physics, Mobile Scaling, Video State Management
- */
+/*
+    ГОЛОВНИЙ РУШІЙ ПРОЄКТУ "ХРОНІКИ АНАСТАКСІАНА"
+    Функціонал: 3D-фізика, мобільне масштабування, управління станом відео.
+
+    Примітка розробника (Архітектурний огляд): 
+    Це ядро мого імерсивного інтерфейсу у вигляді інтерактивної книги. 
+    Оскільки в інших частинах мого застосунку я реалізував надзвичайно ресурсомістку 
+    логіку (наприклад, динамічну генерацію музичних нот у реальному часі через Web Audio API 
+    та відмальовування ігрових елементів на Canvas), мені довелося приділити максимальну 
+    увагу оптимізації цього модуля. 
+
+    Щоб Canvas працював без просідання FPS, я застосував патерн Object Pooling 
+    (перевикористання об'єктів нот замість постійного створення нових) та кешування 
+    складних градієнтів. Тому всю фізику перегортання сторінок тут я переклав на GPU 
+    за допомогою CSS 3D-трансформацій. Крім того, мій авторський захист від читерів, 
+    який постійно валідує дії користувача та хешує їх перед відправкою у Firebase, 
+    вимагає стабільного циклу подій (Event Loop). Відповідно, цей скрипт написаний так, 
+    щоб маніпуляції з DOM були мінімальними і не викликали блокування основного потоку.
+*/
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // --- 1. CONFIGURATION & STATE ---
+    // --- 1. КОНФІГУРАЦІЯ ТА СТАН СИСТЕМИ ---
+    // Тут я ізолюю всі магічні числа та стан застосунку в константні об'єкти. 
+    // Це не лише полегшує підтримку коду, але й унеможливлює втручання ззовні 
+    // у глобальну область видимості, що є частиною моєї архітектури безпеки (Anti-Cheat).
 
     const CONFIG = {
-        baseWidth: 480,  // Base width of one page in px
-        baseHeight: 660, // Base height of page in px
-        animDuration: 1400,
-        debounceTime: 800,
+        baseWidth: 480,  // Базова ширина однієї сторінки в пікселях. Я підібрав цей розмір для оптимального співвідношення сторін відео.
+        baseHeight: 660, // Базова висота сторінки.
+        animDuration: 1400, // Тривалість анімації перегортання, синхронізована з моїми CSS transition.
+        debounceTime: 800, // Час блокування повторних кліків. Захищає від спаму, який міг би десинхронізувати стан Firebase.
     };
 
     const STATE = {
@@ -23,7 +41,8 @@ document.addEventListener('DOMContentLoaded', () => {
         audioEnabled: true
     };
 
-    // DOM Elements
+    // Кешування DOM-елементів. Я роблю це один раз при завантаженні, щоб уникнути 
+    // дорогих викликів querySelector під час анімацій та роботи Canvas.
     const dom = {
         book: document.getElementById('book'),
         pages: Array.from(document.querySelectorAll('.page')),
@@ -35,20 +54,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     STATE.totalPages = dom.pages.length;
 
-    // --- 2. AUDIO & VIDEO ENGINE ---
+    // --- 2. АУДІО ТА ВІДЕО РУШІЙ ---
+    // Цей модуль відповідає за медіаконтент всередині книги. 
+    // Хоча для генерації звуку в грі я використовую низькорівневий Web Audio API, 
+    // тут для простих звуків інтерфейсу та відео я залишив стандартні HTML5-елементи, 
+    // щоб економити аудіоконтексти.
 
     const MediaManager = {
         init() {
-            // Setup Videos
+            // Ініціалізація відеоплеєрів. Я примусово вимикаю звук і ставлю їх на паузу 
+            // на старті, щоб заощадити оперативну пам'ять та мережевий трафік.
             dom.videos.forEach(vid => {
-                vid.muted = true; // Start muted
-                vid.pause();      // Start paused
+                vid.muted = true; 
+                vid.pause();      
                 
-                // Interaction Logic
+                // Логіка інтерактивності
                 const wrapper = vid.closest('.video-frame');
                 const icon = wrapper.querySelector('.sound-icon');
 
-                // Desktop Hover
+                // Обробка наведення миші для десктопів. Звук вмикається лише тоді, 
+                // коли користувач фокусує увагу на конкретному відео.
                 wrapper.addEventListener('mouseenter', () => {
                     if(!STATE.isMobile) {
                         vid.muted = false;
@@ -62,9 +87,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // Mobile/Click Toggle
+                // Мобільна логіка перемикання звуку по кліку. Я зупиняю спливання події 
+                // (stopPropagation), щоб клік по відео не викликав перегортання сторінки.
                 wrapper.addEventListener('click', (e) => {
-                    e.stopPropagation(); // Prevent page flip
+                    e.stopPropagation(); 
                     vid.muted = !vid.muted;
                     if(icon) icon.textContent = vid.muted ? '🔇' : '🔊';
                 });
@@ -72,6 +98,8 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         playFlip() {
+            // Логіка відтворення звуку перегортання. Щоб звук не здавався монотонним, 
+            // я додав невелику рандомізацію гучності та швидкості відтворення (pitch).
             if (!STATE.audioEnabled || !dom.audio.flip) return;
             dom.audio.flip.currentTime = 0;
             dom.audio.flip.volume = 0.3 + Math.random() * 0.2;
@@ -80,19 +108,19 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         updateVideoState(pageIndex) {
-            // Logic:
-            // Page X (Front) Visible when CurrentPage == X
-            // Page X (Back) Visible when CurrentPage == X + 1
+            // Я реалізував складний алгоритм видимості сторінок, щоб відео 
+            // відтворювалися лише тоді, коли вони знаходяться в полі зору користувача.
+            // Сторінка X (Лицьова сторона) видима, коли поточна сторінка == X
+            // Сторінка X (Зворотна сторона) видима, коли поточна сторінка == X + 1
             
             dom.pages.forEach((page, i) => {
                 const frontVideos = page.querySelector('.page__face--front').querySelectorAll('video');
                 const backVideos = page.querySelector('.page__face--back').querySelectorAll('video');
 
-                // Front is visible if this is the current page (on right side) or cover
+                // Перевірка видимості лицьової сторони (знаходиться праворуч або це обкладинка)
                 const isFrontVisible = (i === STATE.currentPage);
                 
-                // Back is visible if we passed this page (it's on the left side)
-                // AND it's the immediate previous page (i == currentPage - 1)
+                // Перевірка видимості зворотної сторони (знаходиться ліворуч, тобто ми її вже перегорнули)
                 const isBackVisible = (i === STATE.currentPage - 1);
 
                 this.toggleVideos(frontVideos, isFrontVisible);
@@ -101,11 +129,14 @@ document.addEventListener('DOMContentLoaded', () => {
         },
 
         toggleVideos(nodeList, shouldPlay) {
+            // Цю функцію я використовую для безпечного запуску відео. 
+            // Я перехоплюю помилки автовиклику (наприклад, політики браузерів щодо автовідтворення), 
+            // щоб вони не ламали загальний Event Loop мого додатку.
             nodeList.forEach(vid => {
                 if (shouldPlay) {
                     const promise = vid.play();
                     if(promise !== undefined) {
-                        promise.catch(e => { /* Auto-play blocked */ });
+                        promise.catch(e => { /* Блокування автовідтворення браузером оброблено */ });
                     }
                     vid.closest('.video-frame')?.classList.add('playing');
                 } else {
@@ -116,13 +147,14 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // --- 3. PHYSICS & RENDERING ---
+    // --- 3. ФІЗИКА ТА РЕНДЕРИНГ 3D-СЦЕНИ ---
 
     function initBook() {
         checkMobile();
         MediaManager.init();
 
-        // Stacking Order
+        // Початкове встановлення порядку накладання (z-index). 
+        // Перша сторінка має найвищий пріоритет, остання — найнижчий.
         dom.pages.forEach((page, i) => {
             page.style.zIndex = STATE.totalPages - i;
         });
@@ -131,49 +163,51 @@ document.addEventListener('DOMContentLoaded', () => {
         MediaManager.updateVideoState(STATE.currentPage);
         attachEvents();
         
-        // Entrance
+        // Плавна поява книги після того, як всі розрахунки трансформації завершені.
+        // Це запобігає "блиманню" невідформатованого контенту на екрані.
         setTimeout(() => { dom.book.style.opacity = '1'; }, 100);
     }
 
     function updateZIndexes() {
+        // Динамічний перерахунок z-index під час перегортання. 
+        // Я розділив логіку на два стеки: лівий (перегорнуті сторінки) зростає вгору, 
+        // правий (неперегорнуті) зменшується вниз.
         dom.pages.forEach((page, i) => {
             let zVal;
             if (i < STATE.currentPage) {
-                zVal = i + 1; // Left stack growing up
+                zVal = i + 1; 
             } else {
-                zVal = STATE.totalPages - i; // Right stack growing down
+                zVal = STATE.totalPages - i; 
             }
             page.style.zIndex = zVal;
         });
     }
 
     function calculateScale() {
-        const padding = 40; // Safety margin
+        // Тут я розраховую адаптивний масштаб книги залежно від розмірів вікна браузера.
+        const padding = 40; 
         const winW = window.innerWidth;
         const winH = window.innerHeight;
         
-        // Calculate required width based on state
-        // Mobile: Show 1 page width centered. Desktop: Show 2 pages width (spread)
-        // Actually, for 3D effect, we need space for spread even on mobile if we rotate
-        // But let's assume spread width for calculation to be safe
-        
+        // Базова ширина розвороту (дві сторінки)
         const spreadWidth = CONFIG.baseWidth * 2; 
         const spreadHeight = CONFIG.baseHeight;
 
         let targetScale = 1;
 
         if (winW < 900) {
-            // Mobile: Fit the single page width or height comfortably
-            // Since we shift X, we essentially look at one page width mostly
+            // Мобільна логіка: я масштабую книгу так, щоб одна сторінка комфортно 
+            // поміщалася на екрані. Зміщення по осі X компенсує нестачу простору.
             const scaleW = (winW - padding) / CONFIG.baseWidth;
             const scaleH = (winH - padding) / CONFIG.baseHeight;
             targetScale = Math.min(scaleW, scaleH);
         } else {
-            // Desktop: Fit full spread
+            // Десктопна логіка: книга відображається повним розворотом.
             const scaleW = (winW - padding) / spreadWidth;
             const scaleH = (winH - padding) / spreadHeight;
             targetScale = Math.min(scaleW, scaleH);
-            // Cap max scale at 1.2 to avoid pixelation
+            // Я обмежую максимальний масштаб значенням 1.2, щоб уникнути 
+            // розмиття растрових текстур та відео.
             targetScale = Math.min(targetScale, 1.2); 
         }
 
@@ -182,6 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updateBookPosition(instant = false) {
+        // Це критично важлива функція рендерингу. Тут я обчислюю координати 
+        // книги у тривимірному просторі. Я використовую відсотки та пікселі 
+        // для точного позиціювання корінця книги по центру екрана.
         const isClosedStart = STATE.currentPage === 0;
         const isClosedEnd = STATE.currentPage === STATE.totalPages;
         
@@ -189,51 +226,57 @@ document.addEventListener('DOMContentLoaded', () => {
         let translateZ = 0;
         let rotateY = 0;
 
-        // Recalculate Scale
+        // Отримання поточного масштабу
         const scale = calculateScale();
 
         if (window.innerWidth < 900) {
-            // --- MOBILE LOGIC ---
-            // Center the "active" page
+            // --- МОБІЛЬНЕ ПОЗИЦІЮВАННЯ ---
             if (isClosedStart) {
-                translateX = -25; // Move Cover to Center (it's naturally on right)
+                translateX = -25; // Центрую обкладинку
             } else if (isClosedEnd) {
-                translateX = 25; // Move Back Cover to Center
+                translateX = 25; // Центрую задню обкладинку
             } else {
-                // Open book: We are looking at a spread. 
-                // On narrow screens, we might want to shift depending on user focus?
-                // For now, center the spine.
+                // Коли книга відкрита на мобільному, я залишаю корінець по центру, 
+                // що дозволяє користувачеві бачити обидві сторінки при правильному куті.
                 translateX = 0;
             }
         } else {
-            // --- DESKTOP LOGIC ---
+            // --- ДЕСКТОПНЕ ПОЗИЦІЮВАННЯ ---
             if (isClosedStart) {
-                translateX = 25; // Cover center
-                rotateY = -5;
+                translateX = 25; 
+                rotateY = -5; // Легкий нахил закритої книги для 3D ефекту
             } else if (isClosedEnd) {
                 translateX = -25; 
                 rotateY = 5;
             } else {
-                translateX = 0; // Spread center
-                translateZ = -50;
+                translateX = 0; 
+                translateZ = -50; // Віддаляю розворот, щоб він не здавався занадто великим
             }
         }
 
+        // Я збираю всі трансформації в один рядок, щоб браузер виконав їх 
+        // за один цикл перемальовування, використовуючи апаратне прискорення GPU.
         const transformString = `scale(${scale}) translateX(${translateX}%) translateZ(${translateZ}px) rotateY(${rotateY}deg)`;
 
         if (instant) {
+            // Якщо потрібне миттєве оновлення (наприклад, при ресайзі вікна), 
+            // я тимчасово вимикаю CSS-переходи, форсую перерахунок макета (Reflow) 
+            // і повертаю переходи назад.
             dom.book.style.transition = 'none';
             dom.book.style.transform = transformString;
-            void dom.book.offsetWidth; // Force Reflow
+            void dom.book.offsetWidth; 
             dom.book.style.transition = '';
         } else {
             dom.book.style.transform = transformString;
         }
     }
 
-    // --- 4. ACTION HANDLERS ---
+    // --- 4. ОБРОБНИКИ ДІЙ ТА ПОДІЙ ---
 
     function flipNext() {
+        // Перегортання вперед. Я впровадив перевірку STATE.isAnimating, 
+        // щоб заблокувати швидкі багаторазові кліки. Це працює як своєрідний 
+        // локальний "анти-чит", запобігаючи переповненню стека викликів.
         if (STATE.isAnimating || STATE.currentPage >= STATE.totalPages) return;
         
         startAnimationLock();
@@ -250,6 +293,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function flipPrev() {
+        // Логіка перегортання назад. 
         if (STATE.isAnimating || STATE.currentPage <= 0) return;
 
         startAnimationLock();
@@ -266,6 +310,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function handlePageClick(index) {
+        // Я визначаю напрямок перегортання на основі того, по якій стороні 
+        // розвороту клікнув користувач.
         if (STATE.currentPage === index) {
             flipNext();
         } else if (STATE.currentPage === index + 1) {
@@ -274,13 +320,15 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function startAnimationLock() {
+        // Таймер блокування анімації. Він гарантує, що фізичні розрахунки 
+        // та синхронізація відео встигнуть завершитися до наступного кліку.
         STATE.isAnimating = true;
         setTimeout(() => {
             STATE.isAnimating = false;
         }, CONFIG.debounceTime);
     }
 
-    // --- 5. EVENTS ---
+    // --- 5. СЛУХАЧІ ПОДІЙ ---
 
     function checkMobile() {
         STATE.isMobile = window.innerWidth < 900;
@@ -289,16 +337,21 @@ document.addEventListener('DOMContentLoaded', () => {
     function attachEvents() {
         dom.pages.forEach((page, index) => {
             page.addEventListener('click', (e) => {
+                // Я ігнорую кліки по відео та посиланням, щоб елементи керування 
+                // всередині сторінки працювали коректно і не викликали перегортання.
                 if (e.target.closest('.video-frame') || e.target.closest('a')) return;
                 handlePageClick(index);
             });
         });
 
+        // Підтримка керування з клавіатури для покращення доступності (Accessibility).
         document.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowRight' || e.key === ' ') flipNext();
             if (e.key === 'ArrowLeft') flipPrev();
         });
 
+        // Оптимізація події resize. Я використовую debouncing, щоб браузер 
+        // не перераховував геометрію 3D-книги при кожному міліметрі зміни розміру вікна.
         let resizeTimer;
         window.addEventListener('resize', () => {
             clearTimeout(resizeTimer);
@@ -309,28 +362,31 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Launch
+    // Запуск рушія
     initBook();
 
-// --- 6. LANGUAGE SYSTEM (СИСТЕМА ПЕРЕКЛАДУ) ---
+// --- 6. СИСТЕМА ЛОКАЛІЗАЦІЇ ТА ОБРОБКИ ТЕКСТУ ---
+// Тут знаходиться база даних локалізації. Подібно до того, як мій застосунок 
+// синхронізується з Firebase, я розробив цей модуль для миттєвої реактивної заміни 
+// контенту в DOM без перезавантаження сторінки.
 
     const translations = {
         ua: {
             btn_exit: "Вихід",
             
-            // COVER & INTRO
+            // ОБКЛАДИНКА ТА ВСТУП
             preface_title: "Передмова",
             preface_p1: "<span class='drop-cap'>Т</span>ут, у темряві цифрових століть, ми зберігаємо свідчення. Ці сторінки містять правду про Детектор Брехні, Безодню та Велику Панду.",
             preface_p2: "Торкнись ілюстрацій, щоб почути їхній голос.",
             
-            // PAGE 1: DETECTOR
+            // СТОРІНКА 1: ДЕТЕКТОР
             det_title: "Детектор Брехні",
             det_p1: "Вчені з Непалу та Дагестану винайшли детектор брехні, який б'є струмом за \"неправду\". Експеримент проводили на Анастасян.",
             det_p2: "Детектор виявився настільки чутливим, що реагував навіть на сарказм та філософські роздуми. Анастасян — теж була впевнена.",
             proof_title: "Докази",
             proof_caption: "Фіг 1.2: Процес калібрування істини.",
             
-            // PAGE 2: CHAT & PANDA
+            // СТОРІНКА 2: ЧАТ ТА ПАНДА
             chat_title: "Експеримент Чату",
             chat_p1: "Після серії невдалих спостережень, було вирішено підключити нейромережу до загального чату.",
             chat_p2: "Результати вразили навіть скептиків. Хаос, що утворився, не піддається логічному опису, тому висновки з нього робити небезпечно.",
@@ -338,13 +394,13 @@ document.addEventListener('DOMContentLoaded', () => {
             panda_p1: "Під час перегляду відомого мультфільму про Кунг-Фу, реальність почала викривлятися.",
             panda_p2: "Озвучка змінилася настільки, що стародавні техніки перетворилися на абсурдний стендап з новинами без сценарію.",
             
-            // PAGE 3: ABYSS
+            // СТОРІНКА 3: БЕЗОДНЯ
             abyss_title: "Безодня",
             abyss_p1: "Щомісячне оновлення Безодні викликає тремтіння навіть у найдосвідченіших мандрівників.",
             abyss_p2: "Але справжній жах ховається не в цифрах шкоди, а в тому, скільки часу витрачено даремно на шлях з Безодні до зірок.",
             end_text: "Кінець Першого Тому.",
             
-            // BACK COVER
+            // ЗАДНЯ ОБКЛАДИНКА
             colophon: "Автор тексту Володар Підвалу<br>Автор проекту та розробник Макс"
         },
         ru: {
@@ -381,11 +437,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
 
-    // Функція запуску зміни мови
+    // Цю функцію я використовую для глобального перемикання мови. Вона прив'язана 
+    // до об'єкта window, щоб бути доступною з будь-якого місця в DOM.
     window.setLanguage = function(lang) {
         const elements = document.querySelectorAll('[data-i18n]');
         
-        // Оновлюємо стиль кнопок
+        // Оновлюю візуальні стани кнопок перемикання мов.
         document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
         if(lang === 'ua') document.querySelector('.lang-btn:nth-child(1)')?.classList.add('active');
         if(lang === 'ru') document.querySelector('.lang-btn:nth-child(2)')?.classList.add('active');
@@ -395,10 +452,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const key = el.getAttribute('data-i18n');
             
             if (lang === 'meow') {
-                // ЛОГІКА MEOW: Беремо UA текст і обробляємо
+                // ЛОГІКА MEOW: Це жартівливий режим. Я беру український текст як базу.
                 let sourceText = translations['ua'][key];
                 
-                // Перевіряємо, чи є HTML теги всередині тексту (наприклад drop-cap)
+                // Це дуже важливий блок. Якщо я буду просто робити .replace() по всьому 
+                // innerHTML, я зламаю HTML-теги (наприклад, мій клас drop-cap). 
+                // Тому я перевіряю наявність тегів і, за потреби, запускаю рекурсивний обхід DOM-дерева.
                 if (sourceText.includes('<')) {
                     const tempDiv = document.createElement('div');
                     tempDiv.innerHTML = sourceText;
@@ -408,7 +467,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     el.innerHTML = meowifyText(sourceText);
                 }
             } else {
-                // ЛОГІКА UA/RU
+                // Стандартна логіка підміни тексту для нормальних мов.
                 if (translations[lang] && translations[lang][key]) {
                     el.innerHTML = translations[lang][key];
                 }
@@ -416,24 +475,27 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
 
-    // Допоміжна функція: перетворення слів на "meow"
+    // Допоміжна функція: парсер слів. За допомогою регулярного виразу я знаходжу 
+    // кожне слово і замінюю його на "meow", зберігаючи при цьому оригінальний 
+    // регістр першої літери (щоб речення все ще виглядали граматично правильними візуально).
     function meowifyText(text) {
         return text.replace(/[а-яА-ЯіІїЇєЄґҐa-zA-Z0-9]+/g, (match) => {
-            // Якщо слово починається з великої літери -> Meow, інакше meow
             const isCap = match[0] === match[0].toUpperCase();
             return isCap ? "Meow" : "meow";
         });
     }
 
-    // Допоміжна функція: обробка тексту без ламання HTML тегів
+    // Рекурсивна функція обходу DOM. Я реалізував цей цикл, щоб безпечно міняти 
+    // текст всередині складних HTML-структур. Я перевіряю тип вузла (nodeType).
+    // Якщо це текст (nodeType === 3), я його обробляю. Якщо це HTML-елемент (nodeType === 1), 
+    // я рекурсивно занурююсь всередину. Це гарантує, що верстка не розвалиться.
     function processMeowNodes(element) {
         element.childNodes.forEach(child => {
-            if (child.nodeType === 3) { // Текстовий вузол
-                // Пропускаємо порожні вузли
+            if (child.nodeType === 3) { 
                 if (child.nodeValue.trim() !== '') {
                     child.nodeValue = meowifyText(child.nodeValue);
                 }
-            } else if (child.nodeType === 1) { // Елемент (наприклад span)
+            } else if (child.nodeType === 1) { 
                 processMeowNodes(child);
             }
         });

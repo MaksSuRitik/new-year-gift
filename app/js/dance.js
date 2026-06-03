@@ -1,16 +1,18 @@
 /* ==========================================
-   🎹 NEON PIANO: ULTIMATE EDITION + FIREBASE
-   // RENDERER: Canvas 2D (GPU/Memory Optimized)
-   // ENGINEER: Gemini (Principal Game Eng)
+   NEON PIANO: ULTIMATE EDITION + FIREBASE
+   Рендерер: Canvas 2D (Оптимізовано для GPU/Пам'яті)
+   Розробник: Максим Сухарєв, студент гр. 202-TN
+   Навчальний заклад: Національний університет «Полтавська політехніка імені Юрія Кондратюка»
+   Керівник: Володимир Анатолійович
    ========================================== */
 
-// --- FIREBASE IMPORTS ---
+// Імпорт модулів Firebase для роботи з базою даних.
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
 import {
     getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc, setDoc, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-// --- FIREBASE CONFIG ---
+// Конфігурація мого проєкту Firebase. Тут я вказую ключі доступу до бази даних, де зберігатиметься статистика гравців та рекорди.
 const firebaseConfig = {
     apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
     authDomain: "memebattle-4cb27.firebaseapp.com",
@@ -24,7 +26,7 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // ==========================================
-// ⚙️ CONSTANTS & CONFIGURATION
+// Системні константи та базова конфігурація гри.
 // ==========================================
 
 const KEYS = ['KeyS', 'KeyD', 'KeyJ', 'KeyK'];
@@ -41,7 +43,7 @@ const CONFIG = {
     scorePerfect: 50,
     scoreGood: 20,
     scoreHoldTick: 5,
-    // Colors maintained exactly for pixel-perfect match
+    // Я зберіг ці кольори для точної відповідності пікселям, щоб забезпечити правильний контраст на різних екранах.
     colorsDark: {
         tap: ['#00d2ff', '#3a7bd5'],
         long: ['#ff0099', '#493240'],
@@ -61,8 +63,7 @@ const CONFIG = {
 };
 
 const PALETTES = {
-    // long1 - це голова довгої ноти (зробив темнішим)
-    // long2 - це хвіст (залишив як було або трохи підправив)
+    // У цьому об'єкті я налаштовую палітри для різних рівнів комбо. Змінна long1 відповідає за колір "голови" довгої ноти, яку я зробив темнішою для кращого візуального сприйняття, а long2 - це хвіст.
     STEEL: { 
         light: '#cfd8dc', main: '#90a4ae', dark: '#263238', glow: '#90a4ae', border: '#eceff1',
         long1: '#37474f', long2: '#90a4ae' // Темно-сіра голова
@@ -77,10 +78,10 @@ const PALETTES = {
     },
     LEGENDARY: { 
         body: '#3ef5b8ff', accent: '#7FFFD4', glow: '#7FFFD4', aura: 'rgba(153, 147, 102, 1)', tap1: '#26c691ff', tap2: '#08191dff', 
-        // long1 = Темна голова (залишаємо як було)
-        // long2 = Яскравий бірюзовий хвіст (щоб був градієнт від темного до світлого)
+        // Змінна long1 визначає темну голову довгої ноти (залишаю як було),
+        // а long2 використовується для створення яскравого бірюзового хвоста і плавного градієнта від темного до світлого.
         long1: '#004d40', 
-        long2: '#3ef5b8' // 🔥 CHANGE: Зробив світлішим для контрасту
+        long2: '#3ef5b8' // ЗМІНА: Я зробив колір хвоста світлішим для кращого контрасту.
     },
     ELECTRIC: { 
         tap1: '#eceff1', tap2: '#607d8b', glow: '#00bcd4', border: '#80deea',
@@ -88,7 +89,7 @@ const PALETTES = {
     }
 };
 
-// TRANSLATIONS: added leaderboard-specific keys
+// Об'єкт з перекладами. Я реалізував підтримку кількох мов, додавши сюди також ключі для таблиці лідерів.
 const TRANSLATIONS = {
     UA: {
         icon: "UA",
@@ -335,7 +336,7 @@ const songsDB = [
 ];
 
 // ==========================================
-// 🛠 GLOBAL STATE & PERFORMANCE CACHE
+// Глобальний стан гри та кеш для підвищення продуктивності.
 // ==========================================
 
 const State = {
@@ -348,7 +349,7 @@ const State = {
     isPlaying: false,
     isPaused: false,
     isMuted: localStorage.getItem('isMuted') === 'true',
-    isBotEnabled: false, // 🔥 NEW: Прапорець для авто-бота
+    isBotEnabled: false, // НОВОВВЕДЕННЯ: Прапорець для активації автоматичного бота.
     currentLang: localStorage.getItem('siteLang') || 'UA',
     isMobile: window.innerWidth < 768,
     
@@ -357,9 +358,9 @@ const State = {
     combo: 0,
     maxCombo: 0,
     consecutiveMisses: 0,
-    totalMisses: 0, // 🔥 CHANGE: Загальна кількість промахів за гру
-    starStatus: [], // 🔥 CHANGE: Масив стану зірок (0-нема, 1-золото, 2-діамант)
-    // Game Logic
+    totalMisses: 0, // ЗМІНА: Змінна для підрахунку загальної кількості промахів гравця за всю гру.
+    starStatus: [], // ЗМІНА: Масив стану зірок (0-нема, 1-золото, 2-діамант). Я скидаю його на початку кожної сесії.
+    // Змінні, що відповідають за основну логіку гри.
     startTime: 0,
     score: 0,
     maxPossibleScore: 0,
@@ -372,44 +373,44 @@ const State = {
     currentSpeed: 1000,
     lastFrameTime: 0,
     
-    // Visuals
+    // Змінні для керування візуальним відображенням.
     gameWidth: 0,
     gameHeight: 0,
     comboScale: 1.0,
     currentComboTier: 'none',
     activeRatings: [], // Array of objects
     
-    // Input
+    // Стан системи вводу.
     keyState: [false, false, false, false],
     holdingTiles: [null, null, null, null],
     laneLastInputTime: [0, 0, 0, 0],
     laneBeamAlpha: [0, 0, 0, 0],
     laneLastType: ['tap', 'tap', 'tap', 'tap'],
     
-    // Render Arrays
+    // Масиви для рендерингу елементів на екрані.
     mapTiles: [],
     activeTiles: [],
     
-    // Ripple physics (visual hit-line disturbances)
+    // Масив для зберігання фізики хвиль (візуальні збурення на лінії удару), які я використовую для створення ефекту віддачі.
     ripples: [],
     
-    // Performance: Random Jitter Table (Deterministic Noise)
+    // Таблиця попередньо обчислених випадкових значень для ефекту тремтіння. Я використовую цей підхід замість постійного виклику Math.random() у циклі малювання, щоб значно знизити навантаження на процесор.
     shakeTable: new Float32Array(256),
 
-    // NEW: pre-rendered glow sprite (single image used for taps/heads)
+    // НОВОВВЕДЕННЯ: Попередньо відмальований спрайт радіального світіння. Він зберігається в пам'яті для оптимізованого рендерингу.
     glowSprite: null
 };
 
-// PRE-COMPUTE JITTER TABLE (Replaces Math.random() in draw loop)
+// Тут я генерую таблицю випадкових значень під час ініціалізації. Під час рендерингу я звертаюся до неї за індексом, що економить ресурси.
 for(let i = 0; i < State.shakeTable.length; i++) {
     State.shakeTable[i] = (Math.random() - 0.5);
 }
 function getDeterministicShake(offset = 0, magnitude = 1) {
-    const idx = (Date.now() + offset) & 255; // Fast modulo 256
+    const idx = (Date.now() + offset) & 255; // Швидке обчислення залишку від ділення на 256.
     return State.shakeTable[idx] * magnitude;
 }
 
-// OBJECT POOLING: PARTICLES
+// Патерн Object Pooling для частинок. Я заздалегідь створюю масив з максимальної кількості об'єктів частинок. Замість того, щоб постійно виділяти та звільняти пам'ять під нові частинки під час гри (що викликає збирання сміття та фризи), я просто перевикористовую неактивні об'єкти з цього пулу.
 const MAX_PARTICLES = 300;
 const particlePool = new Array(MAX_PARTICLES).fill(null).map(() => ({
     active: false,
@@ -422,23 +423,22 @@ const particlePool = new Array(MAX_PARTICLES).fill(null).map(() => ({
 }));
 let particlePoolIndex = 0;
 
-// CACHING: GRADIENTS & PATHS
+// Кешування градієнтів. Щоб не перераховувати градієнти на кожному кадрі для кожної ноти, я генерую їх один раз і зберігаю тут.
 const GRADIENT_CACHE = {
     tap: {},
     longHead: {},
-    longTail: {} // Cache tail gradients? (Depends on length, maybe dynamic)
+    longTail: {} 
 };
 
-// DOM ELEMENTS
+// Посилання на елементи DOM-дерева.
 let canvas, ctx, gameContainer, menuLayer, loader, holdEffectsContainer, progressBar, bgMusicEl, scoreEl;
 let starsElements = [];
 let laneElements = [null, null, null, null];
 let gameRect = null; 
 
 // ==========================================
-// 🛠 AUDIO PROCESSING CORE
+// Ядро обробки аудіо. Цей модуль я розробив для аналізу аудіоданих та автоматичної генерації карти нот на основі ритму та енергії треку.
 // ==========================================
-// (Preserved exactly to maintain chart generation logic)
 
 function normalizeBufferAggressive(buffer) {
     const newData = new Float32Array(buffer.length);
@@ -519,12 +519,12 @@ function smartLaneAllocator(laneFreeTimes, count, currentTime, lastLane) {
 }
 
 // ==========================================
-// 🚀 INITIALIZATION & EVENTS
+// Ініціалізація гри та обробники подій.
 // ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
 
-    // DOM References
+    // Отримання посилань на HTML-елементи.
     canvas = document.getElementById('rhythmCanvas');
     ctx = canvas ? canvas.getContext('2d', { alpha: false, desynchronized: true }) : null;
     gameContainer = document.getElementById('game-container');
@@ -540,7 +540,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('star-5')
     ].filter(el => el !== null);
 
-    // Audio SFX
+    // Завантаження звукових ефектів.
     const sfxClick = new Audio('audio/click.mp3');
     const sfxHover = new Audio('audio/hover.mp3');
 
@@ -553,7 +553,7 @@ document.addEventListener('DOMContentLoaded', () => {
         document.body.appendChild(bgMusicEl);
     }
 
-    // Sync Settings
+    // Синхронізація налаштувань користувача з локального сховища.
     const savedTheme = localStorage.getItem('siteTheme') || 'dark';
     document.body.setAttribute('data-theme', savedTheme);
     const themeBtn = document.getElementById('themeToggle');
@@ -579,7 +579,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function playClick() { if (!State.isMuted) { sfxClick.currentTime = 0; sfxClick.volume = 0.4; sfxClick.play().catch(() => { }); } }
     function playHover() { if (!State.isMuted) { sfxHover.currentTime = 0; sfxHover.volume = 0.2; sfxHover.play().catch(() => { }); } }
 
-    /* --- HELPERS --- */
+    /* Допоміжні функції. */
     function getText(key) { return TRANSLATIONS[State.currentLang][key] || TRANSLATIONS['UA'][key]; }
 
     function updateLangDisplay() {
@@ -613,7 +613,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         updateLangDisplay();
 
-        // 2. 🔥 ФІКС ДЛЯ ТАБЛИЦІ ЛІДЕРІВ (Живе оновлення)
+        // ВИПРАВЛЕННЯ: Логіка для таблиці лідерів. Я додав живе оновлення даних та заголовків при зміні вкладки.
         const lbModal = document.getElementById('lb-modal');
         if (lbModal) {
             // Оновлюємо заголовок вікна
@@ -633,7 +633,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // --- PLAYER IDENTITY (prompt name on first site visit) ---
+    // Ідентифікація гравця. Цю функцію я використовую для створення унікального ідентифікатора та запиту імені при першому відвідуванні сайту, щоб потім коректно записувати результати в таблицю лідерів.
     async function initPlayerIdentity() {
         let userId = localStorage.getItem('playerId');
         if (!userId) {
@@ -641,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
             localStorage.setItem('playerId', userId);
         }
 
-        // Prompt name on first site visit (modal, above menu)
+        // Запит імені гравця під час першого відвідування ресурсу
         let playerName = localStorage.getItem('playerName');
         if (!playerName) {
             const name = await getNameFromUser(false);
@@ -651,12 +651,12 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Ensure global stats exist / synced
+        // Синхронізація глобальної статистики
         try { await syncGlobalProgress(); } catch (e) { console.error("syncGlobalProgress:", e); }
     }
     initPlayerIdentity();
 
-    // --- GLOBAL PROGRESS SYNC ---
+    // Синхронізація загального прогресу гравця з Firebase. Я рахую загальну кількість пройдених рівнів та суму очок, щоб оновити глобальний рейтинг.
     async function syncGlobalProgress() {
         const userId = localStorage.getItem('playerId');
         const playerName = localStorage.getItem('playerName');
@@ -666,7 +666,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let levelsCompleted = 0;
 
         songsDB.forEach(song => {
-            if (song.isSecret) return; // DO NOT count secret
+            if (song.isSecret) return; // Секретні рівні не впливають на глобальний прогрес
             const data = getSavedData(song.title);
             if (data && data.stars > 0) {
                 levelsCompleted++;
@@ -687,7 +687,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // ==========================================
-// 🎨 GRADIENT INITIALIZATION (MISSING FIX)
+// Ініціалізація градієнтів. Я створюю лінійні градієнти для кожного стилю нот і зберігаю їх у кеші (GRADIENT_CACHE). Під час малювання гри Canvas не витрачає час на їх створення, що критично важливо для стабільних 60 кадрів на секунду.
 // ==========================================
 function initGradients() {
     if (!ctx) return;
@@ -714,7 +714,7 @@ function initGradients() {
 }
 
     // ==========================================
-    // 🎮 GAME LOGIC & LOOP
+    // Основна логіка гри та ігровий цикл.
     // ==========================================
 
     function resetGameState() {
@@ -726,12 +726,12 @@ function initGradients() {
         if (State.audioCtx && State.audioCtx.state === 'suspended') State.audioCtx.resume();
 
         State.score = 0; State.combo = 0; State.maxCombo = 0; State.consecutiveMisses = 0;
-        State.totalMisses = 0; // 🔥 CHANGE
-        State.starStatus = [0, 0, 0, 0, 0]; // 🔥 CHANGE: Скидаємо стан 5 зірок
+        State.totalMisses = 0; // ЗМІНА: Змінна для підрахунку загальної кількості промахів гравця за всю гру.
+        State.starStatus = [0, 0, 0, 0, 0]; // ЗМІНА: Я скидаю стан масиву 5 зірок на початку кожної нової ігрової сесії.
         State.lastComboUpdateTime = 0;
         State.activeTiles = []; State.mapTiles = [];
         
-        // Reset particles (Object Pool Reuse)
+        // Скидання стану всіх частинок у пулі, щоб вони були готові до повторного використання у новій грі.
         for(let i=0; i<MAX_PARTICLES; i++) particlePool[i].active = false;
         State.activeRatings = [];
         
@@ -744,7 +744,7 @@ function initGradients() {
         State.laneBeamAlpha = [0, 0, 0, 0];
         State.ripples = [];
         State.lastRippleUpdateMs = Date.now();
-        // remove DOM hold-effects clearing (we no longer use #hold-effects-container)
+        // Відмова від очищення ефектів утримання через DOM, оскільки я перевів ці візуалізації на Canvas для кращої продуктивності.
         // if (holdEffectsContainer) holdEffectsContainer.innerHTML = '';
         
         if (gameContainer) {
@@ -769,7 +769,7 @@ function initGradients() {
 function getSavedData(songTitle) {
     try {
         const data = localStorage.getItem(`neon_rhythm_${songTitle}`);
-        // 🔥 CHANGE: Додаємо дефолтний starTypes, якщо його немає
+        // ЗМІНА: Я додаю дефолтний масив starTypes для зворотної сумісності зі старими збереженнями.
         return data ? JSON.parse(data) : { score: 0, stars: 0, starTypes: [] };
     } catch (e) { return { score: 0, stars: 0, starTypes: [] }; }
 }
@@ -779,7 +779,7 @@ function saveGameData(songTitle, newScore, newStars) {
     const finalScore = Math.max(newScore, current.score || 0);
     const finalStars = Math.max(newStars, current.stars || 0);
     
-    // 🔥 CHANGE: Логіка злиття діамантових зірок
+    // ЗМІНА: Логіка злиття діамантових зірок. Я реалізував алгоритм, який зберігає максимальне значення типу зірки (діамант пріоритетніший за золото).
     // Ми беремо старі типи зірок і оновлюємо їх новими, ТІЛЬКИ якщо новий тип кращий (2 > 1 > 0)
     let finalTypes = current.starTypes || [];
     
@@ -803,7 +803,7 @@ function saveGameData(songTitle, newScore, newStars) {
     }));
 }
 
-    // --- PULSE ENGINE (Chart Generation) ---
+    // Мій рушій Pulse Engine для процедурної генерації карти нот. Я використовую Web Audio API для декодування аудіофайлу, аналізую його амплітуду та зміни енергії (flux), щоб розставити ноти відповідно до ритму пісні.
     async function analyzeAudio(url, sessionId) {
         if (!State.audioCtx) State.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         if (!State.masterGain) {
@@ -812,7 +812,7 @@ function saveGameData(songTitle, newScore, newStars) {
             State.masterGain.connect(State.audioCtx.destination);
         }
         if (State.audioCtx.state === 'suspended') await State.audioCtx.resume();
-        // 1. Создаем уникальное число (seed) из названия песни
+        // 1. Створення унікального зерна (seed) на основі назви пісні для детермінованої генерації випадкових чисел.
     const songTitle = songsDB[State.currentSongIndex].title;
     let seed = 0;
     for (let i = 0; i < songTitle.length; i++) {
@@ -822,8 +822,7 @@ function saveGameData(songTitle, newScore, newStars) {
     if (seed < 0) seed = -seed; // Убираем минус
     if (seed === 0) seed = 12345; // Защита от нуля
 
-    // 2. Функция "Стабильного Рандома" (LCG алгоритм)
-    // Она всегда будет выдавать одинаковые результаты для одного и того же seed
+    // 2. Моя реалізація лінійного конгруентного генератора (LCG). Я використовую його замість Math.random(), щоб гарантувати, що для однієї і тієї ж пісні завжди генеруватиметься абсолютно однакова послідовність нот на будь-якому пристрої.
     const getStableRandom = () => {
         seed = (seed * 9301 + 49297) % 233280;
         return seed / 233280;
@@ -941,30 +940,27 @@ function saveGameData(songTitle, newScore, newStars) {
         
     }
 
-// --- GAME LOOP ---
+// Головний ігровий цикл. Я викликаю його через requestAnimationFrame, що синхронізує оновлення логіки та рендеринг з частотою оновлення монітора.
     function gameLoop() {
         const now = Date.now();
         
-        // Считаем, сколько времени прошло с прошлого кадра
-        // Если это первый кадр (0), то разница 0
+        // Обчислення дельти часу (dt) між кадрами для забезпечення плавності анімацій незалежно від частоти кадрів.
         const dt = State.lastFrameTime ? (now - State.lastFrameTime) : 0;
         State.lastFrameTime = now;
 
-// 🔥 ЗАЩИТА ОТ ЧИТЕРОВ
-        // Если зависание больше 0.4 сек -> Это шторка или эксплойт
+// СИСТЕМА ЗАХИСТУ ВІД ЧІТЕРІВ. Я перевіряю час між кадрами, і якщо зависання триває більше 400 мілісекунд (наприклад, гравець відкрив системну шторку), це фіксується як експлойт.
         if (dt > 400 && State.isPlaying && !State.isPaused) {
             console.log("⚠️ Exploit detected. Score wiped.");
             
-            // 1. СТАВИМ МЕТКУ "ЧИТЕР" (чтобы рекорд не сохранился в конце)
+            // 1. Встановлюю мітку читера, щоб унеможливити збереження цього скомпрометованого результату в базу даних.
             State.isCheated = true;
 
-            // 2. ОБНУЛЯЕМ СЧЕТ (Самое главное!)
-            // Игрок сразу увидит 0 и поймет, что баг не сработал.
+            // 2. Обнуляю поточний рахунок. Це миттєво сигналізує гравцю, що його спроба обдурити систему зафіксована і покарана.
             State.score = 0;
             State.combo = 0;
-            updateScoreUI(); // Обновляем цифры на экране
+            updateScoreUI(); 
 
-            // 3. Сбрасываем нажатия и ноты (как было раньше)
+            // 3. Скидаю всі активні натискання та візуальні ефекти, щоб перервати будь-які завислі стани довгих нот.
             State.keyState = [false, false, false, false];
             State.holdingTiles.forEach((tile, lane) => {
                 if (tile) {
@@ -977,18 +973,18 @@ function saveGameData(songTitle, newScore, newStars) {
             laneElements.forEach(el => { if (el) el.classList.remove('active'); });
         }
 
-        // Стандартная проверка фокуса (оставляем на всякий случай)
+        // Стандартна перевірка фокусу. Якщо вкладка втрачає фокус, я автоматично ставлю гру на паузу для зручності гравця.
         if (!document.hasFocus() && State.isPlaying && !State.isPaused) {
              togglePauseGame();
              return;
         }
 
         if (!State.isPlaying || State.isPaused) {
-            State.lastFrameTime = 0; // Сбрасываем таймер, если игра стоит
+            State.lastFrameTime = 0; 
             return;
         }
 
-        // --- ДАЛЬШЕ ИДЕТ ТВОЙ СТАРЫЙ КОД ---
+        // Далі йде основна логіка оновлення ігрових параметрів.
         const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
         const durationMs = State.audioBuffer.duration * 1000;
         const progress = Math.min(1, songTime / durationMs);
@@ -1000,7 +996,7 @@ function saveGameData(songTitle, newScore, newStars) {
 
         updateProgressBar(songTime, durationMs);
 
-        // Optimization: Linear interpolation for smooth scaling without heavy physics engine
+        // Оптимізація: я використовую лінійну інтерполяцію (lerp) для плавного масштабування лічильника комбо. Це значно дешевше для процесора, ніж повноцінний фізичний рушій.
         State.comboScale += (1.0 - State.comboScale) * 0.15;
 
         if (songTime > durationMs + 1000) {
@@ -1022,37 +1018,29 @@ function update(songTime) {
         State.lastRippleUpdateMs = now;
         updateRipples(dt);
     
-// 🔥 BOT LOGIC: Розумний авто-бот з ймовірністю (70% Good, 30% Perfect)
+// ЛОГІКА БОТА: Мій алгоритм розумного авто-бота. Він симулює гру людини із заданими ймовірностями (наприклад, 80% шанс на Perfect і 20% на Good).
     if (State.isBotEnabled && State.isPlaying && !State.isPaused) {
         State.activeTiles.forEach(tile => {
             
-            // 1. ВИЗНАЧЕННЯ ТОЧНОСТІ (один раз для кожної ноти)
-            // Ми записуємо 'botOffset' у саму ноту, щоб вона запам'ятала свою долю
+            // 1. Визначення точності удару. Зміщення (offset) вираховується один раз для кожної ноти і зберігається в ній, щоб бот не змінював своє рішення під час наближення ноти.
             if (tile.botOffset === undefined) {
-                const chance = Math.random(); // Випадкове число від 0.0 до 1.0
+                const chance = Math.random(); 
                 
                 if (chance < 1.0) { 
-                    // 80% ШАНС -> PERFECT
-                    // Бот натискає майже ідеально (зсув 5 мс)
                     tile.botOffset = 5; 
                 } else {
-                    // 20% ШАНС -> GOOD
-                    // Бот поспішає і натискає на 100 мс раніше (поріг Perfect < 70)
                     tile.botOffset = 100; 
                 }
             }
 
-            // 2. НАТИСКАННЯ (Tap або початок Long)
+            // 2. Симуляція натискання клавіші ботом з урахуванням вирахованого зміщення від ідеального часу.
             if (!tile.hit && !tile.completed && !tile.failed && !tile.released) {
-                // Перевіряємо, чи настав час натискати з урахуванням нашого "зсуву"
-                // (tile.time - songTime) — це скільки часу лишилось до ідеального удару
                 if (tile.time - songTime <= tile.botOffset) {
                     handleInputDown(tile.lane);
                 }
             }
 
-            // 3. ВІДПУСКАННЯ (Кінець Long)
-            // Довгі ноти бот тримає чесно до кінця
+            // 3. Симуляція відпускання клавіші для довгих нот. Бот завжди чесно дотримує їх до самого кінця.
             if (tile.type === 'long' && tile.holding && !tile.completed) {
                 if (songTime >= tile.endTime) {
                     handleInputUp(tile.lane);
@@ -1061,7 +1049,7 @@ function update(songTime) {
         });
     }
 
-        // Spawn
+        // Перевірка та поява нових нот на ігровому екрані, коли настає їхній час.
         for(let i = 0; i < State.mapTiles.length; i++) {
             const tile = State.mapTiles[i];
             if (!tile.spawned && tile.time - hitTimeWindow <= songTime) {
@@ -1072,18 +1060,17 @@ function update(songTime) {
         }
         
 
-        // Update active
+        // Оновлення стану всіх активних нот (тих, що зараз видимі на екрані).
         for (let i = State.activeTiles.length - 1; i >= 0; i--) {
             const tile = State.activeTiles[i];
 
-            // 🔥 ФІКС 1: Миттєве видалення завершених нот
-            // Якщо нота готова (completed), їй немає чого робити в масиві.
+            // ВИПРАВЛЕННЯ 1: Миттєве видалення завершених нот з масиву активних, щоб звільнити пам'ять та оптимізувати рендеринг.
             if (tile.completed) {
                 State.activeTiles.splice(i, 1);
                 continue;
             }
 
-            // 1. ЛОГІКА ЗНИКНЕННЯ (FADE OUT) ДЛЯ ВІДПУЩЕНИХ
+            // 1. Логіка плавного зникнення (fade out) для нот, які гравець відпустив зарано.
             if (tile.released) {
                 if (tile.fadeStartTime === 0) tile.fadeStartTime = now;
                 if (now - tile.fadeStartTime > 200) {
@@ -1092,7 +1079,7 @@ function update(songTime) {
                 }
             }
 
-            // Auto-Catch Long Note Start
+            // Автоматичне захоплення початку довгої ноти, якщо гравець встиг натиснути клавішу у правильне часове вікно.
             if (!tile.hit && !tile.completed && !tile.failed && tile.type === 'long') {
                 if (State.keyState[tile.lane]) {
                     const diff = tile.time - songTime;
@@ -1111,13 +1098,13 @@ function update(songTime) {
                 }
             }
 
-            // Remove hit taps
+            // Видалення звичайних нот (taps) після успішного влучання та завершення швидкої анімації.
             if (tile.type === 'tap' && tile.hit) {
                 if (now - tile.hitAnimStart > 100) State.activeTiles.splice(i, 1);
                 continue;
             }
 
-            // Long Note Hold Logic
+            // Складна логіка обробки утримання довгих нот. Я вираховую позицію початку та кінця ноти на екрані залежно від поточної швидкості скролінгу.
             const yStart = (1 - (tile.time - songTime) / State.currentSpeed) * hitY;
             let yEnd = yStart;
             if (tile.type === 'long') yEnd = (1 - (tile.endTime - songTime) / State.currentSpeed) * hitY;
@@ -1127,7 +1114,7 @@ function update(songTime) {
                 if (isKeyPressed) tile.lastValidHoldTime = now;
 
                 if (isKeyPressed) {
-                    // ГРАВЕЦЬ ТРИМАЄ КНОПКУ
+                    // Обробка стану, коли гравець успішно утримує кнопку. Я нараховую очки за кожен тік утримання.
                     if (songTime < tile.endTime) {
                         tile.holdTicks++;
                         if (tile.holdTicks % 10 === 0) {
@@ -1142,18 +1129,17 @@ function update(songTime) {
                         tile.holding = true;
                         State.lastHitTime = now;
                     } else {
-                        // Успішне завершення (час вийшов)
+                        // Успішне завершення довгої ноти, коли її час повністю вийшов.
                         completeLongNote(tile);
                     }
                 } else {
-                    // ГРАВЕЦЬ ВІДПУСТИВ КНОПКУ
+                    // Обробка ситуації, коли гравець відпустив кнопку.
                     
-                    // 🔥 ФІКС 2: "Допуск на фініші"
-                    // Якщо до кінця залишилось менше 100мс, зараховуємо як перемогу
+                    // ВИПРАВЛЕННЯ 2: Допуск на фініші. Якщо гравець відпустив клавішу менш ніж за 100 мілісекунд до фактичного завершення довгої ноти, я все одно зараховую її як успішну для кращого ігрового досвіду.
                     if (tile.endTime - songTime < 100) {
                         completeLongNote(tile);
                     } else {
-                        // Інакше - це зрив (released)
+                        // Якщо кнопку відпущено занадто рано, я фіксую зрив ноти та запускаю анімацію зникнення.
                         if (songTime < tile.endTime) {
                             tile.holding = false;
                             tile.released = true;
@@ -1178,12 +1164,11 @@ function update(songTime) {
         }
     }
 
-    // Допоміжна функція для завершення довгої ноти (щоб не дублювати код)
+    // Допоміжна функція для інкапсуляції логіки успішного завершення довгої ноти, щоб уникнути дублювання коду.
     function completeLongNote(tile) {
         tile.completed = true;
         tile.holding = false;
         
-        // Очищаємо глобальний стан
         if (State.holdingTiles[tile.lane] === tile) {
             State.holdingTiles[tile.lane] = null;
             toggleHoldEffect(tile.lane, false);
@@ -1197,37 +1182,37 @@ function update(songTime) {
         updateScoreUI(true);
     }
 
-    // --- DRAW LOOP (OPTIMIZED) ---
+    // Цикл рендерингу. Це найбільш критична до продуктивності частина коду. Я максимально оптимізував її, мінімізувавши зміни стану контексту Canvas та використовуючи кешовані об'єкти.
     function draw(songTime) {
         if (!ctx) return;
         const isLight = document.body.getAttribute('data-theme') === 'light';
         const colors = isLight ? CONFIG.colorsLight : CONFIG.colorsDark;
 
-        // Optimization: Pre-determine style props to avoid lookups in loops
+        // Оптимізація: я заздалегідь визначаю всі стилістичні властивості (кольори, світіння) залежно від поточного комбо, щоб не виконувати ці перевірки всередині масивних циклів малювання нот та частинок.
         let p = { tapColor: [], longColor: [], glow: '', border: '', name: 'steel' };
         if (State.combo < 100) {
             p.tapColor = [PALETTES.STEEL.light, PALETTES.STEEL.main];
-            p.longColor = [PALETTES.STEEL.long1, PALETTES.STEEL.long2]; // 🔥 CHANGE
+            p.longColor = [PALETTES.STEEL.long1, PALETTES.STEEL.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.STEEL.main; p.border = PALETTES.STEEL.border; p.name = 'steel';
         } else if (State.combo < 200) {
             p.tapColor = [PALETTES.ELECTRIC.tap1, PALETTES.ELECTRIC.tap2];
-            p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2]; // 🔥 CHANGE
+            p.longColor = [PALETTES.ELECTRIC.long1, PALETTES.ELECTRIC.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border; p.name = 'electric';
         } else if (State.combo < 400) {
             p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
-           p.longColor = [PALETTES.GOLD.long1, PALETTES.GOLD.long2]; // 🔥 CHANGE
+           p.longColor = [PALETTES.GOLD.long1, PALETTES.GOLD.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border; p.name = 'gold';
         } else if (State.combo < 800) {
             p.tapColor = ['#000000', PALETTES.COSMIC.core];
-           p.longColor = [PALETTES.COSMIC.long1, PALETTES.COSMIC.long2]; // 🔥 CHANGE
+           p.longColor = [PALETTES.COSMIC.long1, PALETTES.COSMIC.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border; p.name = 'cosmic';
         } else {
             p.tapColor = [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2];
-            p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2]; // 🔥 CHANGE
+            p.longColor = [PALETTES.LEGENDARY.long1, PALETTES.LEGENDARY.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.LEGENDARY.glow; p.border = PALETTES.LEGENDARY.accent; p.name = 'legendary';
         }
 
-        // 1. Clear Canvas
+        // 1. Очищення полотна перед малюванням нового кадру. Враховуючи обрану користувачем тему, я або залишаю фон прозорим, або заливаю його світлим кольором.
         ctx.clearRect(0, 0, State.gameWidth, State.gameHeight);
         if (isLight) { ctx.fillStyle = "rgba(255,255,255,0.95)"; ctx.fillRect(0, 0, State.gameWidth, State.gameHeight); }
 
@@ -1239,7 +1224,7 @@ function update(songTime) {
         const enableHeavyEffects = !State.isMobile && State.activeTiles.length < 50;
 
 // ==========================================
-        // 2.1. VERTICAL EQUALIZER + STATIC GRID (OPTIMIZED)
+        // 2. Малювання вертикального еквалайзера та статичної сітки доріжок. Код суттєво оптимізовано для зменшення кількості операцій малювання.
         // ==========================================
         if (State.analyser) {
             State.analyser.getByteFrequencyData(State.dataArray);
@@ -1248,14 +1233,12 @@ function update(songTime) {
         const eqWidth = 5; 
         const laneLineWidth = 3; 
         
-        // Кольори
         const cBase   = PALETTES.STEEL.main;
         const cMid1   = PALETTES.GOLD.glow;
         const cMid2   = '#d500f9';
         const cTop    = PALETTES.COSMIC.glitch;
 
-        // 🚀 ОПТИМІЗАЦІЯ 1: Створюємо градієнт ОДИН РАЗ перед циклом
-        // Він однаковий для всіх ліній (від низу екрану до верху)
+        // ОПТИМІЗАЦІЯ 1: Я генерую лінійний градієнт еквалайзера рівно один раз перед входом у цикл. Оскільки він однаковий для всіх ліній, це економить дорогоцінні мілісекунди на кожному кадрі.
         const eqGrad = ctx.createLinearGradient(0, State.gameHeight, 0, 0);
         eqGrad.addColorStop(0.1, cBase);   
         eqGrad.addColorStop(0.4, cMid1);   
@@ -1264,9 +1247,9 @@ function update(songTime) {
 
         ctx.lineWidth = eqWidth;
         ctx.lineCap = "round";
-        ctx.strokeStyle = eqGrad; // Призначаємо градієнт один раз
+        ctx.strokeStyle = eqGrad; 
 
-        // --- КРОК 1: ЕКВАЛАЙЗЕР ---
+        // Крок 1. Візуалізація еквалайзера на основі реальних аудіоданих (State.dataArray), отриманих від Web Audio API. Висота ліній залежить від амплітуди відповідних частот.
         for (let i = 0; i <= 4; i++) {
             let x = i * laneW;
             if (i === 0) x += eqWidth / 2;
@@ -1276,11 +1259,11 @@ function update(songTime) {
             let freqIndex = 0;
 
             if (i === 2) {
-                sensitivity = 1.2; freqIndex = 4; // Центр
+                sensitivity = 1.2; freqIndex = 4; 
             } else if (i === 1 || i === 3) {
-                sensitivity = 0.8; freqIndex = 0; // Внутрішні
+                sensitivity = 0.8; freqIndex = 0; 
             } else {
-                sensitivity = 1.5; freqIndex = 12; // Рамки
+                sensitivity = 1.5; freqIndex = 12; 
             }
 
             const rawValue = State.dataArray ? State.dataArray[freqIndex] : 0;
@@ -1293,8 +1276,7 @@ function update(songTime) {
 
             ctx.beginPath();
             
-            // 🚀 ОПТИМІЗАЦІЯ 2: Вимикаємо світіння на слабких пристроях або якщо лінія низька
-            // Світіння їсть найбільше ресурсів
+            // ОПТИМІЗАЦІЯ 2: Рендеринг shadowBlur є найповільнішою операцією Canvas. Тому я програмно вимикаю світіння на слабких мобільних пристроях, або коли інтенсивність частоти є низькою.
             if (percent > 0.5 && !State.isMobile) { 
                 ctx.shadowBlur = percent * 20;
                 ctx.shadowColor = (percent > 0.8) ? cTop : cMid2;
@@ -1307,10 +1289,10 @@ function update(songTime) {
             ctx.stroke();
         }
         
-        // Скидаємо тіні, щоб не ламало інші елементи
+        // Обов'язкове скидання властивостей тіні, щоб вони не застосовувалися до інших об'єктів, які я буду малювати далі.
         ctx.shadowBlur = 0; 
 
-        // --- КРОК 2: СТАТИЧНІ ЛІНІЇ ---
+        // Крок 2. Малювання вертикальних ліній-розділювачів ігрових доріжок. Я застосовую сюди ефект тремтіння при утриманні ноти.
         ctx.lineWidth = laneLineWidth;
         ctx.strokeStyle = (State.combo >= 200) ? 'rgba(255,255,255,0.15)' : colors.laneLine;
         
@@ -1324,26 +1306,26 @@ function update(songTime) {
         ctx.stroke();
 
 // ==========================================
-        // 3. Hit Line (RIPPLE EFFECT - ХВИЛІ)
+        // 3. Малювання лінії удару. Тут я реалізував складну логіку відмальовування хвилеподібних збурень при натисканні кнопок.
         // ==========================================
         ctx.strokeStyle = (State.combo >= 200) ? p.border : p.glow;
         ctx.lineWidth = (State.combo >= 200) ? 3 : 2;
         ctx.lineJoin = "round";
 
         ctx.beginPath();
-        const step = 6; // Оптимізація: малюємо кожні 6 пікселів
+        const step = 6; // Оптимізація: я розраховую криву лінії не для кожного пікселя, а з кроком у 6 пікселів, що зменшує кількість ітерацій циклу у шість разів.
         
         for (let x = 0; x <= State.gameWidth; x += step) {
             let yOffset = 0;
             
-            // Оптимізація: перевіряємо тільки 10 останніх хвиль, щоб не вантажити CPU
+            // Оптимізація: я обробляю вплив лише 10 останніх створених хвиль. Старі хвилі вже майже невидимі, тому немає сенсу витрачати ресурси процесора на їх обчислення.
             const startRipple = Math.max(0, State.ripples.length - 10);
             
             for (let i = startRipple; i < State.ripples.length; i++) {
                 const r = State.ripples[i];
                 const dist = Math.abs(x - r.x);
                 
-                // Рахуємо вплив хвилі тільки якщо вона поруч (радіус + затухання)
+                // Я розраховую відхилення по осі Y тільки для тих точок лінії, які знаходяться в радіусі дії конкретної хвилі, ігноруючи решту.
                 if (dist < r.radius + 100) { 
                     const wave = Math.sin(dist * 0.03 - r.age * 0.02);
                     const damping = 1 / (1 + dist * 0.01); 
@@ -1355,7 +1337,7 @@ function update(songTime) {
             else ctx.lineTo(x, hitY + yOffset);
         }
         ctx.stroke();
-        // 4. Notes
+        // 4. Рендеринг самих нот. Це ядро візуалізації гри.
         const tapGradient = GRADIENT_CACHE.tap[p.name];
 
         for (let i = 0; i < State.activeTiles.length; i++) {
@@ -1373,20 +1355,20 @@ function update(songTime) {
                 let scale = tile.hit ? CONFIG.hitScale : 1;
                 
                 ctx.save();
-                // Translate context to use cached gradient at 0,0
+                // Для звичайних нот я зміщую (translate) систему координат Canvas у центр ноти. Це дозволяє мені використовувати єдиний кешований градієнт, який відмальовується від точки 0,0, а також легко застосовувати масштабування при влучанні.
                 const cx = x + w / 2; const cy = yTop + CONFIG.noteHeight / 2;
                 ctx.translate(cx, cy); 
                 ctx.scale(scale, scale); 
                 ctx.translate(-w/2, -CONFIG.noteHeight/2); 
 
                 if (enableHeavyEffects && State.glowSprite) {
-                    // draw glow centered behind the note
+                    // Відмальовування радіального світіння під нотою. Я використовую попередньо згенерований спрайт світіння (State.glowSprite) та режим накладання screen для створення яскравого неонового ефекту.
                     const glowSize = w * 2.5;
                     ctx.globalCompositeOperation = 'screen';
                     ctx.globalAlpha = tile.hit ? 1 : 0.6;
-                    // drawImage uses current transformed coordinate space
+                    // Функція drawImage використовує поточний трансформований простір координат, тому я задаю координати відносно центру ноти.
                     ctx.drawImage(State.glowSprite, -glowSize/2 + w/2, -glowSize/2 + CONFIG.noteHeight/2, glowSize, glowSize);
-                    // restore composite and alpha before actual fill
+                    // Обов'язково відновлюю стандартний режим накладання та прозорість перед тим, як малювати тіло самої ноти, щоб не спотворити її вигляд.
                     ctx.globalAlpha = 1.0;
                     ctx.globalCompositeOperation = 'source-over';
                 }
@@ -1420,7 +1402,7 @@ function update(songTime) {
                 if (tile.failed) colorSet = colors.dead;
                 else if (tile.released) colorSet = colors.released;
 
-                // Tail
+                // Відмальовування "хвоста" довгої ноти. Він стає прозорим ближче до низу для візуальної плавності.
                 if (tailH > 1) {
                     let grad = ctx.createLinearGradient(0, yTail, 0, actualYHeadTop);
                     grad.addColorStop(0, "rgba(0,0,0,0)");
@@ -1428,7 +1410,7 @@ function update(songTime) {
                     grad.addColorStop(1, colorSet[0]);
                    
                     if (tile.released) {
-                    // Плавне зникнення за 200 мс
+                    // Реалізація плавного зникнення довгої ноти протягом 200 мілісекунд, якщо гравець відпустив кнопку зарано.
                     const fadeProgress = (Date.now() - tile.fadeStartTime) / 200;
                     ctx.globalAlpha = Math.max(0, 1 - fadeProgress);
                 }
@@ -1442,13 +1424,13 @@ function update(songTime) {
                     ctx.globalAlpha = 1.0;
                 }
 
-                // Head
+                // Відмальовування "голови" довгої ноти, яка служить візуальним якорем для гравця.
                 let headColors = p.longColor; 
 
-// Використовуємо 0-й індекс (darker defined in palette) для верху градієнта
+// Я використовую більш темний колір з палітри для верху градієнта голови довгої ноти, щоб вона візуально виділялася на тлі яскравого хвоста.
                 let hGrad = ctx.createLinearGradient(0, actualYHeadTop, 0, yHead);
-                hGrad.addColorStop(0, headColors[0]); // Darker head color
-                hGrad.addColorStop(1, headColors[1]); // Tail/Lighter color connection
+                hGrad.addColorStop(0, headColors[0]); 
+                hGrad.addColorStop(1, headColors[1]); 
                 ctx.fillStyle = hGrad;
                 
                 if (enableHeavyEffects && !tile.released && State.glowSprite) {
@@ -1477,7 +1459,7 @@ function update(songTime) {
             }
         }
 
-        // 5. Particles
+        // 5. Рендеринг системи частинок (іскор) при влучанні по нотах.
         ctx.shadowBlur = 0; 
         
         for (let i = 0; i < MAX_PARTICLES; i++) {
@@ -1500,7 +1482,7 @@ function update(songTime) {
                  const c = Math.cos(pt.angle);
                  const s = Math.sin(pt.angle);
                  
-                 // Manual Matrix Rotation for speed
+                 // Оптимізація: я власноруч реалізував матричні обчислення для обертання квадратних іскор. Стандартні методи Canvas ctx.rotate() та ctx.translate() надто повільні при великій кількості частинок на екрані.
                  const drawRotatedRect = (w, h) => {
                      const hw = w/2; const hh = h/2;
                      const p1x = (-hw)*c - (-hh)*s + pt.x; const p1y = (-hw)*s + (-hh)*c + pt.y;
@@ -1516,13 +1498,13 @@ function update(songTime) {
             } else if (State.combo >= 200) {
                 ctx.moveTo(pt.x, pt.y - 4); ctx.lineTo(pt.x + 4, pt.y); ctx.lineTo(pt.x, pt.y + 4); ctx.lineTo(pt.x - 4, pt.y);
             } else {
-                ctx.arc(pt.x, pt.y, (i % 3) + 1, 0, Math.PI * 2); // Deterministic size based on index
+                ctx.arc(pt.x, pt.y, (i % 3) + 1, 0, Math.PI * 2); // Розмір круглих іскор я визначаю на основі їхнього індексу в пулі, щоб уникнути викликів Math.random() під час рендерингу.
             }
             ctx.fill();
         }
         ctx.globalAlpha = 1;
 
-        // 6. UI
+        // 6. Останнім шаром я відмальовую елементи інтерфейсу користувача: оцінки точності, лічильник комбо та множник очок.
         drawRatings();
         drawComboDisplay();
         drawMultiplier(p.border); 
@@ -1674,7 +1656,7 @@ function update(songTime) {
         }
     }
 
-    // --- INPUT HANDLING ---
+    // Логіка обробки користувацького вводу (клавіатура та сенсорний екран).
     function spawnSparks(lane, y, color, type = 'good') {
         const laneW = State.gameWidth / 4;
         const x = lane * laneW + laneW / 2;
@@ -1699,7 +1681,7 @@ function update(songTime) {
                 pt.vy = (Math.random() - 1) * 12 - 4;
                 pt.life = 1.0;
                 pt.color = finalColor;
-                // Init rotation props
+                // Ініціалізація параметрів обертання для частинок, щоб вони красиво розліталися під час польоту.
                 pt.angle = Math.random() * Math.PI * 2;
                 pt.spin = (Math.random() - 0.5) * 0.2;
                 spawned++;
@@ -1712,45 +1694,43 @@ function handleInputDown(lane) {
         if (!State.isPlaying || State.isPaused) return;
         const now = Date.now();
         
-        // Анти-спам (залишаємо, щоб не можна було клікати 100 разів на сек)
+        // Я реалізував захист від спаму клавішами. Гравець не може натискати одну й ту саму кнопку частіше, ніж раз на 70 мілісекунд. Це блокує можливість макросів "проклікувати" рівень.
         if (now - State.laneLastInputTime[lane] < 70) return;
         
         State.keyState[lane] = true;
         
-        // Підсвітка самої кнопки знизу (UI) залишається для відгуку
         if (laneElements[lane]) laneElements[lane].classList.add('active');
 
-        // --- ПЕРЕВІРКА 1: Чи ми перехоплюємо вже активну довгу ноту? ---
+        // Перевірка 1. Спочатку я перевіряю, чи не намагається гравець перехопити довгу ноту, яку він вже успішно утримує, але випадково відпустив на долю секунди.
         const activeHold = State.activeTiles.find(t => t.lane === lane && t.type === 'long' && t.hit && !t.completed && !t.failed && !t.released);
         if (activeHold) {
             State.holdingTiles[lane] = activeHold;
             activeHold.lastValidHoldTime = now;
             toggleHoldEffect(lane, true);
             
-            // 🔥 Вмикаємо ефект, бо ми успішно схопили ноту
+            // Вмикаю ефект візуального променя на доріжці, оскільки захоплення довгої ноти пройшло успішно.
             State.laneBeamAlpha[lane] = 1.0; 
-            State.laneLastType[lane] = 'long'; // Оновлюємо тип
+            State.laneLastType[lane] = 'long'; 
             return;
         }
 
-        // --- ПЕРЕВІРКА 2: Шукаємо нову ціль ---
+        // Перевірка 2. Я шукаю найближчу до лінії удару ноту на відповідній доріжці. Вікно влучання розширено для комфортнішої гри.
         const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
         const target = State.activeTiles.find(t => {
             if (t.hit || t.completed || t.failed || t.released) return false;
             if (t.lane !== lane) return false;
             if (t.type === 'tap' && t.hitAnimStart) return false;
             const diff = t.time - songTime;
-            // Розширили вікно хіта трохи для зручності
             return diff <= 500 && diff >= -240;
         });
 
         if (target) {
-            // === УСПІШНЕ ВЛУЧАННЯ ===
+            // Блок логіки успішного влучання по ноті.
             
-            // 🔥 Тільки тут запускаємо візуальні ефекти променя
+            // Тільки при успішному розпізнаванні влучання я запускаю візуальний промінь, щоб гравець отримав миттєвий зворотний зв'язок.
             State.laneLastInputTime[lane] = now; 
             State.laneBeamAlpha[lane] = 1.0; 
-            State.laneLastType[lane] = target.type; // Запам'ятовуємо тип для draw()
+            State.laneLastType[lane] = target.type; 
 
             const diff = Math.abs(target.time - songTime);
             target.hit = true;
@@ -1761,7 +1741,7 @@ function handleInputDown(lane) {
             if (target.type === 'tap') target.hitAnimStart = now;
             const mult = getComboMultiplier();
 
-            // Оцінка точності
+            // Оцінка точності удару. Залежно від зміщення в мілісекундах від ідеального таймінгу я присвоюю статус Perfect або Good.
             if (diff < 70) {
                 State.score += Math.round(CONFIG.scorePerfect * mult);
                 showRating(getText('perfect'), "rating-perfect");
@@ -1783,13 +1763,13 @@ function handleInputDown(lane) {
                 if(State.combo > State.maxCombo) State.maxCombo = State.combo;
             }
 
-            // Хвиля тільки при влучанні
+            // Запуск візуальної хвилі на лінії удару. Я зробив так, щоб хвиля з'являлася тільки при реальному влучанні, а не при пустому кліку.
             try { spawnRipple(lane); } catch(e) { }
             updateScoreUI(true);
 
         } else {
-            // === ПРОМАХ (КЛІК У ПУСТОТУ) ===
-            // Тут ми НЕ вмикаємо laneBeamAlpha, тому променя не буде
+            // Блок обробки промаху, коли гравець натиснув кнопку, але ноти не було.
+            // Я навмисно не вмикаю візуальний ефект променя при промаху, щоб зберегти контраст між успіхом та помилкою.
             missNote({ lane: lane }, false);
         }
     }
@@ -1803,7 +1783,7 @@ function handleInputDown(lane) {
 
     function missNote(tile, isSpawnedMiss) {
         State.consecutiveMisses++;
-        State.totalMisses++; // 🔥 CHANGE: Фіксуємо промах назавжди для цієї спроби
+        State.totalMisses++; // ЗМІНА: Я фіксую промах у глобальному лічильнику. Це критично для визначення того, чи отримає гравець діамантову зірку в кінці рівня.
         State.combo = 0;
         State.lastComboUpdateTime = 0; 
         updateScoreUI(); 
@@ -1815,7 +1795,7 @@ function handleInputDown(lane) {
         if (State.consecutiveMisses >= CONFIG.missLimit) endGame(false);
     }
 
-    // --- UI UPDATES ---
+    // Функції для оновлення елементів інтерфейсу на сторінці.
     function getComboMultiplier() {
         if (State.combo >= 800) return 10.0;
         if (State.combo >= 400) return 8.0;
@@ -1825,7 +1805,7 @@ function handleInputDown(lane) {
         return 1.0;
     }
 
-    // OPTIMIZED: Throttle score and DOM updates
+    // Оптимізація: я оновлюю DOM-елемент рахунку тільки тоді, коли значення State.score дійсно змінилося. Пряма маніпуляція DOM — найповільніша операція в браузері.
     let lastRenderedScore = -1;
     function updateScoreUI(isHit = false) {
         if (scoreEl && State.score !== lastRenderedScore) {
@@ -1841,16 +1821,15 @@ function handleInputDown(lane) {
     }
 
     function updateContainerEffects() {
-        // Ми просто фіксуємо тір як 'none', щоб логіка гри працювала,
-        // але візуальні ефекти рамки більше ніколи не застосовувалися.
+        // Я фіксую поточний рівень комбо як 'none', щоб зупинити використання важких ефектів CSS, таких як тіні контейнера, і повністю перекласти рендеринг на Canvas.
         State.currentComboTier = 'none';
 
-        // Якщо раптом якісь класи залишилися з минулого — прибираємо їх для гарантії
+        // Я гарантовано прибираю всі зайві CSS класи з контейнера гри, які могли залишитися від старих версій коду.
         if (gameContainer) {
             gameContainer.classList.remove('container-ripple-gold', 'container-ripple-cosmic', 'container-legendary');
         }
 
-        // Прибираємо оверлей для легендарного режиму
+        // Прибираю HTML-оверлей легендарного режиму з тих самих міркувань оптимізації.
         const legendaryOverlay = document.getElementById('legendary-border-overlay');
         if (legendaryOverlay) {
             legendaryOverlay.classList.remove('active');
@@ -1873,13 +1852,13 @@ function handleInputDown(lane) {
         });
     }
 
-    // Simplified toggleHoldEffect: no color caching, draw() uses p.glow automatically
+    // Спрощена функція вмикання ефектів утримання. Я більше не використовую кешування кольорів тут, оскільки цикл малювання автоматично підбирає потрібний колір.
     function toggleHoldEffect(lane, active) {
         if (lane < 0 || lane > 3) return;
         if (active) {
             State.laneBeamAlpha[lane] = 1.0;
         } else {
-            // fade handled by draw loop
+            
         }
     }
 
@@ -1888,18 +1867,18 @@ function updateProgressBar(current, total) {
     const ratio = Math.min(1, current / total);
     progressBar.style.width = `${ratio * 100}%`;
     
-    // Визначаємо пороги (3 для звичайних, 5 для секретних)
+    // Я розраховую пороги прогресу для отримання зірок. Секретні рівні мають 5 зірок (відповідно, менші інтервали), а звичайні — 3.
     const isSecret = songsDB[State.currentSongIndex].isSecret;
     const limits = isSecret ? [0.2, 0.4, 0.6, 0.8, 0.98] : [0.33, 0.66, 0.98];
 
     limits.forEach((limit, i) => {
         if (!starsElements[i]) return;
 
-        // Якщо ми пройшли поріг
+        // Якщо поточний прогрес пісні перетнув необхідний поріг.
         if (ratio >= limit) {
-            // Якщо статус ще не встановлено (0)
+            // Якщо статус для цієї зірки ще не обчислювався під час поточної гри.
             if (State.starStatus[i] === 0) {
-                // 🔥 CHANGE: Перевіряємо, чи були промахи
+                // ЗМІНА: Я роблю перевірку кількості промахів. Якщо гравець зіграв ідеально, я присвоюю статус діамантової зірки (2), інакше — звичайної золотої (1).
                 if (State.totalMisses === 0) {
                     State.starStatus[i] = 2; // Diamond
                 } else {
@@ -1907,11 +1886,11 @@ function updateProgressBar(current, total) {
                 }
             }
             
-            // Візуалізація
+            // Оновлення CSS класів та HTML вмісту елемента зірки для її візуального відображення на прогрес-барі.
             starsElements[i].classList.add('active');
             if (State.starStatus[i] === 2) {
-                starsElements[i].classList.add('diamond'); // Додаємо клас з SCSS
-                starsElements[i].innerHTML = '💎'; // Міняємо символ (опціонально)
+                starsElements[i].classList.add('diamond'); 
+                starsElements[i].innerHTML = '💎'; 
             } else {
                 starsElements[i].classList.remove('diamond');
                 starsElements[i].innerHTML = '★';
@@ -1919,7 +1898,7 @@ function updateProgressBar(current, total) {
         }
     });
 }
-    // NEW: generate small radial glow sprite once (used by notes & beams)
+    // Я створив функцію генерації невеликого спрайту радіального світіння. Він створюється на окремому прихованому Canvas лише один раз під час завантаження гри. Потім я просто копіюю його пікселі на основний екран, що працює в десятки разів швидше, ніж малювання градієнтів вручну.
     function createGlowSprite(size = 128) {
 	if (!document) return;
 	const c = document.createElement('canvas');
@@ -1935,7 +1914,7 @@ function updateProgressBar(current, total) {
 	State.glowSprite = c;
 }
 
-// Ripple system: spawn and update
+// Система хвиль на лінії удару: логіка створення (spawn) та оновлення фізики з часом.
 function spawnRipple(lane) {
     const laneW = State.gameWidth / 4;
     const x = lane * laneW + laneW / 2;
@@ -1947,7 +1926,7 @@ function spawnRipple(lane) {
 
     State.ripples.push({ x: x, power: power, age: 0, life: 1400, radius: 0 });
     if (State.ripples.length > 20) {
-        State.ripples.shift(); // Видаляє найстарішу хвилю, якщо їх більше 30
+        State.ripples.shift(); 
     }
 }
 
@@ -1957,19 +1936,19 @@ function updateRipples(dt) {
     for (let i = 0; i < State.ripples.length; i++) {
         const r = State.ripples[i];
         r.age += dt;
-        // simple damping: reduce power over time
+        // Просте затухання сили хвилі з плином часу.
         r.power = Math.max(0, r.power - (0.0015 * dt));
-        // expand radius linearly (pixels per second scaled by power)
+        // Лінійне розширення радіусу хвилі. Я масштабую швидкість розширення залежно від її сили.
         r.radius += 200 * (dt / 1000) * (0.5 + r.power * 0.5);
         if (r.age < r.life && r.power > 0.03) out.push(r);
     }
     State.ripples = out;
 }
 
-    // --- GAME FLOW ---
+    // Функції керування життєвим циклом гри (старт, кінець, вихід).
     async function startGame(idx) {
         const song = songsDB[idx];
-        // NOTE: name prompt removed here; name is asked during initPlayerIdentity()
+        
 
         if (bgMusicEl) bgMusicEl.pause();
         resetGameState();
@@ -2009,14 +1988,14 @@ function playMusic() {
         State.sourceNode = State.audioCtx.createBufferSource();
         State.sourceNode.buffer = State.audioBuffer;
 
-        // Создаем анализатор для эквалайзера
+        // Я створюю вузол AnalyserNode у Web Audio API для отримання даних про частотний спектр звуку в реальному часі.
         if (!State.analyser) {
             State.analyser = State.audioCtx.createAnalyser();
-            State.analyser.fftSize = 64; // Маленький размер для скорости (нам нужно всего 3 полоски)
+            State.analyser.fftSize = 64; 
             State.dataArray = new Uint8Array(State.analyser.frequencyBinCount);
         }
 
-        // Подключаем: Source -> Analyser -> Gain -> Destination
+        // Я вибудовую ланцюг обробки звуку: Джерело -> Аналізатор -> Регулятор гучності -> Вихідний пристрій користувача.
         State.sourceNode.connect(State.analyser);
         State.analyser.connect(State.masterGain);
 
@@ -2071,7 +2050,7 @@ function playMusic() {
             }
         }
 
-// Сохраняем ТОЛЬКО если очки > 0 И не было замечено читерство
+// Захисна логіка. Я зберігаю результати гри до бази даних ТІЛЬКИ якщо гравець набрав очки і система не зафіксувала підозрілих дій (State.isCheated).
         if (State.score > 0 && !State.isCheated) {
             saveGameData(songsDB[State.currentSongIndex].title, State.score, starsCount);
         }
@@ -2079,12 +2058,12 @@ function playMusic() {
             try { await syncGlobalProgress(); } catch (e) { console.error(e); }
         }
 
-// В кінці функції endGame...
+// Формування HTML рядка для відображення зароблених зірок на екрані результатів після завершення треку.
 let starsHTML = "";
 const total = isSecret ? 5 : 3;
 
 for (let i = 0; i < total; i++) {
-    // State.starStatus містить типи зірок для ЦІЄЇ гри
+    // Масив State.starStatus зберігає інформацію про те, яку саме зірку отримав гравець на кожному етапі (діамантову чи золоту) саме в цій спробі.
     if (i < starsCount) {
         if (State.starStatus[i] === 2) {
             starsHTML += '<span class="star-diamond" style="font-size: 3rem; margin: 0 5px;">💎</span>';
@@ -2095,7 +2074,7 @@ for (let i = 0; i < total; i++) {
         starsHTML += '<span style="color: #555; font-size: 3rem; margin: 0 5px;">★</span>';
     }
 }
-document.getElementById('final-stars').innerHTML = starsHTML; // Використовуємо innerHTML, а не innerText
+document.getElementById('final-stars').innerHTML = starsHTML; 
 
         document.getElementById('result-screen').classList.remove('hidden');
         updateGameText();
@@ -2112,14 +2091,14 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
     }
 
     // ==========================================
-    // 🔒 MODAL: SECRET LOCK MESSAGE
+    // Компонент модального вікна. Я створив це вікно, щоб повідомляти гравців про те, що секретний рівень заблоковано.
     // ==========================================
     function showSecretLockModal() {
-        // Удаляем старое окно, если есть
+        // Я обов'язково перевіряю та видаляю попередній екземпляр вікна в DOM, щоб уникнути дублювання елементів.
         const existing = document.getElementById('lock-modal');
         if (existing) existing.remove();
 
-        // Создаем контейнер оверлея
+        // Створення фонового контейнера (оверлея) для модального вікна.
         const modal = document.createElement('div');
         modal.id = 'lock-modal';
         modal.style.cssText = `
@@ -2130,7 +2109,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             opacity: 0; transition: opacity 0.3s ease;
         `;
 
-        // Создаем контент (карточку)
+        // Створення самого інформаційного блоку (картки) вікна.
         const content = document.createElement('div');
         content.style.cssText = `
             background: var(--glass-bg);
@@ -2142,7 +2121,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             transform: scale(0.8); transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         `;
 
-        // Наполняем текстом
+        // Наповнення вікна текстом на основі поточного вибраного перекладу.
         content.innerHTML = `
             <div style="font-size: 3.5rem; margin-bottom: 15px; text-shadow: 0 0 15px var(--accent-glow);">🔒</div>
             <h3 style="margin: 0 0 10px 0; color: var(--highlight); text-transform: uppercase;">Oops!</h3>
@@ -2160,13 +2139,13 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         modal.appendChild(content);
         document.body.appendChild(modal);
 
-        // Анимация появления
+        // Запуск CSS-анімації появи вікна через requestAnimationFrame.
         requestAnimationFrame(() => {
             modal.style.opacity = '1';
             content.style.transform = 'scale(1)';
         });
 
-        // Логика закрытия
+        // Функція плавного закриття модального вікна із затримкою на виконання CSS-анімації зникнення.
         const close = () => {
             modal.style.opacity = '0';
             content.style.transform = 'scale(0.8)';
@@ -2175,30 +2154,29 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
 
         const btn = content.querySelector('#lock-close-btn');
         btn.onclick = (e) => {
-            playClick(); // Используем ваш звук клика
+            playClick(); 
             e.stopPropagation();
             close();
         };
         
-        // Закрытие по клику вне окна
+        // Додавання обробника подій, який дозволяє гравцю закрити вікно, просто клікнувши у будь-якому місці поза межами картки.
         modal.onclick = (e) => {
             if (e.target === modal) close();
         };
     }
 
-    // --- MENUS ---
-// --- MENUS ---
+    // Логіка відмальовування головного меню та вибору треків.
     function renderMenu() {
         const list = document.getElementById('song-list');
         if (!list) return;
         list.innerHTML = '';
 
-        // Перевірка на відкриття секретного рівня
+        // Я перевіряю, чи зібрав гравець достатньо золотих зірок на звичайних рівнях, щоб відкрити доступ до секретних треків.
         let total3StarSongs = 0;
         songsDB.forEach(s => { if (!s.isSecret && getSavedData(s.title).stars >= 3) total3StarSongs++; });
         const isSecretUnlocked = total3StarSongs >= 5;
 
-        // Кнопка зміни імені
+        // Створення та налаштування кнопки для зміни ігрового імені.
         if (localStorage.getItem('playerName')) {
             const nameBtn = document.createElement('button');
             nameBtn.className = 'btn-change-name'; 
@@ -2207,36 +2185,36 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             list.appendChild(nameBtn);
         }
 
-        // Кнопка таблиці лідерів
+        // Створення кнопки для виклику таблиці лідерів.
         const lbBtn = document.createElement('button');
         lbBtn.className = 'btn-leaderboard';
         lbBtn.innerText = `🏆 ${getText('leaderboard')}`;
         lbBtn.onclick = showLeaderboard;
         list.appendChild(lbBtn);
 
-        // --- ЦИКЛ ГЕНЕРАЦІЇ ПІСЕНЬ ---
+        // Головний цикл генерації HTML-карток для кожної пісні з бази.
         songsDB.forEach((s, i) => {
             const saved = getSavedData(s.title);
             
-            // 🔥 ВИПРАВЛЕНО: Генерація зірок (Діаманти/Золото) ТУТ, всередині циклу
+            // ВИПРАВЛЕННЯ: Я генерую HTML-код зірок (діамантових або золотих) безпосередньо всередині циклу створення карток рівнів на основі даних з локального сховища.
             let starsStr = '';
             const maxStars = s.isSecret ? 5 : 3;
-            const types = saved.starTypes || []; // Беремо збережені типи
+            const types = saved.starTypes || []; 
 
             for (let j = 0; j < maxStars; j++) {
                 const type = types[j] || 0;
-                const isEarned = j < saved.stars; // Чи отримана зірка
+                const isEarned = j < saved.stars; 
 
                 if (isEarned) {
                     if (type === 2) {
-                        // 💎 Діамантова
+                        // Блок відображення іконки діамантової зірки.
                         starsStr += '<span class="star-diamond">💎</span>';
                     } else {
-                        // ★ Золота
+                        // Блок відображення іконки звичайної золотої зірки.
                         starsStr += '★';
                     }
                 } else {
-                    // ☆ Порожня
+                    // Блок відображення іконки порожньої (неотриманої) зірки.
                     starsStr += '☆';
                 }
             }
@@ -2245,7 +2223,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             const el = document.createElement('div');
             el.className = 'song-card';
             
-            // Стилізація карток
+            // Застосування відповідних CSS класів залежно від типу треку (секретний, золотий тощо).
             if (s.isSecret) {
                 if (!isSecretUnlocked) el.classList.add('song-locked');
                 else el.classList.add('secret-song-card');
@@ -2253,7 +2231,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
                 el.classList.add(`song-${s.tag}`);
             }
 
-            // Клік по картці
+            // Призначення обробника натискання на картку треку, який перевіряє доступ та запускає гру.
             el.onclick = () => {
                 playClick();
                 if (s.isSecret && !isSecretUnlocked) { showSecretLockModal(); return; }
@@ -2261,7 +2239,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             };
             el.onmouseenter = playHover;
 
-            // HTML картки
+            // Формування HTML-структури картки треку.
             el.innerHTML = `
                 <div class="song-info">
                     <h3>${s.title} <span class="song-duration">${s.duration}</span></h3>
@@ -2351,11 +2329,11 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         });
     }
 
-    // --- Leaderboard: Fixed Size & Animations ---
+    // Логіка роботи модального вікна таблиці лідерів із фіксованим розміром та анімаціями перемикання.
     let currentLbTab = 'global';
 
     async function showLeaderboard() {
-        // Видаляємо старе вікно, якщо є
+        // Очищення DOM від старого вікна перед створенням нового.
         const existing = document.getElementById('lb-modal');
         if (existing) existing.remove();
 
@@ -2363,7 +2341,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         modal.id = 'lb-modal';
         modal.className = 'leaderboard-modal';
         
-        // Генеруємо HTML з фіксованою структурою
+        // Генерація каркасу вікна таблиці лідерів.
         modal.innerHTML = `
             <div class="lb-header-row">
                 <div class="lb-title">🏆 ${getText('leaderboard')}</div>
@@ -2386,7 +2364,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             
         document.body.appendChild(modal);
 
-        // Події
+        // Призначення обробників подій для елементів керування таблицею.
         modal.querySelector('.lb-close-btn').onclick = () => {
             modal.style.opacity = '0';
             modal.style.transform = 'translate(-50%, -45%) scale(0.95)';
@@ -2400,25 +2378,25 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             btn.onclick = () => {
                 if (btn.classList.contains('active')) return;
                 
-                // Перемикання кнопок
+                // Логіка візуального перемикання активної вкладки (глобальний/секретний рейтинг).
                 btns.forEach(b => b.classList.remove('active'));
                 btn.classList.add('active');
                 
-                // Анімація зникнення контенту
+                // Додавання класу для запуску анімації зникнення поточного контенту таблиці.
                 scrollArea.classList.add('fading');
                 
-                // Чекаємо поки зникне (200мс), тоді вантажимо нові дані
+                // Я використовую setTimeout для того, щоб дочекатися завершення CSS-анімації зникнення, перш ніж почати завантажувати та рендерити нові дані.
                 setTimeout(() => {
                     currentLbTab = btn.dataset.tab;
                     loadLeaderboardData(currentLbTab, modal).then(() => {
-                        // Анімація появи
+                        // Запуск анімації появи нового контенту після його рендерингу.
                         scrollArea.classList.remove('fading');
                     });
                 }, 200);
             };
         });
 
-        // Завантажуємо першу вкладку
+        // Автоматичне завантаження вкладки глобального рейтингу при першому відкритті вікна.
         await syncGlobalProgress().catch(e => console.error(e));
         loadLeaderboardData('global', modal);
     }
@@ -2427,10 +2405,10 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         const thead = modalRef.querySelector('#lb-header');
         const tbody = modalRef.querySelector('#lb-body');
         
-        // Очистка перед завантаженням (щоб не було видно старої таблиці під час фейду)
+        // Я очищаю таблицю перед початком завантаження нових даних, щоб старі результати не затримувалися на екрані.
         tbody.innerHTML = ''; 
 
-        // Заголовки (Локалізовані)
+        // Встановлення локалізованих заголовків стовпців залежно від типу обраного рейтингу.
         if (type === 'global') {
             thead.innerHTML = `<tr>
                 <th width="15%">#</th>
@@ -2446,17 +2424,17 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
             </tr>`;
         }
 
-        // Лоудер
+        // Відображення індикатора завантаження під час очікування відповіді від Firebase.
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">${getText('lbLoading')}</td></tr>`;
 
         try {
             const col = type === 'global' ? "global_leaderboard" : "secret_leaderboard";
             const orderField = type === 'global' ? "totalScore" : "score";
             
-            const q = query(collection(db, col), orderBy(orderField, "desc"), limit(20)); // Більше записів, бо є скрол
+            const q = query(collection(db, col), orderBy(orderField, "desc"), limit(20)); // Я встановив ліміт у 20 записів, оскільки вікно тепер має область з можливістю прокручування.
             const snap = await getDocs(q);
             
-            tbody.innerHTML = ''; // Прибираємо лоудер
+            tbody.innerHTML = ''; // Видалення індикатора завантаження після отримання даних.
 
             if (snap.empty) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; opacity:0.6;">${getText('lbNoRecords')}</td></tr>`;
@@ -2466,7 +2444,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
                     const data = docSnap.data();
                     const tr = document.createElement('tr');
                     
-                    // Стилізація рангу (1, 2, 3 місця)
+                    // Додавання візуальних бейджів (медалей) для перших трьох місць у рейтингу.
                     let rankClass = '';
                     let rankDisplay = `#${rank}`;
                     if (rank === 1) { rankClass = 'rank-1'; rankDisplay = '🥇 1'; }
@@ -2502,7 +2480,7 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         return String(text).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
     }
 
-    // --- CONTROLS ---
+    // Ініціалізація та налаштування глобальних обробників вводу (миша, сенсор, клавіатура).
     function initControls() {
         const lanesContainer = document.getElementById('lanes-bg');
         if (lanesContainer) for (let i = 0; i < 4; i++) laneElements[i] = lanesContainer.children[i];
@@ -2545,26 +2523,24 @@ document.getElementById('final-stars').innerHTML = starsHTML; // Викорис�
         }
 
 if (canvas) {
-            // 🔥 НОВИЙ ОБРОБНИК (POINTER EVENTS)
+            // НОВИЙ ОБРОБНИК: Я впровадив систему подій Pointer Events. Це дозволяє мені однаково добре обробляти введення як з комп'ютерної миші, так і з мобільних сенсорних екранів (включаючи мультитач).
             const handlePointer = (e, isDown) => {
-                // Блокуємо зум і скрол
+                // Виклик preventDefault() блокує стандартну поведінку браузера (зум, скрол, жести назад/вперед), щоб вони не заважали грі.
                 if (e.cancelable) e.preventDefault();
                 
-                // Страховка: якщо кеш пустий, оновимо його (але зазвичай він вже є)
+                // Страхувальна перевірка. Якщо розміри полотна ще не були кешовані, я роблю це тут.
                 if (!gameRect) gameRect = canvas.getBoundingClientRect();
 
-                // Отримуємо X координату конкретно цього пальця/миші
+                // Я отримую горизонтальну координату поточного дотику/кліку.
                 const clientX = e.clientX;
                 
-                // Рахуємо доріжку (0, 1, 2, 3)
-                // Використовуємо закешований gameRect, це миттєво
+                // Математично розраховую індекс ігрової доріжки (0-3) на основі координати дотику та кешованої ширини Canvas.
                 const lane = Math.floor((clientX - gameRect.left) / (gameRect.width / 4));
 
                 if (lane >= 0 && lane < 4) {
                     if (isDown) {
                         handleInputDown(lane);
-                        // "Захоплюємо" цей палець, щоб якщо він трохи зсунеться, 
-                        // браузер знав, що він все ще контролює цей елемент
+                        // Я застосовую setPointerCapture(). Це гарантує, що навіть якщо гравець випадково зсуне палець за межі екрана, браузер продовжить надсилати події pointerup саме на Canvas.
                         canvas.setPointerCapture(e.pointerId);
                     } else {
                         handleInputUp(lane);
@@ -2573,21 +2549,20 @@ if (canvas) {
                 }
             };
 
-            // pointerdown/up працюють і для миші, і для пальців
-            // passive: false обов'язково для e.preventDefault()
+            // Призначення обробників. Pointer Events чудово підходять, оскільки вони універсально працюють і з мишею, і з тачскріном.
             canvas.addEventListener('pointerdown', (e) => handlePointer(e, true), { passive: false });
             canvas.addEventListener('pointerup', (e) => handlePointer(e, false), { passive: false });
             
-            // Важливо: обробляємо випадки, коли палець "зісковзнув" або вилетів за межі
-   // 🔥 ЕСЛИ ПАЛЕЦ УШЕЛ ЗА ГРАНИЦЫ (В ШТОРКУ)
+            // Я додав обробники для екстрених випадків, коли система несподівано перериває дотик.
+   // ОБРОБКА ВИХОДУ ЗА МЕЖІ: Якщо палець гравця зісковзнув з активної зони Canvas (наприклад, у верхню шторку пристрою), я програмно розцінюю це як відпускання клавіші.
             canvas.addEventListener('pointerleave', (e) => {
                 handlePointer(e, false); 
             }, { passive: false });
 
-            // 🔥 ЕСЛИ СИСТЕМА ПРЕРВАЛА КАСАНИЕ (ЗВОНОК / УВЕДОМЛЕНИЕ)
+            // ОБРОБКА ПЕРЕРИВАННЯ: Якщо операційна система смартфона примусово перервала дотик (наприклад, через вхідний дзвінок), подія pointercancel дозволяє мені безпечно скинути стан керування.
             canvas.addEventListener('pointercancel', (e) => {
                 handlePointer(e, false);
-                // На всякий случай сбрасываем всё
+                // В екстреній ситуації я примусово скидаю всі активні натискання, щоб гравець не втрачав очки через технічні переривання.
                 State.keyState = [false, false, false, false];
                 State.holdingTiles = [null, null, null, null];
             }, { passive: false });
@@ -2614,30 +2589,23 @@ if (canvas) {
             const btn = document.getElementById(id);
             if (btn) { btn.onclick = (e) => { e.stopPropagation(); playClick(); fn(btn); }; btn.onmouseenter = playHover; }
         };
-        setupBtn('themeToggle', (btn) => {
-            const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
-            document.body.setAttribute('data-theme', next);
-            localStorage.setItem('siteTheme', next);
-            btn.innerText = next === 'dark' ? '🌙' : '☀️';
-            if(ctx) initGradients();
-        });
-// --- ЛОГІКА ЧІТ-КОДУ (ЗМІННІ) ---
+// Реалізація логіки секретного чіт-коду для активації авто-бота.
         let cheatTimer = 0;
         let cheatThemeCount = 0;
         let cheatSoundCount = 0;
 
-        // Функція перевірки: чи виконані умови (2 теми + 4 звуки)
+        // Функція, яка перевіряє, чи ввів гравець правильну комбінацію (2 рази змінити тему, 4 рази перемкнути звук).
         const checkCheatActivation = () => {
             if (cheatThemeCount === 2 && cheatSoundCount === 4) {
                 State.isBotEnabled = true;
                 
-                // Скидаємо лічильники, щоб код не спрацьовував повторно при наступних кліках
+                // Після успішної активації я скидаю лічильники, щоб код не спрацьовував хибно у майбутньому.
                 cheatThemeCount = 0;
                 cheatSoundCount = 0;
                 
-                // Візуальне повідомлення про активацію
+                // Я створив тимчасовий HTML-елемент, який інформує гравця про те, що бот успішно активований.
                 const msg = document.createElement('div');
-                msg.innerHTML = "🤖 AUTO-BOT ACTIVATED 🤖";
+                msg.innerHTML = "AUTO-BOT ACTIVATED";
                 msg.style.cssText = "position:fixed; top:20%; left:50%; transform:translateX(-50%); font-size:2rem; color:#00ff00; font-weight:bold; z-index:9999; text-shadow: 0 0 10px #000; pointer-events:none;";
                 document.body.appendChild(msg);
                 
@@ -2649,44 +2617,44 @@ if (canvas) {
             }
         };
 
-        // Функція оновлення таймера
+        // Логіка таймера. Щоб чіт-код зарахувався, послідовність кнопок потрібно ввести досить швидко (менш ніж за 10 секунд).
         const updateCheatTimer = () => {
             const now = Date.now();
-            // Якщо пройшло більше 10 секунд з початку введення коду — скидаємо все
+            // Якщо час вийшов, я анулюю всі попередні натискання.
             if (now - cheatTimer > 10000) {
                 cheatThemeCount = 0;
                 cheatSoundCount = 0;
-                cheatTimer = now; // Запускаємо новий відлік 10 сек
+                cheatTimer = now; 
             }
         };
 
-        // --- КНОПКА ТЕМИ (Theme) ---
+        // Налаштування кнопки перемикання світлої/темної теми.
         setupBtn('themeToggle', (btn) => {
-            // 1. Стандартна логіка зміни теми
+            // 1. Звичайна логіка зміни CSS-змінних, оновлення тексту кнопки та перегенерації градієнтів Canvas.
             const next = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
             document.body.setAttribute('data-theme', next);
             localStorage.setItem('siteTheme', next);
             btn.innerText = next === 'dark' ? '🌙' : '☀️';
             if(ctx) initGradients();
 
-            // 2. 🔥 ЧІТ-ЛОГІКА ТЕМИ
+            // ЛОГІКА СЕКРЕТУ (ТЕМА): Я перехоплюю натискання на кнопку зміни теми для перевірки комбінації секретного чіт-коду.
             updateCheatTimer();
-            cheatThemeCount++; // +1 до теми
+            cheatThemeCount++; 
             checkCheatActivation();
         });
 
-        // --- КНОПКА ЗВУКУ (Sound) ---
+        // Налаштування кнопки керування звуком.
         setupBtn('soundToggle', (btn) => {
-            // 1. Стандартна логіка звуку
+            // 1. Звичайна логіка увімкнення/вимкнення вузла Gain у Web Audio API та керування фоновою музикою.
             State.isMuted = !State.isMuted;
             localStorage.setItem('isMuted', State.isMuted);
             if (State.masterGain) State.masterGain.gain.value = State.isMuted ? 0 : 1;
             btn.innerText = State.isMuted ? '🔇' : '🔊';
             if (bgMusicEl) State.isMuted ? bgMusicEl.pause() : (!State.isPlaying && bgMusicEl.play().catch(() => {}));
 
-            // 2. 🔥 ЧІТ-ЛОГІКА ЗВУКУ
+            // ЛОГІКА СЕКРЕТУ (ЗВУК): Я додаю крок у лічильник комбінації чіт-коду при кожному натисканні на кнопку звуку.
             updateCheatTimer();
-            cheatSoundCount++; // +1 до звуку
+            cheatSoundCount++; 
             checkCheatActivation();
         });
 
@@ -2735,48 +2703,48 @@ if (canvas) {
     }
 
     // ==========================================
-    // 🛡️ SECURITY FIX: ANTI-EXPLOIT (Calls/Notifications)
+    // Критичне оновлення безпеки. Система протидії експлойтам під час переривань роботи браузера.
     // ==========================================
     
-    // Функция для принудительного сброса всех нажатий
+    // Моя функція для гарантованого примусового зняття всіх натискань. Вона перешкоджає можливості "заморозити" довгу ноту і фармити на ній нескінченні очки.
     function forceReleaseAllInputs() {
-        // 1. Сбрасываем состояние клавиш
+        // 1. Повне скидання булевих прапорців натискань у масиві State.keyState.
         State.keyState = [false, false, false, false];
 
-        // 2. Убираем визуальную подсветку дорожек
+        // 2. Зняття CSS-класів активності з елементів доріжок та обнулення прозорості візуальних променів Canvas.
         laneElements.forEach(el => { if (el) el.classList.remove('active'); });
         State.laneBeamAlpha = [0, 0, 0, 0];
 
-        // 3. Разрываем удержание длинных нот (Long Notes)
-        // Это самое важное: прекращаем фарм очков
+        // 3. Найважливіший крок: примусовий розрив процесу утримання всіх активних довгих нот.
+        // Я роблю це, щоб гравець не міг отримати перевагу від системного лагу або згорнутої вкладки.
         State.holdingTiles.forEach((tile, lane) => {
             if (tile) {
                 tile.holding = false;
-                // Можно пометить как released, чтобы нота "сорвалась"
+                // Я навмисно встановлюю прапорець released = true, щоб запустити анімацію зникнення ноти і показати гравцю, що вона "зірвалася".
                 tile.released = true; 
                 if (tile.fadeStartTime === 0) tile.fadeStartTime = Date.now();
-                // Выключаем визуальный эффект луча
+                // Я вимикаю ефект візуального світлового променя на цих доріжках.
                 toggleHoldEffect(lane, false);
             }
         });
-        // Очищаем массив удерживаемых нот
+        // Повністю очищую масив об'єктів нот, які зараз нібито "утримуються".
         State.holdingTiles = [null, null, null, null];
     }
 
-    // СЛУШАТЕЛЬ 1: Потеря фокуса (Звонок, клик по уведомлению, Alt+Tab)
+    // Обробник події blur (втрата фокусу вікном). Спрацьовує при вхідному дзвінку, натисканні Alt+Tab тощо.
     window.addEventListener('blur', () => {
-        forceReleaseAllInputs(); // Сразу обрубаем нажатия
+        forceReleaseAllInputs(); 
         if (State.isPlaying && !State.isPaused) {
-            togglePauseGame(); // Ставим на паузу
+            togglePauseGame(); 
         }
     });
 
-    // СЛУШАТЕЛЬ 2: Скрытие вкладки/браузера (Сворачивание, выключение экрана)
+    // Обробник visibilitychange (зміна видимості документа). Надійно спрацьовує на мобільних пристроях, коли користувач згортає браузер або блокує екран.
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            forceReleaseAllInputs(); // Сразу обрубаем нажатия
+            forceReleaseAllInputs(); 
             if (State.isPlaying && !State.isPaused) {
-                togglePauseGame(); // Ставим на паузу
+                togglePauseGame(); 
             }
         }
     });

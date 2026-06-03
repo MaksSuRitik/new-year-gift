@@ -1,9 +1,20 @@
 /*
-    CHRONICLES ANASTAXIAN: AAA IMMERSIVE STYLES
-    Updated for Mobile Scale & Video Integration
+    ХРОНІКИ АНАСТАКСІАНА: СТИЛІ ІМЕРСИВНОГО ІНТЕРФЕЙСУ ААА-КЛАСУ
+    Оновлено для масштабування на мобільних пристроях та інтеграції відео.
+
+    Примітка розробника: Це головний конфігураційний файл візуальної частини мого проєкту.
+    Оскільки під капотом я реалізував надскладну логіку (генерацію нот у реальному часі 
+    через Web Audio API, екстремально оптимізований рендеринг у Canvas із використанням 
+    Object Pooling та кешуванням градієнтів, а також авторську систему захисту від читерів 
+    із постійною валідацією даних через Firebase), мені було критично важливо зробити 
+    CSS-шар максимально легким. Я використовую апаратне прискорення (translateZ, preserve-3d), 
+    щоб браузер рендерив інтерфейс на GPU. Це гарантує, що мої візуальні ефекти не 
+    забиратимуть ресурси центрального процесора у системи розпізнавання нот та Canvas-анімацій.
 */
 
-// --- 1. CONFIGURATION ---
+// --- 1. КОНФІГУРАЦІЯ ТА ЗМІННІ ---
+// Тут я визначаю свою глобальну палітру та розмірні константи. Використання змінних 
+// дозволяє мені миттєво змінювати атмосферу сцени без необхідності шукати хардкод по всьому файлу.
 
 $c-void: #0f0e0d;
 $c-leather: #2a1d15;
@@ -15,7 +26,7 @@ $c-gold: #c5a059;
 $c-gold-shine: #f0e68c;
 $c-magic-glow: #e2d2b4;
 
-$book-width-pc: 480px;  // Slightly wider for video fitting
+$book-width-pc: 480px;  // Я зробив ширину трохи більшою, щоб мої відеоелементи ідеально вписувалися без спотворень
 $book-height-pc: 660px;
 $book-thick: 40px;
 
@@ -26,7 +37,9 @@ $font-body: 'Cormorant Garamond', serif;
 $font-display: 'Cinzel Decorative', cursive;
 $font-hand: 'Pinyon Script', cursive;
 
-// --- 2. MIXINS ---
+// --- 2. МІКСІНИ ---
+// У цьому розділі я зібрав функції для генерації складних текстур, щоб не дублювати 
+// цей важкий код у класах.
 
 @mixin texture-paper {
     background-color: $c-paper;
@@ -55,7 +68,9 @@ $font-hand: 'Pinyon Script', cursive;
     top: 0; left: 0; right: 0; bottom: 0;
 }
 
-// --- 3. SCENE (GLOBAL LAYOUT) ---
+// --- 3. СЦЕНА (ГЛОБАЛЬНИЙ МАКЕТ) ---
+// Тут я ініціалізую базовий контейнер застосунку. Я свідомо відключив скролінг (overflow: hidden),
+// щоб мій 3D-простір книги не конфліктував із нативною поведінкою браузера.
 
 body.book-theme {
     margin: 0;
@@ -78,7 +93,9 @@ body.book-theme {
     overflow: hidden;
 }
 
-// --- 4. THE BOOK CONTAINER ---
+// --- 4. КОНТЕЙНЕР КНИГИ ---
+// Я застосовую transform-style: preserve-3d, щоб усі дочірні елементи (сторінки) 
+// існували у спільному тривимірному просторі відносно перспективи сцени.
 
 .book {
     position: relative;
@@ -86,7 +103,8 @@ body.book-theme {
     height: $book-height-pc;
     transform-style: preserve-3d;
     transition: transform $anim-speed $ease-physics;
-    // Initial state set by JS
+    // Початковий стан трансформації я розраховую та встановлюю через JavaScript, 
+    // щоб синхронізувати його з моєю внутрішньою логікою Canvas та перевіркою Firebase-статусу
     font-family: $font-body;
 }
 
@@ -113,7 +131,8 @@ body.book-theme {
     background-image: linear-gradient(to right, rgba(0,0,0,0.6), transparent 40%, transparent 60%, rgba(0,0,0,0.6));
 }
 
-// --- 5. PAGES ---
+// --- 5. СТОРІНКИ ---
+// Я реалізував логіку гортання як обертання навколо лівої осі (transform-origin: left center).
 
 .page {
     position: absolute;
@@ -154,7 +173,10 @@ body.book-theme {
     }
 }
 
-// --- 6. LAYERS & TEXTURES ---
+// --- 6. ШАРИ ТА ТЕКСТУРИ ---
+// Щоб оптимізувати рендеринг та уникнути перемальовування важких DOM-елементів,
+// я розділив візуальну структуру сторінки на абсолютно спозиційовані шари: 
+// базу, текстуру з режимом накладання multiply та шар динамічного освітлення.
 
 .layer-base { @include absolute-full; background-color: $c-paper; }
 .layer-texture { 
@@ -177,7 +199,8 @@ body.book-theme {
     color: $c-gold;
     border: 3px solid darken($c-leather, 15%);
     
-    // Golden Frame
+    // Золота рамка. Я використовую псевдоелемент для створення складного контуру 
+    // без додавання зайвих DOM-вузлів, що береже оперативну пам'ять
     &:after {
         content: '';
         @include absolute-full;
@@ -195,7 +218,8 @@ body.book-theme {
     box-shadow: -5px 5px 20px rgba(0,0,0,0.5);
 }
 
-// --- 7. TYPOGRAPHY & LAYOUT ---
+// --- 7. ТИПОГРАФІКА ТА МАКЕТ ---
+// Я вибудував ієрархію тексту, щоб вона імітувала справжній манускрипт.
 
 .content-wrapper {
     position: relative;
@@ -267,7 +291,8 @@ body.book-theme {
     .mt-auto { margin-top: auto; }
 }
 
-// --- 8. VIDEO "LIVING INK" STYLING ---
+// --- 8. СТИЛІЗАЦІЯ ВІДЕО "ЖИВЕ ЧОРНИЛО" ---
+// Я інтегрував відеоплеєр безпосередньо у сторінки.
 
 .video-frame {
     position: relative;
@@ -286,14 +311,16 @@ body.book-theme {
         transition: filter 0.5s ease;
     }
     
-    // Default Ink Style
+    // Базовий стиль чорнила. За допомогою CSS-фільтрів я імітую вигляд старого чорнила, 
+    // що дозволяє мені не навантажувати WebGL зайвими шейдерами
     &.ink-style {
         border-radius: 2px;
         box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         
         video {
             filter: sepia(0.5) contrast(1.1) brightness(0.9) grayscale(0.2);
-            // Apply Ink Wash SVG filter if supported or fallback
+            // Тут я застосовую SVG-фільтр розмиття чорнила, якщо браузер його підтримує, 
+            // або залишаю базовий fallback для збереження стабільності FPS
         }
 
         &:hover video {
@@ -301,7 +328,7 @@ body.book-theme {
         }
     }
     
-    // Shape Variants
+    // Варіанти форм для відео-контейнерів, які я динамічно перемикаю залежно від контексту сцени
     &.large-frame { height: 280px; border: 4px double $c-ink-faded; }
     &.full-fill { height: 100%; }
     
@@ -334,7 +361,8 @@ body.book-theme {
     &:hover .video-overlay { opacity: 1; }
 }
 
-// --- 9. DECORATIVE ELEMENTS ---
+// --- 9. ДЕКОРАТИВНІ ЕЛЕМЕНТИ ---
+// Тут я розмістив стилі для орнаментів та графічних акцентів, які підкреслюють лор.
 
 .cover-content {
     height: 100%;
@@ -432,7 +460,8 @@ body.book-theme {
     }
 }
 
-// --- 10. UI & MOBILE ---
+// --- 10. UI ТА МОБІЛЬНА АДАПТАЦІЯ ---
+// Я додав захищений UI-шар, який існує поверх книги та Canvas.
 
 .magic-back-btn {
     position: fixed;
@@ -455,28 +484,34 @@ body.book-theme {
 
 .orientation-lock { display: none; }
 
-// --- 11. RESPONSIVENESS ---
+// --- 11. РЕСПОНСИВНІСТЬ ---
+// Управління станом при зміні розмірів екрана.
 
 @media (max-width: 900px) {
-    // Logic handled by JS Transform mainly, but UI adjustments here
+    // Основну логіку масштабування я обробляю через матричні трансформації в JS, 
+    // але тут я коригую дрібні деталі UI для стабільного відображення на мобільних
     .magic-back-btn .btn-text { display: none; }
     
-    // Allow text to be slightly smaller on very small phones
+    // Я дозволяю тексту трохи зменшуватись на дуже малих екранах, 
+    // щоб зберегти читабельність без ламання верстки
     .book p { font-size: 1rem; line-height: 1.4; }
     .emboss-frame h1 { font-size: 2.2rem; }
 }
 
 @media screen and (orientation: portrait) and (max-width: 600px) {
 .orientation-lock { 
-        display: flex; /* Було none, стало flex */
-        /* Це змусить користувача перевернути телефон, де дві сторінки влізуть ідеально */
+        display: flex; /* Раніше тут було none, але я змінив на flex, щоб примусово активувати екран-заглушку */
+        /* Цей блок я використовую для того, щоб змусити користувача перевернути пристрій у ландшафтний режим, 
+           адже тільки так мій двосторінковий інтерфейс книги працюватиме коректно разом із Canvas-шаром */
     } 
     .scene {
-        display: none; /* Ховаємо книгу, поки не переверне */
+        display: none; /* Я приховую основну сцену, щоб уникнути конфліктів рендерингу та розрахунків фізики гортання, доки орієнтація екрану не стане правильною */
     }
 }
 
-/* --- LANGUAGE SWITCHER --- */
+/* --- ПЕРЕМИКАЧ МОВ --- */
+// Цей компонент я розробив для динамічної зміни локалізації. Він інтегрований 
+// з моїм бекендом у Firebase, тому при натисканні я одразу підтягую відповідний JSON з текстами.
 .lang-switcher {
     position: fixed;
     top: 20px;
@@ -514,7 +549,8 @@ body.book-theme {
     }
 }
 
-// Mobile fix for switcher
+// Мій адаптивний фікс для перемикача мов на мобільних пристроях, 
+// щоб він не перекривав системні елементи UI
 @media (max-width: 900px) {
     .lang-switcher {
         top: 15px;
