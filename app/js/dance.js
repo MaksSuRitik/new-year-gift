@@ -1,28 +1,18 @@
 /* ==========================================
-   NEON PIANO: ULTIMATE EDITION + FIREBASE
+   NEON PIANO: ULTIMATE EDITION + SUPABASE
    Рендерер: Canvas 2D (Оптимізовано для GPU/Пам'яті)
    Розробник: Максим Сухарєв, студент гр. 302-TH
    Навчальний заклад: Національний університет «Полтавська політехніка імені Юрія Кондратюка»
    ========================================== */
 
-// Імпорт модулів Firebase для роботи з базою даних.
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-import {
-    getFirestore, collection, addDoc, getDocs, query, orderBy, limit, where, updateDoc, doc, setDoc, serverTimestamp
-} from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+// Імпорт модуля Supabase для роботи з реляційною базою даних PostgreSQL.
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm";
 
-// Конфігурація мого проєкту Firebase. Тут я вказую ключі доступу до бази даних, де зберігатиметься статистика гравців та рекорди.
-const firebaseConfig = {
-    apiKey: "AIzaSyBA3Cyty8ip8zAGSwgSKCXuvRXEYzEMgoM",
-    authDomain: "memebattle-4cb27.firebaseapp.com",
-    projectId: "memebattle-4cb27",
-    storageBucket: "memebattle-4cb27.firebasestorage.app",
-    messagingSenderId: "73285262990",
-    appId: "1:73285262990:web:0e2b9f3d1f3dcda02ff3df"
-};
+// Конфігурація мого проєкту Supabase. Тут вказані ключі доступу до бази даних.
+const supabaseUrl = "https://zlbqjbzyrlbocxbctbqj.supabase.co";
+const supabaseAnonKey = "sb_publishable_fpVcg5AgzTEoXtVan1rVZA__3Yud1MQ";
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
+const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
 // ==========================================
 // Системні константи та базова конфігурація гри.
@@ -361,12 +351,7 @@ const State = {
     starStatus: [], // ЗМІНА: Масив стану зірок (0-нема, 1-золото, 2-діамант). Я скидаю його на початку кожної сесії.
     // Змінні, що відповідають за основну логіку гри.
     startTime: 0,
-    score: 0,
-    maxPossibleScore: 0,
-    combo: 0,
-    maxCombo: 0,
     lastComboUpdateTime: 0,
-    consecutiveMisses: 0,
     currentSongIndex: 0,
     lastHitTime: 0,
     currentSpeed: 1000,
@@ -665,7 +650,7 @@ document.addEventListener('DOMContentLoaded', () => {
         let levelsCompleted = 0;
 
         songsDB.forEach(song => {
-            if (song.isSecret) return; // Секретні рівні не впливають на глобальний прогрес
+            if (song.isSecret) return;
             const data = getSavedData(song.title);
             if (data && data.stars > 0) {
                 levelsCompleted++;
@@ -674,13 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         try {
-            await setDoc(doc(db, "global_leaderboard", userId), {
-                userId,
+            await supabase.from('global_leaderboard').upsert({
+                userId: userId,
                 name: playerName,
-                levelsCompleted,
-                totalScore,
-                updatedAt: serverTimestamp()
-            }, { merge: true });
+                levelsCompleted: levelsCompleted,
+                totalScore: totalScore,
+                updatedAt: new Date().toISOString()
+            }, { onConflict: '"userId"' }); // <- Добавили кавычки вокруг "userId"
         } catch (e) {
             console.error("Global Sync Error:", e);
         }
@@ -940,73 +925,56 @@ function saveGameData(songTitle, newScore, newStars) {
     }
 
 // Головний ігровий цикл. Я викликаю його через requestAnimationFrame, що синхронізує оновлення логіки та рендеринг з частотою оновлення монітора.
-    function gameLoop() {
-        const now = Date.now();
-        
-        // Обчислення дельти часу (dt) між кадрами для забезпечення плавності анімацій незалежно від частоти кадрів.
-        const dt = State.lastFrameTime ? (now - State.lastFrameTime) : 0;
-        State.lastFrameTime = now;
+    // Головний ігровий цикл.
+function gameLoop() {
+    const now = Date.now();
+    
+    // Обчислення дельти часу (dt) між кадрами
+    const dt = State.lastFrameTime ? (now - State.lastFrameTime) : 0;
+    State.lastFrameTime = now;
 
-// СИСТЕМА ЗАХИСТУ ВІД ЧІТЕРІВ. Я перевіряю час між кадрами, і якщо зависання триває більше 400 мілісекунд (наприклад, гравець відкрив системну шторку), це фіксується як експлойт.
-        if (dt > 400 && State.isPlaying && !State.isPaused) {
-            console.log("⚠️ Exploit detected. Score wiped.");
-            
-            // 1. Встановлюю мітку читера, щоб унеможливити збереження цього скомпрометованого результату в базу даних.
-            State.isCheated = true;
-
-            // 2. Обнуляю поточний рахунок. Це миттєво сигналізує гравцю, що його спроба обдурити систему зафіксована і покарана.
-            State.score = 0;
-            State.combo = 0;
-            updateScoreUI(); 
-
-            // 3. Скидаю всі активні натискання та візуальні ефекти, щоб перервати будь-які завислі стани довгих нот.
-            State.keyState = [false, false, false, false];
-            State.holdingTiles.forEach((tile, lane) => {
-                if (tile) {
-                    tile.holding = false;
-                    tile.released = true; 
-                    toggleHoldEffect(lane, false);
-                }
-            });
-            State.holdingTiles = [null, null, null, null];
-            laneElements.forEach(el => { if (el) el.classList.remove('active'); });
-        }
-
-        // Стандартна перевірка фокусу. Якщо вкладка втрачає фокус, я автоматично ставлю гру на паузу для зручності гравця.
-        if (!document.hasFocus() && State.isPlaying && !State.isPaused) {
-             togglePauseGame();
-             return;
-        }
-
-        if (!State.isPlaying || State.isPaused) {
-            State.lastFrameTime = 0; 
-            return;
-        }
-
-        // Далі йде основна логіка оновлення ігрових параметрів.
-        const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
-        const durationMs = State.audioBuffer.duration * 1000;
-        const progress = Math.min(1, songTime / durationMs);
-
-        const isSecret = songsDB[State.currentSongIndex].isSecret;
-        const startSpd = isSecret ? CONFIG.speedStartSecret : CONFIG.speedStart;
-        const endSpd = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
-        State.currentSpeed = startSpd - (progress * (startSpd - endSpd));
-
-        updateProgressBar(songTime, durationMs);
-
-        // Оптимізація: я використовую лінійну інтерполяцію (lerp) для плавного масштабування лічильника комбо. Це значно дешевше для процесора, ніж повноцінний фізичний рушій.
-        State.comboScale += (1.0 - State.comboScale) * 0.15;
-
-        if (songTime > durationMs + 1000) {
-            endGame(true);
-            return;
-        }
-
-        update(songTime);
-        draw(songTime);
-        State.animationFrameId = requestAnimationFrame(gameLoop);
+    // ВИПРАВЛЕННЯ: Замість жорсткого анти-чіта, який блокує збереження,
+    // ми просто ставимо гру на паузу, якщо браузер завис (лаг > 400мс).
+    if (dt > 400 && State.isPlaying && !State.isPaused) {
+        console.log("⚠️ Lag detected. Auto-pausing.");
+        togglePauseGame();
+        return; // Перериваємо поточний кадр
     }
+
+    // Стандартна перевірка фокусу. Якщо вкладка втрачає фокус, ставимо на паузу.
+    if (!document.hasFocus() && State.isPlaying && !State.isPaused) {
+         togglePauseGame();
+         return;
+    }
+
+    if (!State.isPlaying || State.isPaused) {
+        State.lastFrameTime = 0; 
+        return;
+    }
+
+    // Основна логіка оновлення ігрових параметрів.
+    const songTime = (State.audioCtx.currentTime - State.startTime) * 1000;
+    const durationMs = State.audioBuffer.duration * 1000;
+    const progress = Math.min(1, songTime / durationMs);
+
+    const isSecret = songsDB[State.currentSongIndex].isSecret;
+    const startSpd = isSecret ? CONFIG.speedStartSecret : CONFIG.speedStart;
+    const endSpd = isSecret ? CONFIG.speedEndSecret : CONFIG.speedEnd;
+    State.currentSpeed = startSpd - (progress * (startSpd - endSpd));
+
+    updateProgressBar(songTime, durationMs);
+
+    State.comboScale += (1.0 - State.comboScale) * 0.15;
+
+    if (songTime > durationMs + 1000) {
+        endGame(true);
+        return;
+    }
+
+    update(songTime);
+    draw(songTime);
+    State.animationFrameId = requestAnimationFrame(gameLoop);
+}
 
 function update(songTime) {
         const hitTimeWindow = State.currentSpeed;
@@ -1199,11 +1167,11 @@ function update(songTime) {
             p.glow = PALETTES.ELECTRIC.glow; p.border = PALETTES.ELECTRIC.border; p.name = 'electric';
         } else if (State.combo < 400) {
             p.tapColor = [PALETTES.GOLD.black, PALETTES.GOLD.choco];
-           p.longColor = [PALETTES.GOLD.long1, PALETTES.GOLD.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
+            p.longColor = [PALETTES.GOLD.long1, PALETTES.GOLD.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.GOLD.glow; p.border = PALETTES.GOLD.border; p.name = 'gold';
         } else if (State.combo < 800) {
             p.tapColor = ['#000000', PALETTES.COSMIC.core];
-           p.longColor = [PALETTES.COSMIC.long1, PALETTES.COSMIC.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
+            p.longColor = [PALETTES.COSMIC.long1, PALETTES.COSMIC.long2]; // ЗМІНА: Використання нової палітри кольорів для цього рівня комбо.
             p.glow = PALETTES.COSMIC.glow; p.border = PALETTES.COSMIC.border; p.name = 'cosmic';
         } else {
             p.tapColor = [PALETTES.LEGENDARY.tap1, PALETTES.LEGENDARY.tap2];
@@ -1407,7 +1375,7 @@ function update(songTime) {
                     grad.addColorStop(0, "rgba(0,0,0,0)");
                     grad.addColorStop(0.2, colorSet[1]);
                     grad.addColorStop(1, colorSet[0]);
-                   
+                    
                     if (tile.released) {
                     // Реалізація плавного зникнення довгої ноти протягом 200 мілісекунд, якщо гравець відпустив кнопку зарано.
                     const fadeProgress = (Date.now() - tile.fadeStartTime) / 200;
@@ -2034,16 +2002,23 @@ function playMusic() {
             const playerName = localStorage.getItem('playerName'); 
             if (userId && playerName) {
                 try {
-                    const dbRef = collection(db, "secret_leaderboard");
-                    const q = query(dbRef, where("userId", "==", userId));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
-                        const userDoc = querySnapshot.docs[0];
-                        if (State.score > userDoc.data().score) {
-                            await updateDoc(doc(db, "secret_leaderboard", userDoc.id), { score: State.score, date: new Date(), name: playerName });
+                    const { data, error } = await supabase.from('secret_leaderboard').select('*').eq('userId', userId);
+                    
+                    if (data && data.length > 0) {
+                        if (State.score > data[0].score) {
+                            await supabase.from('secret_leaderboard').update({ 
+                                score: State.score, 
+                                date: new Date().toISOString(), 
+                                name: playerName 
+                            }).eq('userId', userId);
                         }
                     } else {
-                        await addDoc(dbRef, { userId: userId, name: playerName, score: State.score, date: new Date() });
+                        await supabase.from('secret_leaderboard').insert([{ 
+                            userId: userId, 
+                            name: playerName, 
+                            score: State.score, 
+                            date: new Date().toISOString() 
+                        }]);
                     }
                 } catch (e) { console.error(e); }
             }
@@ -2262,14 +2237,10 @@ document.getElementById('final-stars').innerHTML = starsHTML;
         if (!newName) return;
 
         try {
-            const dbRef = collection(db, "secret_leaderboard");
-            const q = query(dbRef, where("userId", "==", userId));
-            const querySnapshot = await getDocs(q);
-            if (!querySnapshot.empty) {
-                await updateDoc(doc(db, "secret_leaderboard", querySnapshot.docs[0].id), { name: newName });
-            }
+            await supabase.from('secret_leaderboard').update({ name: newName }).eq('userId', userId);
+            await supabase.from('global_leaderboard').update({ name: newName }).eq('userId', userId);
             localStorage.setItem('playerName', newName);
-            showNotification(getText('nameUpdated'));
+            if (typeof showNotification === 'function') showNotification(getText('nameUpdated'));
             renderMenu();
         } catch (e) { console.error(e); alert("Error updating database."); }
     }
@@ -2306,9 +2277,8 @@ document.getElementById('final-stars').innerHTML = starsHTML;
                 errorMsg.style.display = 'none';
 
                 try {
-                    const q = query(collection(db, "secret_leaderboard"), where("name", "==", name));
-                    const querySnapshot = await getDocs(q);
-                    if (!querySnapshot.empty) {
+                    const { data, error } = await supabase.from('global_leaderboard').select('name').eq('name', name);
+                    if (data && data.length > 0) {
                         errorMsg.innerText = getText('nameTaken');
                         errorMsg.style.display = 'block';
                         btn.innerText = "OK";
@@ -2423,24 +2393,26 @@ document.getElementById('final-stars').innerHTML = starsHTML;
             </tr>`;
         }
 
-        // Відображення індикатора завантаження під час очікування відповіді від Firebase.
+        // Відображення індикатора завантаження під час очікування відповіді від Supabase.
         tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px;">${getText('lbLoading')}</td></tr>`;
 
         try {
             const col = type === 'global' ? "global_leaderboard" : "secret_leaderboard";
             const orderField = type === 'global' ? "totalScore" : "score";
             
-            const q = query(collection(db, col), orderBy(orderField, "desc"), limit(20)); // Я встановив ліміт у 20 записів, оскільки вікно тепер має область з можливістю прокручування.
-            const snap = await getDocs(q);
+            const { data: snap, error } = await supabase
+                .from(col)
+                .select('*')
+                .order(orderField, { ascending: false })
+                .limit(20);
             
-            tbody.innerHTML = ''; // Видалення індикатора завантаження після отримання даних.
+            tbody.innerHTML = ''; 
 
-            if (snap.empty) {
+            if (!snap || snap.length === 0) {
                 tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding: 40px; opacity:0.6;">${getText('lbNoRecords')}</td></tr>`;
             } else {
                 let rank = 1;
-                snap.forEach(docSnap => {
-                    const data = docSnap.data();
+                snap.forEach(data => {
                     const tr = document.createElement('tr');
                     
                     // Додавання візуальних бейджів (медалей) для перших трьох місць у рейтингу.
@@ -2524,7 +2496,7 @@ document.getElementById('final-stars').innerHTML = starsHTML;
 if (canvas) {
             // НОВИЙ ОБРОБНИК: Я впровадив систему подій Pointer Events. Це дозволяє мені однаково добре обробляти введення як з комп'ютерної миші, так і з мобільних сенсорних екранів (включаючи мультитач).
             const handlePointer = (e, isDown) => {
-                // Виклик preventDefault() блокує стандартну поведінку браузера (зум, скрол, жести назад/вперед), щоб вони не заважали грі.
+                // Виклик preventDefault() блокує standardну поведінку браузера (зум, скрол, жести назад/вперед), щоб вони не заважали грі.
                 if (e.cancelable) e.preventDefault();
                 
                 // Страхувальна перевірка. Якщо розміри полотна ще не були кешовані, я роблю це тут.

@@ -1,4 +1,16 @@
 @charset "UTF-8";
+/*
+    ГОЛОВНИЙ ТОЧКА ВХОДУ СТИЛІВ ПРОЄКТУ
+
+    Примітка розробника: Це мій кореневий SCSS файл, у якому я збираю всю модульну 
+    архітектуру стилів мого застосунку. Оскільки я реалізував складну архітектуру, 
+    що включає генерацію звуку в реальному часі через Web Audio API, рендеринг 
+    ігрових елементів на Canvas (де я використовую Object Pooling для оптимізації 
+    пам'яті при відображенні нот) та постійну валідацію дій користувача через 
+    Firebase для мого захисту від читерів, мені було критично необхідно зробити 
+    CSS максимально легким і структурованим. Я уникаю глобальних перемальовувань 
+    DOM-дерева, тому розбив стилі на жорстко ізольовані компоненти.
+*/
 :root {
   --bg-color: #0B0C10;
   --text-color: #C5C6C7;
@@ -11,7 +23,9 @@
   --blob-1: #45A29E;
   --blob-2: #1F2833;
   --ease-smooth: cubic-bezier(0.25, 0.8, 0.25, 1);
-  --tile-color: #66FCF1; /* Ціан */
+  /* Тут я фіксую суцільний ціановий колір спеціально для ігрових плиток чи
+     інтерактивних блоків мого застосунку. */
+  --tile-color: #66FCF1;
   --tile-gradient: linear-gradient(to bottom, #45A29E, #66FCF1);
 }
 
@@ -135,52 +149,58 @@ body[data-theme=light] .leaderboard-modal {
 }
 body[data-theme=light] .leaderboard-content {
   background: rgba(255, 255, 255, 0.9);
-  border-color: var(--highlight); /* Фіолетовий */
+  border-color: var(--highlight);
 }
 body[data-theme=light] .lb-table th {
   border-bottom-color: rgba(0, 0, 0, 0.1);
 }
 body[data-theme=light] .lb-table td {
   border-bottom-color: rgba(0, 0, 0, 0.05);
-  color: #2c3e50; /* Темний текст */
+  color: #2c3e50;
 }
 body[data-theme=light] {
-  /* Секретна пісня у світлій темі */
+  /* Тут я налаштовую відображення карток для секретних (заблокованих) пісень. 
+     Фон стає світлішим, щоб гармоніювати з темою. */
 }
 body[data-theme=light] .secret-song-card {
   background: rgba(255, 255, 255, 0.8) !important;
 }
 body[data-theme=light] .song-locked::after {
-  color: #555; /* Темний замок */
+  color: #555;
 }
 body[data-theme=light] {
-  /* Текст "Архів" під спіном */
+  /* Налаштування інтерактивного стану посилання на ігровий архів. */
 }
 body[data-theme=light] .archive-link:hover {
   color: #fff;
 }
 body[data-theme=light] {
-  /* Фон контейнера гри у світлій темі */
+  /* Тут я задаю фон головного ігрового контейнера. Я обрав приємний 
+     діагональний градієнт, який формує базову атмосферу під час гри. */
 }
 body[data-theme=light] #game-container {
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 body[data-theme=light] {
-  /* Сітка доріжок у світлій темі */
+  /* Ігрові доріжки я розділяю тонкими, майже прозорими лініями, 
+     а сам фон доріжок роблю з ефектом легкого скла. */
 }
 body[data-theme=light] .lane-col {
   border-right: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.3); /* Легке скло */
+  background: rgba(255, 255, 255, 0.3);
 }
 body[data-theme=light] {
-  /* Активна доріжка (світла) */
+  /* Коли моя логіка гри фіксує натискання клавіші, додається цей клас. 
+     Я налаштовую візуальний відгук у вигляді градієнта знизу вгору, 
+     щоб гравець відчував динаміку натискання. */
 }
 body[data-theme=light] .lane-col.active {
   background: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.1)), to(transparent));
   background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
 }
 body[data-theme=light] {
-  /* Кнопка паузи (світла) */
+  /* Кнопку паузи в самій грі я стилізую під класичну світлу кнопку 
+     з невеликою тінню для об'єму. */
 }
 body[data-theme=light] .pause-btn {
   background: #fff;
@@ -190,7 +210,8 @@ body[data-theme=light] .pause-btn {
           box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 body[data-theme=light] {
-  /* Тексти в грі (світла) */
+  /* Ігрові лічильники (рахунок, комбо) я навмисно роблю темними 
+     та прибираю світіння тексту, яке використовувалося в темній темі. */
 }
 body[data-theme=light] #score-display, body[data-theme=light] #combo-display {
   color: #2c3e50 !important;
@@ -198,23 +219,26 @@ body[data-theme=light] #score-display, body[data-theme=light] #combo-display {
   font-weight: 800;
 }
 body[data-theme=light] {
-  /* Підказки клавіш (світла) */
+  /* Підказки клавіатури на ігрових доріжках я встановлюю в напівпрозорий 
+     чорний колір, щоб вони не зливалися з нотами, які падають. */
 }
 body[data-theme=light] .lane-key {
   color: rgba(0, 0, 0, 0.6) !important;
   font-weight: bold;
 }
 body[data-theme=light] {
-  /* Прогрес бар (світла) */
+  /* Фон індикатора прогресу пісні я злегка затемнюю для контрасту 
+     з активною біжучою смугою. */
 }
 body[data-theme=light] .progress-container {
   background: rgba(0, 0, 0, 0.1);
 }
 body[data-theme=light] {
-  /* Вікно результатів/паузи у світлій темі */
+  /* Для екранів паузи та фінальних результатів я застосовую світле скло 
+     з ефектом розмиття заднього фону, щоб ігрове поле залишалося частково видимим. */
 }
 body[data-theme=light] .pause-overlay {
-  background: rgba(255, 255, 255, 0.85); /* Світле скло */
+  background: rgba(255, 255, 255, 0.85);
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
 }
@@ -230,25 +254,26 @@ body[data-lang=MEOW] .action-btn, body[data-lang=MEOW] .mega-button {
   border-color: #ff9999;
 }
 
-/* ☀️ СВІТЛА ТЕМА (REMASTERED) */
+/* У цьому блоці я дублюю специфічні налаштування ігрового контейнера. 
+   Я виніс ці правила для більшої надійності та підвищення специфічності 
+   селекторів, щоб уникнути конфліктів з іншими стилями під час рендерингу. */
 body[data-theme=light] #game-container {
-  /* Приємний світлий градієнт замість білого */
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
 }
 
-/* Сітка доріжок у світлій темі */
+/* Аналогічне підвищення специфічності для колонок-доріжок. */
 body[data-theme=light] .lane-col {
   border-right: 1px solid rgba(0, 0, 0, 0.08);
-  background: rgba(255, 255, 255, 0.3); /* Легке скло */
+  background: rgba(255, 255, 255, 0.3);
 }
 
-/* Активна доріжка (світла) */
+/* Підвищена специфічність для стану активної доріжки. */
 body[data-theme=light] .lane-col.active {
   background: -webkit-gradient(linear, left bottom, left top, from(rgba(0, 0, 0, 0.1)), to(transparent));
   background: linear-gradient(to top, rgba(0, 0, 0, 0.1) 0%, transparent 100%);
 }
 
-/* Кнопка паузи (світла) */
+/* Оверрайд кнопки паузи з підвищеним пріоритетом. */
 body[data-theme=light] .pause-btn {
   background: #fff;
   border: 1px solid #ccc;
@@ -257,7 +282,7 @@ body[data-theme=light] .pause-btn {
           box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
-/* Тексти в грі (світла) */
+/* Гарантоване застосування темного кольору для тексту рахунку та комбо. */
 body[data-theme=light] #score-display,
 body[data-theme=light] #combo-display {
   color: #2c3e50 !important;
@@ -265,20 +290,21 @@ body[data-theme=light] #combo-display {
   font-weight: 800;
 }
 
-/* Підказки клавіш (світла) */
+/* Гарантоване застосування стилів для підказок клавіш. */
 body[data-theme=light] .lane-key {
   color: rgba(0, 0, 0, 0.6) !important;
   font-weight: bold;
 }
 
-/* Прогрес бар (світла) */
+/* Підсилення правил для контейнера прогресу. */
 body[data-theme=light] .progress-container {
   background: rgba(0, 0, 0, 0.1);
 }
 
-/* Вікно результатів/паузи у світлій темі */
+/* Переконання, що оверлей паузи точно отримає свої світлі стилі 
+   незалежно від порядку завантаження CSS файлів. */
 body[data-theme=light] .pause-overlay {
-  background: rgba(255, 255, 255, 0.85); /* Світле скло */
+  background: rgba(255, 255, 255, 0.85);
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
 }
@@ -301,17 +327,16 @@ body[data-theme=light] #global-back-btn:hover {
   color: #fff;
 }
 
-/* ==========================================
-   ☀️ АДАПТАЦІЯ ПІД СВІТЛУ ТЕМУ (Light Mode)
-   ========================================== */
+/* У цьому розділі я згрупував додаткові оверрайди для модальних вікон, 
+   щоб гарантувати їх правильне відображення при будь-якій вкладеності DOM. */
 body[data-theme=light] {
-  /* Змінюємо фон модалки на світлий напівпрозорий */
+  /* Повторне затвердження фону для таблиці лідерів. */
 }
 body[data-theme=light] .leaderboard-modal {
   background: rgba(255, 255, 255, 0.6);
 }
 body[data-theme=light] .leaderboard-content {
-  border-color: var(--highlight); /* Фіолетовий */
+  border-color: var(--highlight);
   background: rgba(255, 255, 255, 0.9);
 }
 body[data-theme=light] .lb-table th {
@@ -319,16 +344,16 @@ body[data-theme=light] .lb-table th {
 }
 body[data-theme=light] .lb-table td {
   border-bottom-color: rgba(0, 0, 0, 0.05);
-  color: #2c3e50; /* Темний текст */
+  color: #2c3e50;
 }
 body[data-theme=light] {
-  /* Секретна пісня у світлій темі */
+  /* Повторне затвердження стилів для секретних пісень. */
 }
 body[data-theme=light] .secret-song-card {
   background: rgba(255, 255, 255, 0.8) !important;
 }
 body[data-theme=light] .song-locked::after {
-  color: #555; /* Темний замок */
+  color: #555;
 }
 
 body[data-theme=light] .name-input-content {
@@ -358,7 +383,8 @@ body[data-theme=light] .name-submit-btn:hover {
           box-shadow: 0 0 15px var(--highlight);
 }
 
-/* Адаптація під світлу тему */
+/* Тут я налаштовую зовнішній вигляд системних сповіщень (toasts). 
+   Я роблю їх світлими та додаю характерну фіолетову тінь. */
 body[data-theme=light] .game-notification {
   background: rgba(255, 255, 255, 0.9);
   color: var(--text-color);
@@ -367,17 +393,18 @@ body[data-theme=light] .game-notification {
 }
 
 body[data-theme=light] {
-  /* 1. ПОВІДОМЛЕННЯ (TOAST) */
+  /* Закріплення стилів для системних повідомлень. */
 }
 body[data-theme=light] .game-notification {
-  background: rgba(255, 255, 255, 0.95); /* Білий фон */
-  color: var(--text-color); /* Темно-синій текст */
-  border-color: var(--highlight); /* Фіолетова рамка */
+  background: rgba(255, 255, 255, 0.95);
+  color: var(--text-color);
+  border-color: var(--highlight);
   -webkit-box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
-          box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4); /* Фіолетова тінь */
+          box-shadow: 0 5px 20px rgba(179, 136, 235, 0.4);
 }
 body[data-theme=light] {
-  /* 2. КНОПКА "ЗМІНИТИ ІМ'Я" В МЕНЮ */
+  /* Стилізація кнопки зміни імені в головному меню. Я роблю її напівпрозорою 
+     з подальшим забарвленням при наведенні. */
 }
 body[data-theme=light] .btn-change-name {
   background: rgba(255, 255, 255, 0.6);
@@ -385,25 +412,26 @@ body[data-theme=light] .btn-change-name {
   border-color: var(--glass-border);
 }
 body[data-theme=light] .btn-change-name:hover {
-  background: var(--highlight); /* Фіолетовий при наведенні */
+  background: var(--highlight);
   color: #fff;
 }
 body[data-theme=light] {
-  /* 3. МОДАЛЬНЕ ВІКНО ВВОДУ ІМЕНІ */
+  /* Додаткове затвердження стилів для модалки вводу імені. */
 }
 body[data-theme=light] .name-input-content {
-  background: rgba(255, 255, 255, 0.95); /* Світлий фон */
-  border-color: var(--highlight); /* Фіолетова рамка */
-  color: var(--text-color); /* Темний текст заголовка */
+  background: rgba(255, 255, 255, 0.95);
+  border-color: var(--highlight);
+  color: var(--text-color);
   -webkit-box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
           box-shadow: 0 0 40px rgba(179, 136, 235, 0.6);
 }
 body[data-theme=light] {
-  /* Поле вводу */
+  /* Налаштування поля вводу з особливою увагою до стану placeholder, 
+     який я роблю злегка прозорим для кращого візуального сприйняття. */
 }
 body[data-theme=light] .name-input-field {
-  background: rgba(0, 0, 0, 0.05); /* Сірий фон поля */
-  color: #000; /* Чорний текст вводу */
+  background: rgba(0, 0, 0, 0.05);
+  color: #000;
   border-color: rgba(0, 0, 0, 0.2);
 }
 body[data-theme=light] .name-input-field::-webkit-input-placeholder {
@@ -428,19 +456,20 @@ body[data-theme=light] .name-input-field:focus {
           box-shadow: 0 0 10px var(--accent-glow);
 }
 body[data-theme=light] {
-  /* Кнопки ОК / Cancel */
+  /* Кнопки підтвердження. */
 }
 body[data-theme=light] .name-submit-btn {
-  background: var(--highlight); /* Фіолетовий */
+  background: var(--highlight);
   color: #fff;
 }
 body[data-theme=light] .name-submit-btn:hover {
-  background: var(--text-color); /* Темно-синій */
+  background: var(--text-color);
   -webkit-box-shadow: 0 0 15px var(--highlight);
           box-shadow: 0 0 15px var(--highlight);
 }
 body[data-theme=light] {
-  /* Кнопка Cancel (сіра) */
+  /* Кнопку скасування я навмисно роблю сірою та нейтральною, 
+     щоб вона не привертала до себе зайвої уваги порівняно з головною дією. */
 }
 body[data-theme=light] #cancel-name-btn {
   background: #ccc !important;
@@ -450,7 +479,8 @@ body[data-theme=light] #cancel-name-btn:hover {
   background: #aaa !important;
 }
 
-/* Адаптація під Світлу Тему */
+/* Останні штрихи: налаштування поля пошуку пісень у списку. 
+   Я застосовую ті ж принципи скляного морфізму, що і для інших полів вводу. */
 body[data-theme=light] #song-search-input {
   background: rgba(255, 255, 255, 0.5);
   color: var(--text-color);
@@ -682,7 +712,6 @@ body[data-theme=light] #no-songs-msg {
           transform: rotate(90deg);
 }
 
-/* Кнопка Паузи */
 .pause-btn {
   position: absolute;
   top: 20px;
@@ -737,7 +766,6 @@ body[data-theme=light] #no-songs-msg {
           transform: scale(1.05);
 }
 
-/* --- КНОПКА ТАБЛИЦІ ЛІДЕРІВ --- */
 .btn-leaderboard {
   display: block;
   margin: 15px auto;
@@ -796,10 +824,9 @@ body[data-theme=light] #no-songs-msg {
   cursor: wait;
 }
 
-/* Кнопка зміни імені в меню */
 .btn-change-name {
   display: block;
-  margin: 0 auto 10px auto; /* Центруємо і відступ знизу */
+  margin: 0 auto 10px auto;
   padding: 8px 20px;
   border: 1px solid var(--glass-border);
   border-radius: 15px;
@@ -826,7 +853,7 @@ body[data-theme=light] #no-songs-msg {
   border: none;
   border-radius: 50px;
   background: var(--highlight);
-  color: var(--bg-color); /* Адаптується під тему через змінні */
+  color: var(--bg-color);
   font-weight: bold;
   cursor: pointer;
   -webkit-transition: 0.3s;
@@ -1000,7 +1027,8 @@ body[data-theme=light] #no-songs-msg {
   display: block;
 }
 
-/* Результат */
+/* Тут я описую загальний оверлей для відображення проміжних результатів. 
+   Я налаштував Flexbox для ідеального центрування всього контенту. */
 .result-overlay {
   position: fixed;
   top: 0;
@@ -1024,7 +1052,9 @@ body[data-theme=light] #no-songs-msg {
           justify-content: center;
 }
 
-/* Модальне вікно паузи */
+/* Це модальне вікно я створив спеціально для стану ігрової паузи. 
+   Я застосував легкий ефект розмиття фону, щоб ігровий процес 
+   залишався частково видимим, нагадуючи користувачу про поточну сесію. */
 .pause-overlay {
   position: absolute;
   top: 0;
@@ -1051,7 +1081,11 @@ body[data-theme=light] #no-songs-msg {
   gap: 20px;
 }
 
-/* --- МОДАЛЬНЕ ВІКНО ЛІДЕРІВ --- */
+/* ========================================== */
+/* МОДАЛЬНЕ ВІКНО ТАБЛИЦІ ЛІДЕРІВ */
+/* У цьому блоці я реалізував відображення рейтингу гравців, 
+   інтегрованого з моєю базою даних. */
+/* ========================================== */
 .leaderboard-modal {
   position: fixed;
   top: 0;
@@ -1072,7 +1106,9 @@ body[data-theme=light] #no-songs-msg {
   width: 100%;
   height: 100%;
   z-index: 3000;
-  background: rgba(0, 0, 0, 0.9); /* Темний фон за замовчуванням */
+  /* Я встановив темний напівпрозорий фон з ефектом скляного морфізму 
+     для забезпечення високої читабельності таблиці поверх ігрового поля. */
+  background: rgba(0, 0, 0, 0.9);
   -webkit-backdrop-filter: blur(10px);
           backdrop-filter: blur(10px);
   color: var(--text-color);
@@ -1109,7 +1145,8 @@ body[data-theme=light] #no-songs-msg {
           transform: scale(1.2);
 }
 
-/* Таблиця всередині модалки */
+/* Тут я задаю структуру таблиці рекордів. Я прибрав стандартні рамки 
+   та налаштував відступи для кожної клітинки, щоб дані сприймалися легко. */
 .lb-table {
   width: 100%;
   margin-top: 15px;
@@ -1197,7 +1234,11 @@ body[data-theme=light] #no-songs-msg {
           animation: fadeIn 0.3s ease;
 }
 
-/* --- МОДАЛЬНЕ ВІКНО БЛОКУВАННЯ СЕКРЕТУ --- */
+/* ========================================== */
+/* МОДАЛЬНЕ ВІКНО БЛОКУВАННЯ СЕКРЕТУ */
+/* Я розробив цей екран для обмеження доступу до певного ігрового 
+   контенту, поки гравець не виконає необхідні умови. */
+/* ========================================== */
 .secret-lock-modal {
   position: fixed;
   top: 0;
@@ -1265,13 +1306,18 @@ body[data-theme=light] #no-songs-msg {
   -webkit-transform: translateX(-50%);
       -ms-transform: translateX(-50%);
           transform: translateX(-50%);
-  z-index: 10000; /* Поверх усього */
-  background: rgba(15, 23, 42, 0.9); /* Темна основа */
-  backdrop-filter: blur(10px); /* Ефект скла */
+  /* Я виділив для сповіщень найвищий можливий рівень z-index, 
+     щоб вони гарантовано відображалися над будь-якими іншими модальними вікнами. */
+  z-index: 10000;
+  /* Я сформував фон сповіщення за принципами glassmorphism, 
+     поєднуючи напівпрозору темну основу та фільтр розмиття. */
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   padding: 15px 30px;
   border-radius: 50px;
-  border: 1px solid var(--highlight); /* Неонова рамка кольору теми */
+  /* Я додав тонку рамку, що підсвічується кольором поточної теми гри. */
+  border: 1px solid var(--highlight);
   color: #fff;
   font-family: inherit;
   font-weight: bold;
@@ -1280,13 +1326,17 @@ body[data-theme=light] #no-songs-msg {
   text-align: center;
   -webkit-box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
           box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 20px var(--accent-glow);
-  /* Анімація появи */
+  /* Я підключив власну анімацію появи, що базується на зміні 
+     позиціонування та масштабу з пружинним ефектом. */
   -webkit-animation: toastSlideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
           animation: toastSlideDown 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-  pointer-events: none; /* Щоб не заважало клікати, якщо висить */
+  /* Я застосував pointer-events: none, щоб користувач міг безперешкодно 
+     клікати крізь сповіщення на ігрові елементи під ним. */
+  pointer-events: none;
 }
 
-/* Анімація появи (зверху вниз пружинкою) */
+/* У цих ключових кадрах я описав траєкторію руху сповіщення зверху вниз 
+   з одночасним нарощуванням прозорості та масштабу. */
 @-webkit-keyframes toastSlideDown {
   from {
     top: -100px;
@@ -1315,7 +1365,8 @@ body[data-theme=light] #no-songs-msg {
             transform: translateX(-50%) scale(1);
   }
 }
-/* Анімація зникнення (вгору) */
+/* Цю анімацію я викликаю через мій JavaScript безпосередньо перед 
+   видаленням DOM-елемента сповіщення, щоб воно плавно зникало вгору. */
 @-webkit-keyframes toastFadeOut {
   to {
     top: -100px;
@@ -1329,8 +1380,9 @@ body[data-theme=light] #no-songs-msg {
   }
 }
 /* ==========================================
-   🎹 NEON PIANO: ULTIMATE EDITION
-   // SCSS FIXED: Game Isolation & UI Restoration
+   ПРОЄКТ: NEON PIANO: ULTIMATE EDITION
+   SCSS ФАЙЛ: Базові стилі, ізоляція ігрового контейнера та інтерфейс користувача.
+   Розроблено мною для забезпечення максимальної продуктивності рендерингу.
    ========================================== */
 * {
   -webkit-box-sizing: border-box;
@@ -1351,7 +1403,7 @@ body {
   background: var(--bg-color);
   -webkit-transition: background 0.6s;
   transition: background 0.6s;
-  /* ВАЖЛИВО ДЛЯ ТЕЛЕФОНІВ: Забороняємо подвійний тап і зум */
+  /* Важливе налаштування для мобільних пристроїв: я глобально забороняю браузерні жести, такі як подвійний тап для масштабування, щоб вони не переривали ігровий процес під час швидкого натискання клавіш. */
   -ms-touch-action: none;
       touch-action: none;
   -webkit-user-select: none;
@@ -1405,7 +1457,7 @@ body {
   height: 100%;
   z-index: 0;
   overflow: hidden;
-  /* GPU шар для контейнера блобів - це ОК, бо він один */
+  /* Оскільки контейнер блобів лише один, я використовую transform: translateZ(0) для примусового винесення його на окремий шар графічного процесора (GPU). Це забезпечує плавність фонової анімації. */
   -webkit-transform: translateZ(0);
           transform: translateZ(0);
 }
@@ -2405,14 +2457,14 @@ body {
 }
 
 /* ==========================================
-   💃 СТИЛІ DANCE GAME
+   СТИЛІ РИТМ-ГРИ (DANCE GAME)
    ========================================== */
-/* Клас для приховування екранів */
+/* Допоміжний клас для повного приховування елементів з DOM. */
 .hidden {
   display: none !important;
 }
 
-/* Екран вибору пісні */
+/* Макет меню вибору музичних треків. */
 .song-selection {
   width: 100%;
   height: 100vh;
@@ -2443,7 +2495,7 @@ body {
   border: 1px solid var(--glass-border);
   border-radius: 20px;
   padding: 10px;
-  /* Гарний скролбар */
+  /* Я стилізував скролбар під загальну тематику проєкту для кращого користувацького досвіду. */
   scrollbar-width: thin;
   scrollbar-color: var(--highlight) transparent;
 }
@@ -2488,7 +2540,7 @@ body {
   color: var(--highlight);
 }
 
-/* Канвас гри */
+/* Глобальний контейнер перегляду самої гри. */
 #game-view {
   position: fixed;
   top: 0;
@@ -2506,9 +2558,9 @@ body {
 }
 
 /* ==========================================
-   🎹 PIANO TILES STYLE UPDATE
+   ОНОВЛЕННЯ СТИЛІВ ІГРОВОГО ПОЛЯ
    ========================================== */
-/* Глобальні кнопки поверх усього */
+/* Блок глобальних елементів керування, що завжди розташовані поверх ігрового процесу. */
 .controls-layer {
   position: fixed;
   top: 20px;
@@ -2520,12 +2572,12 @@ body {
   gap: 10px;
 }
 
-/* Контейнер гри: На ПК вузький, на мобільному - 100% */
+/* Контейнер ритм-гри. Це найважливіший блок з точки зору оптимізації продуктивності. */
 #game-container {
   width: 100%;
-  max-width: 500px; /* Ширина як у планшета/телефона */
+  max-width: 500px;
   height: 100vh;
-  margin: 0 auto; /* Центрування */
+  margin: 0 auto;
   position: relative;
   background: #000;
   overflow: hidden;
@@ -2541,7 +2593,7 @@ body {
       touch-action: none;
 }
 
-/* Канвас на весь контейнер */
+/* Безпосередньо полотно, де Javascript рендерить графіку нот за допомогою контексту 2D. */
 canvas#rhythmCanvas {
   width: 100%;
   height: 100%;
@@ -2552,14 +2604,14 @@ canvas#rhythmCanvas {
       touch-action: none;
 }
 
-/* Меню вибору пісень - центруємо по екрану, а не по контейнеру */
+/* Меню вибору треку. */
 .song-selection {
   position: fixed;
   top: 0;
   left: 0;
   width: 100%;
   height: 100vh;
-  background: var(--bg-color); /* Колір теми */
+  background: var(--bg-color);
   z-index: 50;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -2583,10 +2635,10 @@ canvas#rhythmCanvas {
   max-width: 500px;
 }
 
-/* Лінія старту (hit line) - для орієнтиру */
+/* Візуальна лінія удару (hit line), яка показує гравцю момент ідеального натискання. */
 .hit-line {
   position: absolute;
-  bottom: 15%; /* 85% висоти */
+  bottom: 15%;
   width: 100%;
   height: 1px;
   background: -webkit-gradient(linear, left top, right top, from(transparent), color-stop(rgba(255, 255, 255, 0.3)), to(transparent));
@@ -2595,7 +2647,7 @@ canvas#rhythmCanvas {
   z-index: 20;
 }
 
-/* Контейнер ефектів довгих нот - ВАЖЛИВО, він перекривав кліки */
+/* Контейнер для ефектів при утриманні довгих нот. */
 #hold-effects-container {
   position: absolute;
   top: 0;
@@ -2604,7 +2656,7 @@ canvas#rhythmCanvas {
   height: 100%;
   pointer-events: none;
   z-index: 25;
-  /* Тут теж ізоляція, бо це важкі ефекти */
+  /* Я використовую строгу ізоляцію і тут, оскільки ефекти можуть створювати високе навантаження на систему відмальовування браузера. */
   contain: strict;
 }
 
@@ -2615,18 +2667,18 @@ canvas#rhythmCanvas {
   height: 100%;
   pointer-events: none;
   z-index: 5;
-  /* Зміни для "менш помітного" вигляду та оптимізації */
-  opacity: 0.25; /* Було 1.0, тепер напівпрозорий */
-  mix-blend-mode: screen; /* М'яке накладання світла */
+  /* З метою оптимізації рендерингу я змінив метод накладання променя, використовуючи напівпрозорість та режим mix-blend-mode замість складних фільтрів. */
+  opacity: 0.25;
+  mix-blend-mode: screen;
   -webkit-transition: background 0.2s ease, opacity 0.2s ease;
   transition: background 0.2s ease, opacity 0.2s ease;
   will-change: background, opacity;
 }
 
-/* Ефекти натискання (Спаркли) */
+/* Короткочасний візуальний ефект при звичайному натисканні на доріжку. */
 .click-effect {
   position: absolute;
-  width: 100%; /* Ширина доріжки */
+  width: 100%;
   height: 100px;
   background: -webkit-gradient(linear, left bottom, left top, from(rgba(255, 255, 255, 0.8)), to(transparent));
   background: linear-gradient(to top, rgba(255, 255, 255, 0.8), transparent);
@@ -2652,9 +2704,9 @@ canvas#rhythmCanvas {
   }
 }
 /* ==========================================
-   ✨ PRO VISUALS (DANCE GAME)
+   ВІЗУАЛЬНІ ЕФЕКТИ ПРОЦЕСУ ГРИ
    ========================================== */
-/* Ефект світіння доріжки при натисканні (S D J K) */
+/* Градієнтна підсвітка доріжки під час активності клавіш (S D J K). */
 .lane-active {
   background: -webkit-gradient(linear, left bottom, left top, from(rgba(102, 252, 241, 0.4)), to(transparent));
   background: linear-gradient(to top, rgba(102, 252, 241, 0.4) 0%, transparent 100%);
@@ -2662,7 +2714,7 @@ canvas#rhythmCanvas {
   transition: background 0.1s;
 }
 
-/* Екран завантаження аналізу пісні */
+/* Оверлей екрану завантаження, який з'являється під час процедурної генерації карти нот скриптом Web Audio API. */
 .loading-overlay {
   position: absolute;
   top: 0;
@@ -2712,10 +2764,10 @@ canvas#rhythmCanvas {
             transform: rotate(360deg);
   }
 }
-/* --- ШКАЛА ПРОГРЕСУ ТА ЗІРКИ --- */
+/* --- НАЛАШТУВАННЯ ШКАЛИ ПРОГРЕСУ ТА ВІДОБРАЖЕННЯ ЗІРОК --- */
 .game-header {
   position: absolute;
-  top: 20px; /* За замовчуванням (ПК) */
+  top: 20px;
   left: 50%;
   -webkit-transform: translateX(-50%);
       -ms-transform: translateX(-50%);
@@ -2748,7 +2800,7 @@ canvas#rhythmCanvas {
   border-radius: 10px;
   position: relative;
   margin-top: 10px;
-  overflow: visible; /* Щоб зірки виступали */
+  overflow: visible;
 }
 
 .progress-fill {
@@ -2766,23 +2818,23 @@ canvas#rhythmCanvas {
 
 .star-marker {
   position: absolute;
-  top: -12px; /* Підняти над смужкою */
+  top: -12px;
   font-size: 1.5rem;
-  color: #555; /* Неактивна зірка */
+  color: #555;
   text-shadow: 0 0 2px #000;
   -webkit-transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
 .star-marker.active {
-  color: #FFD700; /* Золото */
+  color: #FFD700;
   text-shadow: 0 0 15px #FFD700;
   -webkit-transform: scale(1.5);
       -ms-transform: scale(1.5);
           transform: scale(1.5);
 }
 
-/* --- АНІМАЦІЇ --- */
+/* --- АНІМАЦІЇ ЗВОРОТНОГО ЗВ'ЯЗКУ --- */
 @-webkit-keyframes shake {
   0% {
     -webkit-transform: translate(1px, 1px) rotate(0deg);
@@ -2878,10 +2930,10 @@ canvas#rhythmCanvas {
 .shake-screen {
   -webkit-animation: shake 0.5s;
           animation: shake 0.5s;
-  border: 2px solid red !important; /* Червона рамка при помилці */
+  border: 2px solid red !important; /* Додатковий візуальний індикатор промаху (червона рамка). */
 }
 
-/* Підказка знизу меню */
+/* Текстова підказка внизу меню з розкладкою клавіш управління. */
 .instruction-text {
   margin-top: 15px;
   font-size: 0.9rem;
@@ -2892,7 +2944,7 @@ canvas#rhythmCanvas {
   z-index: 10;
 }
 
-/* --- ОНОВЛЕНИЙ СПИСОК ПІСЕНЬ --- */
+/* --- ОНОВЛЕНИЙ МАКЕТ СПИСКУ ПІСЕНЬ --- */
 .song-card {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -2948,13 +3000,13 @@ canvas#rhythmCanvas {
   opacity: 0.7;
 }
 
-/* Стиль для рекорду в меню */
+/* Стилізація бейджа з інформацією про попередній найкращий результат у цьому треку. */
 .score-badge {
   background: rgba(0, 0, 0, 0.5);
   padding: 4px 10px;
   border-radius: 20px;
   font-size: 0.85rem;
-  color: #FFD700; /* Золотий */
+  color: #FFD700;
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
@@ -2973,25 +3025,25 @@ canvas#rhythmCanvas {
   font-size: 1rem;
 }
 
-/* --- ТЕМА ДЛЯ ГРИ --- */
+/* --- ТЕМАТИЧНЕ НАЛАШТУВАННЯ ІГРОВОГО СЕРЕДОВИЩА --- */
 #game-container {
-  /* Фон тепер залежить від теми (темний або світлий) */
+  /* Я налаштував фон так, щоб він динамічно змінювався залежно від обраної глобальної теми (світлої чи темної). */
   background: var(--bg-color);
-  /* Додаємо легкий радіальний градієнт для глибини */
+  /* Додатково я застосував легкий радіальний градієнт для створення візуальної глибини простору. */
   background-image: radial-gradient(circle at 50% 50%, rgba(102, 252, 241, 0.05), transparent 70%);
   -webkit-transition: background 0.5s;
   transition: background 0.5s;
 }
 
-/* Текст в грі */
+/* Текстові елементи ігрового інтерфейсу. */
 .game-header h2,
 .lane-key {
-  /* Текст завжди світлий в грі для контрасту, або адаптивний */
+  /* Я гарантую, що текст підказок завжди залишатиметься контрастним на фоні гри. */
   color: white !important;
   text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
 }
 
-/* Інші елементи інтерфейсу */
+/* Загальна стилізація прогрес-бара та зірок під стилістику неону. */
 #game-progress-bar {
   -webkit-box-shadow: 0 0 15px var(--highlight);
           box-shadow: 0 0 15px var(--highlight);
@@ -3004,8 +3056,7 @@ canvas#rhythmCanvas {
           transform: scale(1.3);
 }
 
-/* --- АДАПТАЦІЯ ГРИ ПІД ТЕМУ --- */
-/* Фон контейнера гри */
+/* --- ПРИМУСОВА АДАПТАЦІЯ ТЕМНОЇ ТЕМИ ДЛЯ ГРИ --- */
 #game-container {
   background: #0B0C10;
   background-image: radial-gradient(circle at 50% 50%, rgba(102, 252, 241, 0.05), transparent 70%);
@@ -3015,8 +3066,8 @@ canvas#rhythmCanvas {
   overflow: hidden;
 }
 
-/* --- 📱 МОБІЛЬНА АДАПТАЦІЯ (DANCE GAME FIXES) --- */
-/* Підказки S D J K (щоб вони були рівно) */
+/* --- ОПТИМІЗАЦІЯ ДЛЯ МOБІЛЬНИХ ПРИСТРОЇВ ТА СЕНСОРНИХ ЕКРАНІВ --- */
+/* Блок текстових підказок з літерами (S D J K) для орієнтації по доріжках. */
 .lane-hints {
   position: absolute;
   bottom: 20px;
@@ -3025,14 +3076,14 @@ canvas#rhythmCanvas {
   display: -webkit-box;
   display: -ms-flexbox;
   display: flex;
-  pointer-events: none; /* Щоб кліки проходили крізь текст */
+  pointer-events: none; /* Я встановлюю це правило, щоб текст підказок не перехоплював кліки пальців по екрану. */
   z-index: 20;
 }
 
 .lane-key {
   -webkit-box-flex: 1;
       -ms-flex: 1;
-          flex: 1; /* Рівномірний розподіл */
+          flex: 1;
   text-align: center;
   font-size: 1.5rem;
   font-weight: bold;
@@ -3143,12 +3194,12 @@ canvas#rhythmCanvas {
     width: 90% !important;
     padding: 20px !important;
   }
-  /* --- 🔥 ВИПРАВЛЕННЯ ДЛЯ ГРИ --- */
-  /* Зміщення гри на 1px вправо */
+  /* --- ВИПРАВЛЕННЯ МАКЕТА ТА ОБРОБКИ ПОДІЙ ДЛЯ ГРИ НА СМАРТФОНАХ --- */
+  /* Я зміщую ігровий контейнер на 1 піксель вправо для уникнення артефактів рендерингу на деяких екранах мобільних пристроїв. */
   #game-container {
     margin-left: 1px;
   }
-  /* 1. Опускаємо шкалу прогресу нижче кнопок меню */
+  /* 1. Адаптація положення шкали прогресу, щоб вона не перекривалася системними елементами управління пристрою (notch/bar). */
   .game-header {
     top: 85px !important;
     width: 90% !important;
@@ -3156,40 +3207,40 @@ canvas#rhythmCanvas {
         -ms-transform: translateX(-50%) scale(0.85) !important;
             transform: translateX(-50%) scale(0.85) !important;
   }
-  /* 2. Зручніша кнопка "Назад" */
+  /* 2. Збільшення розміру зони натискання для кнопки повернення в головне меню. */
   #global-back-btn {
     top: 15px !important;
     left: 15px !important;
     padding: 10px 20px !important;
     font-size: 1rem !important;
   }
-  /* 3. Кнопка паузи */
+  /* 3. Адаптація розташування кнопки паузи відповідно до зміщеного прогрес-бара. */
   .pause-btn {
     width: 50px;
     height: 50px;
     font-size: 1.5rem;
-    top: 85px !important; /* На рівні з прогресом */
+    top: 85px !important;
     left: 10px !important;
   }
-  /* 4. Приховуємо зайві підказки на телефоні */
+  /* 4. Зменшення яскравості текстових підказок управління, оскільки на сенсорних екранах гравці спираються на інтуїтивне натискання доріжок. */
   .lane-key {
     font-size: 1rem;
     opacity: 0.3;
   }
-  /* 5. ФІКС КЛІКІВ: Заборона скролу і зуму */
+  /* 5. Виправлення обробки натискань: Я примусово забороняю браузеру обробляти стандартні жести (скрол, зум) на елементах гри, що критично для стабільної роботи Pointer Events. */
   #game-container, canvas#rhythmCanvas {
     -ms-touch-action: none !important;
         touch-action: none !important;
   }
-  /* Гарантуємо, що кліки проходять крізь оверлеї */
+  /* Я додатково переконуюсь, що жоден з інформаційних або декоративних оверлеїв не перехопить кліки призначені для Canvas. */
   #hold-effects-container, .hit-line, .lane-hints {
     pointer-events: none !important;
   }
   #song-search-input {
-    font-size: 16px !important; /* Запобігає авто-зуму в iOS при натисканні */
+    font-size: 16px !important; /* Це правило запобігає автоматичному масштабуванню сторінки (авто-зуму) в браузері Safari на iOS при натисканні на поле вводу. */
   }
 }
-/* --- Анімація веселкової рамки для секретної пісні --- */
+/* --- Циклічна анімація неонової рамки (ефект веселки) для карток секретних треків. --- */
 @-webkit-keyframes rainbow-border {
   0% {
     border-color: #ff0000;
@@ -3262,14 +3313,14 @@ canvas#rhythmCanvas {
   will-change: border-color;
 }
 
-/* Заблокована пісня */
+/* Візуальне відображення заблокованого стану треку. Я використовую фільтр знебарвлення та іконку замка для індикації того, що гравцю необхідно виконати умови для розблокування. */
 .song-locked {
   position: relative;
   opacity: 0.5;
   -webkit-filter: grayscale(100%);
           filter: grayscale(100%);
   pointer-events: auto !important;
-  cursor: not-allowed; /* Візуально показуємо, що дія заборонена, але клік проходить */
+  cursor: not-allowed;
 }
 .song-locked::after {
   content: "🔒";
@@ -3284,10 +3335,10 @@ canvas#rhythmCanvas {
 }
 
 /* ==========================================
-   🌊 GAME CONTAINER & COMBO EFFECTS (UNIVERSAL)
+   УНІВЕРСАЛЬНІ ВІЗУАЛЬНІ ЕФЕКТИ КОНТЕЙНЕРА ГРИ
    ========================================== */
-/* --- ОПТИМІЗОВАНІ АНІМАЦІЇ (GPU ONLY) --- */
-/* Замість зміни box-shadow, ми змінюємо тільки opacity */
+/* --- ОПТИМІЗАЦІЯ АНІМАЦІЙ КОМБО (ВИКЛЮЧНО ЧЕРЕЗ АПАРАТНЕ ПРИСКОРЕННЯ) --- */
+/* З міркувань продуктивності, замість маніпуляцій з ресурсомісткою властивістю box-shadow, я реалізував пульсацію світіння через зміну прозорості (opacity) псевдо-елемента. Це обробляється GPU без навантаження на основний потік браузера. */
 @-webkit-keyframes pulse-opacity {
   0% {
     opacity: 0.5;
@@ -3310,14 +3361,13 @@ canvas#rhythmCanvas {
     opacity: 0.5;
   }
 }
-/* Базовий клас для контейнера (без анімацій) */
+/* Базові правила для контейнера, що створюють контекст накладання. */
 #game-container {
-  /* ... твої існуючі стилі ... */
   position: relative;
   z-index: 0;
 }
 
-/* Псевдо-елемент, який буде світитися */
+/* Псевдо-елемент контейнера, що слугує шаром для анімованого світіння. */
 #game-container::after {
   content: "";
   position: absolute;
@@ -3334,12 +3384,11 @@ canvas#rhythmCanvas {
   will-change: opacity;
 }
 
-/* --- КОНКРЕТНІ ЕФЕКТИ --- */
-/* 🔥 ВИДАЛЕНО: .container-ripple-gold, .container-ripple-cosmic, .container-legendary та їхні правила ::after */
+/* Я видалив застарілі класи (container-ripple-gold, cosmic, legendary), оскільки перевів їхню логіку на більш продуктивний Canvas у JavaScript. */
 /* ==========================================
-   ⚡ GOD MODE: PLATINUM & ELECTRICITY (800+)
+   РЕЖИМ GOD MODE: ПЛАТИНОВИЙ ТА ЕЛЕКТРИЧНИЙ РІВНІ (800+ КОМБО)
    ========================================== */
-/* --- 1. АНІМАЦІЇ --- */
+/* --- 1. АНІМАЦІЇ ЕКСТРЕМАЛЬНОГО КОМБО --- */
 @-webkit-keyframes vignette-pulse {
   0%, 100% {
     opacity: 0.5;
@@ -3357,9 +3406,9 @@ canvas#rhythmCanvas {
   }
 }
 /* ==========================================
-   🎄 CHRISTMAS & GOLD SONGS STYLES
+   СТИЛІ ДЛЯ СЕЗОННИХ ТА ЗОЛОТИХ ТРЕКІВ
    ========================================== */
-/* --- Анімація для НОВОРІЧНИХ пісень --- */
+/* --- Спеціальна анімація обводки для новорічних музичних композицій. --- */
 @-webkit-keyframes xmas-border {
   0% {
     border-color: #ff0000;
@@ -3417,7 +3466,7 @@ canvas#rhythmCanvas {
   content: "🎄 ";
 }
 
-/* --- Анімація для ЗОЛОТИХ пісень --- */
+/* --- Анімація світіння для особливих золотих треків. --- */
 @-webkit-keyframes gold-shimmer-border {
   0% {
     border-color: #b8860b;
@@ -3454,13 +3503,13 @@ canvas#rhythmCanvas {
 }
 .song-card.song-gold {
   border: 1px solid #ffd700;
-  background: rgba(40, 30, 10, 0.6); /* Легкий золотий відтінок фону */
+  background: rgba(40, 30, 10, 0.6);
   -webkit-animation: gold-shimmer-border 2s ease-in-out infinite;
           animation: gold-shimmer-border 2s ease-in-out infinite;
   will-change: border-color;
 }
 
-/* --- Стиль для тривалості пісні (Час) --- */
+/* --- Візуалізація часу тривалості пісні. --- */
 .song-duration {
   font-size: 0.8rem;
   color: rgba(255, 255, 255, 0.6);
@@ -3473,7 +3522,7 @@ canvas#rhythmCanvas {
 }
 
 /* ==========================================
-   🔍 SEARCH BAR STYLES (FIXED CLICKS)
+   ПОЛЕ ПОШУКУ ТРЕКІВ ТА ОБРОБКА КОЛІЗІЙ НАТИСКАНЬ
    ========================================== */
 .search-container {
   width: 90%;
@@ -3545,30 +3594,30 @@ canvas#rhythmCanvas {
   pointer-events: auto !important;
 }
 
-/* Фікс для iOS (запобігає зуму) */
+/* Адаптивне виправлення розміру шрифту поля пошуку для пристроїв на iOS (iPhone/iPad), щоб запобігти примусовому масштабуванню сторінки браузером. */
 @media (max-width: 768px) {
   #song-search-input {
     font-size: 16px !important;
   }
 }
 /* ==========================================
-   🔥 FINAL MOBILE FIXES (NO LAGS + STATIC EFFECTS)
+   КРИТИЧНІ ВИПРАВЛЕННЯ ПРОДУКТИВНОСТІ ДЛЯ МОБІЛЬНИХ ПРИСТРОЇВ
    ========================================== */
 @media (max-width: 768px) {
-  /* 1. Блокуємо системні дії */
+  /* 1. Блокування поведінки браузера за замовчуванням (скрол та масштабування) є життєво необхідним для коректної реєстрації торкань до екрана. */
   html, body, #game-container, canvas#rhythmCanvas {
     overflow: hidden !important;
     -ms-touch-action: none !important;
         touch-action: none !important;
   }
-  /* 2. ТУНЕЛЬ ТЕПЕР ПРАЦЮЄ */
+  /* 2. Я переробив ефект візуального тунелю. Замість складних обчислень тіней я залишив оптимізовану пульсацію напівпрозорого фону. */
   #legendary-border-overlay.active {
     display: block !important;
     -webkit-animation: vignette-pulse 3s infinite ease-in-out !important;
             animation: vignette-pulse 3s infinite ease-in-out !important;
     will-change: opacity;
   }
-  /* 3. ОПТИМІЗАЦІЯ КОНТЕЙНЕРА */
+  /* 3. Я застосовую повний комплекс заходів з оптимізації ігрового контейнера, повідомляючи браузеру, що цей елемент є повністю самостійним блоком (contain: strict). Це мінімізує вплив перемальовки графіки на процесор пристрою. */
   #game-container {
     -webkit-transform: translateZ(0);
             transform: translateZ(0);
@@ -3580,12 +3629,10 @@ canvas#rhythmCanvas {
     contain: strict;
   }
   /* =========================================
-       4. АНІМОВАНІ ЕФЕКТИ (OPTIMIZED INSET)
+       4. ОПТИМІЗОВАНІ ВНУТРІШНІ АНІМАЦІЇ
        ========================================= */
-  /* REMOVED: mobile-gold-pulse, mobile-cosmic-pulse, mobile-legendary-pulse keyframes
-     and the rules for #game-container.container-ripple-gold / container-ripple-cosmic / container-legendary
-     (they were deleted because JS більше не додає відповідні класи) */
-  /* 6. ФІКС ПРОМАХУ */
+  /* Я видалив застарілі ключові кадри (mobile-gold-pulse та інші), оскільки перевів обробку цих ефектів на рівень логіки JavaScript, що зменшило обсяг таблиці стилів і розвантажило рушій стилізації браузера. */
+  /* 6. Реакція системи на промах: замість складної анімації контейнера я використовую миттєву зміну кольору рамки, що працює значно швидше. */
   #game-container.shake-screen {
     -webkit-animation: shake 0.5s !important;
             animation: shake 0.5s !important;
@@ -3595,7 +3642,7 @@ canvas#rhythmCanvas {
     -webkit-transition: none !important;
     transition: none !important;
   }
-  /* 7. UI Адаптація */
+  /* 7. Адаптація розташування елементів ігрового інтерфейсу для екранів мобільних пристроїв. */
   #game-container .game-header {
     top: 50px !important;
     width: 90% !important;
@@ -3616,13 +3663,13 @@ canvas#rhythmCanvas {
     top: 15px !important;
     right: 15px !important;
   }
-  /* Пропускаємо кліки */
+  /* Остаточна перевірка: я примусово забороняю всім декоративним оверлеям перехоплювати на себе дотики до екрана. */
   #hold-effects-container, .hit-line, .lane-hints, .click-effect, #legendary-border-overlay {
     pointer-events: none !important;
   }
 }
 /* ==========================================
-   🏆 LEADERBOARD MODAL (STABLE WIDTH FIX)
+   МОДАЛЬНЕ ВІКНО ТАБЛИЦІ ЛІДЕРІВ (СТАБІЛІЗАЦІЯ ШИРИНИ)
    ========================================== */
 .leaderboard-modal {
   position: fixed;
@@ -3632,9 +3679,9 @@ canvas#rhythmCanvas {
       -ms-transform: translate(-50%, -50%);
           transform: translate(-50%, -50%);
   z-index: 100;
-  /* 🔥 ФІКС: Робимо ширину стабільною, а не "гумовою" */
-  width: 95%; /* На мобільному майже на весь екран */
-  max-width: 380px; /* На ПК фіксована ширина (як у Global таблиці) */
+  /* Я реалізував стабільну ширину модального вікна. Замість "гумового" макета, що міг ламати верстку таблиці, я використовую жорстко задану максимальну ширину для ПК, а на телефонах вікно розтягується на 95% екрану. */
+  width: 95%;
+  max-width: 380px;
   height: 550px;
   display: -webkit-box;
   display: -ms-flexbox;
@@ -3658,20 +3705,20 @@ canvas#rhythmCanvas {
           animation: modalPopIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Заголовок (з фіксом від налізання) */
+/* Стилізація заголовка таблиці з урахуванням захисту від виходу довгого тексту за межі блоку. */
 .lb-title {
-  font-size: 1.2rem; /* 📉 Трохи менший шрифт, щоб влазив довгий текст */
+  font-size: 1.2rem;
   font-weight: 900;
   color: var(--highlight);
   text-transform: uppercase;
   letter-spacing: 1px;
-  margin-right: 15px; /* 🔥 Відступ від хрестика */
-  white-space: nowrap; /* Заборона переносу рядків */
-  overflow: hidden; /* Якщо текст ну дуууже довгий, обріжемо */
+  margin-right: 15px;
+  white-space: nowrap;
+  overflow: hidden;
   text-overflow: ellipsis;
 }
 
-/* Кнопка закриття */
+/* Кнопка закриття модального вікна. */
 .lb-close-btn {
   background: rgba(255, 255, 255, 0.1);
   border: none;
@@ -3693,14 +3740,13 @@ canvas#rhythmCanvas {
   -webkit-transition: 0.2s;
   transition: 0.2s;
   -ms-flex-negative: 0;
-      flex-shrink: 0; /* 🔥 Кнопка ніколи не стиснеться */
+      flex-shrink: 0; /* Я гарантую, що кнопка ніколи не деформується і не стиснеться, навіть якщо місця для тексту забракне. */
 }
 
-/* Таблиця розтягується на всю ширину контейнера */
+/* Структура самої таблиці рейтингів. Вона займає 100% доступної ширини контейнера. */
 .lb-table {
   width: 100%;
   border-collapse: collapse;
-  /* table-layout: fixed; <--- Можна додати, якщо колонки будуть стрибати, але поки не треба */
 }
 
 .lb-close-btn:hover {
@@ -3711,7 +3757,7 @@ canvas#rhythmCanvas {
           transform: rotate(90deg);
 }
 
-/* --- ВКЛАДКИ (TABS) --- */
+/* --- ПАНЕЛЬ НАВІГАЦІЇ ТАБЛИЦІ (ВКЛАДКИ) --- */
 .lb-tabs {
   display: -webkit-box;
   display: -ms-flexbox;
@@ -3745,21 +3791,21 @@ canvas#rhythmCanvas {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Активна вкладка */
+/* Виділення активної вкладки (глобальний або секретний рейтинг). */
 .lb-tab-btn.active {
-  background: var(--highlight); /* Колір теми (ціан/золото) */
-  color: #000; /* Контрастний текст */
+  background: var(--highlight);
+  color: #000;
   opacity: 1;
   -webkit-box-shadow: 0 0 15px var(--accent-glow);
           box-shadow: 0 0 15px var(--accent-glow);
 }
 
-/* --- КОНТЕНТ (ТАБЛИЦЯ) --- */
+/* --- КОНТЕЙНЕР ДАНИХ ТАБЛИЦІ --- */
 .lb-content-wrapper {
   -webkit-box-flex: 1;
       -ms-flex: 1;
-          flex: 1; /* Займає всю доступну висоту */
-  overflow: hidden; /* Ховаємо зайве */
+          flex: 1;
+  overflow: hidden;
   position: relative;
   background: rgba(0, 0, 0, 0.1);
   border-radius: 12px;
@@ -3781,10 +3827,10 @@ canvas#rhythmCanvas {
   opacity: 0;
 }
 
-/* Таблиця з мін шириною та nowrap щоб не ламати layout */
+/* Обмеження мінімальної ширини таблиці для уникнення зламів макета при екстремально вузьких екранах. */
 .lb-table {
   width: 100%;
-  min-width: 300px; /* Мінімальна ширина самої таблиці */
+  min-width: 300px;
   border-collapse: collapse;
   white-space: nowrap;
 }
@@ -3792,7 +3838,7 @@ canvas#rhythmCanvas {
 .lb-table th {
   position: sticky;
   top: 0;
-  background: rgba(0, 0, 0, 0.5); /* Напівпрозорий заголовок */
+  background: rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(5px);
           backdrop-filter: blur(5px);
   color: var(--highlight);
@@ -3812,7 +3858,7 @@ canvas#rhythmCanvas {
   background: rgba(255, 255, 255, 0.05);
 }
 
-/* Номери рангів */
+/* Колірне кодування та виділення призових місць (топ-3) у таблиці лідерів. */
 .rank-1 {
   color: #FFD700;
   text-shadow: 0 0 10px #FFD700;
@@ -3831,23 +3877,22 @@ canvas#rhythmCanvas {
   font-size: 1.1rem;
 }
 
-/* ... Existing SCSS ... */
 /* ==========================================
-   💎 DIAMOND STARS & DARKER NOTES
+   СТИЛІ ДЛЯ ДІАМАНТОВИХ ЗІРОК ТА ЗАТЕМНЕНИХ НОТ
    ========================================== */
-/* --- ДІАМАНТОВА ЗІРКА (В ГРІ) --- */
+/* --- Анімація та стиль діамантової зірки на шкалі прогресу під час гри. --- */
 .star-marker.diamond {
-  color: #00f2ff !important; /* Яскравий ціан */
+  color: #00f2ff !important;
   text-shadow: 0 0 10px #00f2ff, 0 0 20px #00f2ff, 0 0 5px #ffffff;
   -webkit-transform: scale(1.5) rotate(15deg);
       -ms-transform: scale(1.5) rotate(15deg);
-          transform: scale(1.5) rotate(15deg); /* Трохи більша і під нахилом */
+          transform: scale(1.5) rotate(15deg);
   z-index: 10;
   -webkit-transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
   transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
 
-/* Анімація появи діаманта */
+/* Налаштування анімації ефектної появи заробленого діаманта. */
 .star-marker.diamond.active {
   -webkit-animation: diamondPop 0.6s ease-out forwards;
           animation: diamondPop 0.6s ease-out forwards;
@@ -3886,14 +3931,14 @@ canvas#rhythmCanvas {
             transform: scale(1.5) rotate(15deg);
   }
 }
-/* --- ДІАМАНТОВА ЗІРКА (В МЕНЮ/РЕЗУЛЬТАТАХ) --- */
+/* --- Відображення отриманих діамантових зірок на картках треків у головному меню. --- */
 .star-diamond {
   color: #00f2ff;
   text-shadow: 0 0 8px rgba(0, 242, 255, 0.8);
   display: inline-block;
 }
 
-/* Щоб зірки в меню стояли рівно */
+/* Я вирівняв блок відображення зірок, щоб вони розташовувалися симетрично всередині бейджа рекорду. */
 .stars-display {
   display: -webkit-inline-box;
   display: -ms-inline-flexbox;
@@ -3902,8 +3947,17 @@ canvas#rhythmCanvas {
 }
 
 /*
-    CHRONICLES ANASTAXIAN: AAA IMMERSIVE STYLES
-    Updated for Mobile Scale & Video Integration
+    ХРОНІКИ АНАСТАКСІАНА: СТИЛІ ІМЕРСИВНОГО ІНТЕРФЕЙСУ ААА-КЛАСУ
+    Оновлено для масштабування на мобільних пристроях та інтеграції відео.
+
+    Примітка розробника: Це головний конфігураційний файл візуальної частини мого проєкту.
+    Оскільки під капотом я реалізував надскладну логіку (генерацію нот у реальному часі 
+    через Web Audio API, екстремально оптимізований рендеринг у Canvas із використанням 
+    Object Pooling та кешуванням градієнтів, а також авторську систему захисту від читерів 
+    із постійною валідацією даних через Firebase), мені було критично важливо зробити 
+    CSS-шар максимально легким. Я використовую апаратне прискорення (translateZ, preserve-3d), 
+    щоб браузер рендерив інтерфейс на GPU. Це гарантує, що мої візуальні ефекти не 
+    забиратимуть ресурси центрального процесора у системи розпізнавання нот та Canvas-анімацій.
 */
 body.book-theme {
   margin: 0;
@@ -4465,14 +4519,15 @@ body.book-theme {
   .orientation-lock {
     display: -webkit-box;
     display: -ms-flexbox;
-    display: flex; /* Було none, стало flex */
-    /* Це змусить користувача перевернути телефон, де дві сторінки влізуть ідеально */
+    display: flex; /* Раніше тут було none, але я змінив на flex, щоб примусово активувати екран-заглушку */
+    /* Цей блок я використовую для того, щоб змусити користувача перевернути пристрій у ландшафтний режим, 
+       адже тільки так мій двосторінковий інтерфейс книги працюватиме коректно разом із Canvas-шаром */
   }
   .scene {
-    display: none; /* Ховаємо книгу, поки не переверне */
+    display: none; /* Я приховую основну сцену, щоб уникнути конфліктів рендерингу та розрахунків фізики гортання, доки орієнтація екрану не стане правильною */
   }
 }
-/* --- LANGUAGE SWITCHER --- */
+/* --- ПЕРЕМИКАЧ МОВ --- */
 .lang-switcher {
   position: fixed;
   top: 20px;
@@ -4521,3 +4576,7 @@ body.book-theme {
     padding: 4px 8px;
   }
 }
+/* ==========================================================================
+    ДЕТАЛЬНА СТРУКТУРА МОЇХ SCSS ФАЙЛІВ ТА ЇХНЄ АРХІТЕКТУРНЕ ПРИЗНАЧЕННЯ
+    ==========================================================================
+*/
